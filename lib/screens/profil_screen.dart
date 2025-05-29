@@ -1,37 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/user/user_bloc.dart';
+import 'package:project_ta/bloc/user/user_state.dart';
+import 'package:project_ta/bloc/video_edukasi/video_edukasi_bloc.dart';
+import 'package:project_ta/bloc/video_edukasi/video_edukasi_event.dart';
+import 'package:project_ta/bloc/video_edukasi/video_edukasi_state.dart';
 import 'package:project_ta/constants/color.dart';
-import 'package:project_ta/screens/infoPengguna_screen.dart';
+import 'package:project_ta/screens/info_pengguna_screen.dart';
 import 'package:project_ta/screens/login_screen.dart';
-import 'package:project_ta/screens/rapot_screen.dart';
-import 'package:project_ta/screens/riwayatUjian_screen.dart';
-import 'package:project_ta/screens/temanKelas_screen.dart';
+import 'package:project_ta/screens/rapot_siswa_screen.dart';
+import 'package:project_ta/screens/riwayat_ujian_screen.dart';
+import 'package:project_ta/screens/teman_kelas_screen.dart';
 
-import '../blocs/auth/auth_bloc.dart';
-import '../blocs/auth/auth_event.dart';
-import '../blocs/auth/auth_state.dart';
-import 'kupon_screen.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_event.dart';
+import '../bloc/auth/auth_state.dart';
+import 'siswa_kupon_screen.dart';
 
 class ProfilScreen extends StatelessWidget {
   const ProfilScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 250,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: _ProfileAppBar(),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 240,
+              pinned: true,
+              automaticallyImplyLeading: false, // <-- Ini menghilangkan tombol back
+              flexibleSpace: FlexibleSpaceBar(
+                background: _ProfileAppBar(),
+              ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: _ProfileMenu(),
-          ),
-        ],
-      ),
+            SliverToBoxAdapter(
+              child: _ProfileMenu(),
+            ),
+          ],
+        ),
+      )
     );
   }
 }
@@ -39,81 +49,94 @@ class ProfilScreen extends StatelessWidget {
 class _ProfileAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xff886ff2),
-            Color(0xff6849ef),
-          ],
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: kToolbarHeight),
-          // Foto Profil
-          CircleAvatar(
-            radius: 50,
-            backgroundImage: NetworkImage(
-                'https://randomuser.me/api/portraits/men/1.jpg'),
-            backgroundColor: Colors.grey[200],
-          ),
-          const SizedBox(height: 16),
-          // Nama User
-          Text(
-            'Ara Chan',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Kelas dan Poin
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Kelas 7A',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: Colors.white),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.star, color: Colors.yellow[300], size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      '1.500 Poin',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
+    final authState = context.read<AuthBloc>().state;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xff886ff2),
+              Color(0xff6849ef),
             ],
           ),
-        ],
-      ),
+        ),
+        child: BlocBuilder<UserBloc, UserState>(
+          builder: (context, userState){
+            if(authState is! Authenticated) return Text("Login Dulu");
+            if(userState is UserLoaded){
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: kToolbarHeight),
+                  // Foto Profil
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: NetworkImage(userState.profpic),
+                    backgroundColor: Colors.grey[200],
+                  ),
+                  const SizedBox(height: 16),
+                  // Nama User
+                  Text(
+                    userState.username,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Kelas dan Poin
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'Kelas ${userState.kelas}',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.star, color: Colors.yellow[300], size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${userState.poin} Poin',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            }
+            else{
+              return Text("GG");
+            }
+          }
+        )
+      )
     );
   }
 }
@@ -161,26 +184,21 @@ class _ProfileMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          // Daftar Menu
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.5,
-            ),
-            itemCount: menuItems.length,
-            itemBuilder: (context, index) {
-              final menu = menuItems[index];
-              return _buildMenuCard(context, menu);
-            },
-          ),
-        ],
+      padding: const EdgeInsets.only(left: 16.0, top: 0.0, right: 16.0, bottom: 8.0),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 1.5,
+        ),
+        itemCount: menuItems.length,
+        itemBuilder: (context, index) {
+          final menu = menuItems[index];
+          return _buildMenuCard(context, menu);
+        },
       ),
     );
   }
@@ -221,14 +239,14 @@ class _ProfileMenu extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const RapotScreen(),
+                    builder: (context) => const RapotSiswaScreen(),
                   ),
                 );
               } else if (menu['route'] == '/kupon') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const KuponScreen(),
+                    builder: (context) => const SiswaKuponScreen(),
                   ),
                 );
               } else if (menu['route'] == '/riwayat-ujian') {
@@ -250,7 +268,7 @@ class _ProfileMenu extends StatelessWidget {
               }
             },
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(8),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -271,6 +289,7 @@ class _ProfileMenu extends StatelessWidget {
                     menu['title'],
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
+                      fontSize: 14
                     ),
                     textAlign: TextAlign.center,
                   ),

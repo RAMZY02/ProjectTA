@@ -1,33 +1,51 @@
 class UserModel {
   final int id;
-  final String name;
   final String email;
-  final String phone;
+  final String password;
+  final String nama;
+  final String role;
+  final String? kelas;
+  final int poin;
+  final String profpic;
+  final DateTime timestamps;
 
   UserModel({
     required this.id,
-    required this.name,
     required this.email,
-    required this.phone,
+    required this.password,
+    required this.nama,
+    required this.role,
+    this.kelas,
+    required this.poin,
+    required this.profpic,
+    required this.timestamps,
   });
 
-  // Convert JSON ke Model
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'],
-      name: json['name'],
       email: json['email'],
-      phone: json['phone'],
+      password: json['password'],
+      nama: json['nama'],
+      role: json['role'],
+      kelas: json['kelas'],
+      poin: json['poin'] ?? 0,
+      profpic: json['profpic'] ?? '-',
+      timestamps: DateTime.parse(json['timestamps']),
     );
   }
 
-  // Convert Model ke JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
       'email': email,
-      'phone': phone,
+      'password': password,
+      'nama': nama,
+      'role': role,
+      'kelas': kelas,
+      'poin': poin,
+      'profpic': profpic,
+      'timestamps': timestamps,
     };
   }
 }

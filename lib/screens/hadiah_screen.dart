@@ -1,4 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/auth/auth_event.dart';
+import 'package:project_ta/bloc/auth/auth_state.dart';
+import 'package:project_ta/bloc/hadiah/hadiah_bloc.dart';
+import 'package:project_ta/bloc/hadiah/hadiah_event.dart';
+import 'package:project_ta/bloc/hadiah/hadiah_state.dart';
+import 'package:project_ta/bloc/user/user_bloc.dart';
+import 'package:project_ta/bloc/user/user_event.dart';
+import 'package:project_ta/bloc/user/user_state.dart';
+import 'package:project_ta/constants/color.dart';
+import 'package:project_ta/models/hadiah_model.dart';
+
+import '../bloc/auth/auth_bloc.dart';
 
 class HadiahScreen extends StatefulWidget {
   const HadiahScreen({super.key});
@@ -8,65 +22,33 @@ class HadiahScreen extends StatefulWidget {
 }
 
 class _HadiahScreenState extends State<HadiahScreen> {
-  // Data dummy user (biasanya dari API/database)
-  int _userPoints = 1500;
 
-  // Data dummy hadiah (biasanya dari API/database)
-  final List<Map<String, dynamic>> _listHadiah = [
-    {
-      'id': 1,
-      'nama': 'Pensil Mekanik',
-      'gambar': 'https://cdn.pixabay.com/photo/2017/07/24/16/31/pencil-2536264_640.jpg',
-      'poin': 300,
-      'stok': 15,
-      'kategori': 'Alat Tulis',
-    },
-    {
-      'id': 2,
-      'nama': 'Buku Catatan',
-      'gambar': 'https://cdn.pixabay.com/photo/2016/11/23/00/32/notebook-1850603_640.jpg',
-      'poin': 500,
-      'stok': 8,
-      'kategori': 'Alat Tulis',
-    },
-    {
-      'id': 3,
-      'nama': 'Paket Snack',
-      'gambar': 'https://cdn.pixabay.com/photo/2016/03/05/22/18/food-1239241_640.jpg',
-      'poin': 200,
-      'stok': 20,
-      'kategori': 'Jajanan',
-    },
-    {
-      'id': 4,
-      'nama': 'Susu Kotak',
-      'gambar': 'https://cdn.pixabay.com/photo/2016/08/23/17/32/milk-1614828_640.jpg',
-      'poin': 250,
-      'stok': 12,
-      'kategori': 'Minuman',
-    },
-    {
-      'id': 5,
-      'nama': 'Pulpen Premium',
-      'gambar': 'https://cdn.pixabay.com/photo/2015/05/15/14/47/computer-768696_640.jpg',
-      'poin': 800,
-      'stok': 5,
-      'kategori': 'Alat Tulis',
-    },
-  ];
+  int _userPoints = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final userState = context.read<UserBloc>().state;
+    if(userState is UserLoaded) _userPoints = userState.poin;
+  }
 
   void _tukarHadiah(int hadiahId) {
-    final hadiah = _listHadiah.firstWhere((h) => h['id'] == hadiahId);
+    final hadiahState = context.read<HadiahBloc>().state;
+    final authState = context.read<AuthBloc>().state;
+    late HadiahModel hadiah;
 
-    if (_userPoints < hadiah['poin']) {
+    if(authState is! Authenticated) return;
+    if(hadiahState is HadiahLoaded) hadiah = hadiahState.hadiah.firstWhere((h) => h.id == hadiahId);
+
+    if (_userPoints < hadiah.poin) {
       _showAlertDialog(
         'Poin Tidak Cukup',
-        'Maaf, poin Anda tidak cukup untuk menukar hadiah ini. Anda membutuhkan ${hadiah['poin']} poin.',
+        'Maaf, poin Anda tidak cukup untuk menukar hadiah ini. Anda membutuhkan ${hadiah.poin} poin.',
       );
       return;
     }
 
-    if (hadiah['stok'] <= 0) {
+    if (hadiah.stok <= 0) {
       _showAlertDialog(
         'Stok Habis',
         'Maaf, stok hadiah ini sudah habis.',
@@ -78,7 +60,7 @@ class _HadiahScreenState extends State<HadiahScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Konfirmasi Penukaran'),
-        content: Text('Anda yakin ingin menukar ${hadiah['nama']} dengan ${hadiah['poin']} poin?'),
+        content: Text('Anda yakin ingin menukar ${hadiah.nama} dengan ${hadiah.poin} poin?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -86,13 +68,15 @@ class _HadiahScreenState extends State<HadiahScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              // Proses penukaran hadiah
               setState(() {
-                _userPoints -= hadiah['poin'] as int; // Add explicit cast to int
-                hadiah['stok'] = (hadiah['stok'] as int) - 1; // Also ensure stok is treated as int
+                _userPoints -= hadiah.poin;
               });
+              if(hadiahState is HadiahLoaded){
+                context.read<HadiahBloc>().add(TukarHadiah(token: authState.token, userId: authState.id, hadiahId: hadiahId, hadiah: hadiahState.hadiah));
+              }
+              context.read<UserBloc>().add(UpdatePoin(token: authState.token, poin: _userPoints));
               Navigator.pop(context);
-              _showSuccessDialog(hadiah['nama']);
+              _showSuccessDialog(hadiah.nama);
             },
             child: const Text('Tukar'),
           ),
@@ -137,16 +121,22 @@ class _HadiahScreenState extends State<HadiahScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false, // Ini yang menghilangkan tombol back
         title: const Text(
           'Daftar Hadiah',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontSize:  18
           ),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF1976D2),
+        backgroundColor: kPrimaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.grey,
+          statusBarIconBrightness: Brightness.light,
+        ),
       ),
       body: Column(
         children: [
@@ -184,127 +174,173 @@ class _HadiahScreenState extends State<HadiahScreen> {
             ),
           ),
 
-          // Daftar Hadiah
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _listHadiah.length,
-              itemBuilder: (context, index) {
-                final hadiah = _listHadiah[index];
-                return Card(
-                  elevation: 2,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Gambar Hadiah
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(12),
-                        ),
-                        child: Image.network(
-                          hadiah['gambar'],
-                          height: 250,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return SizedBox(
-                              height: 250,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                      : null,
-                                ),
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              height: 250,
-                              color: Colors.grey[200],
-                              child: const Icon(Icons.image_not_supported),
-                            );
-                          },
-                        ),
-                      ),
+            child: BlocBuilder<HadiahBloc, HadiahState>(
+              builder: (context, hadiahState){
+                final authState = context.read<AuthBloc>().state;
+                if(authState is Authenticated && hadiahState is HadiahInitial){
+                  context.read<HadiahBloc>().add(FetchHadiah(
+                      token: authState.token,
+                  ));
+                }
 
-                      // Info Hadiah
-                      Padding(
-                        padding: const EdgeInsets.all(16),
+                if(hadiahState is HadiahLoading){
+                  return Center(
+                    child: CircularProgressIndicator()
+                  );
+                }
+                else if(hadiahState is HadiahLoaded){
+                  return GridView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2, // Number of columns
+                      crossAxisSpacing: 8, // Horizontal space between items
+                      mainAxisSpacing: 8, // Vertical space between items
+                      childAspectRatio: 0.43, // Adjust this to control card height relative to width
+                    ),
+                    itemCount: hadiahState.hadiah.length,
+                    itemBuilder: (context, index) {
+                      final hadiah = hadiahState.hadiah[index];
+                      return Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(
-                              hadiah['nama'],
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                            // Gambar Hadiah
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(12),
+                              ),
+                              child: Image.network(
+                                hadiah.link_gambar,
+                                height: 240, // Reduced height for grid layout
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return SizedBox(
+                                    height: 120,
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                            : null,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    height: 120,
+                                    color: Colors.grey[200],
+                                    child: const Icon(Icons.image_not_supported),
+                                  );
+                                },
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Icon(Icons.category, size: 16),
-                                const SizedBox(width: 4),
-                                Text(hadiah['kategori']),
-                                const Spacer(),
-                                const Icon(Icons.attach_money, size: 16),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${hadiah['poin']} Poin',
-                                  style: const TextStyle(
+
+                            // Info Hadiah
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    hadiah.nama,
+                                    style: const TextStyle(
+                                      fontSize: 16, // Slightly smaller font
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.category, size: 14),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          hadiah.kategori,
+                                          style: const TextStyle(fontSize: 12),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.attach_money, size: 14),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${hadiah.poin} Poin',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.inventory, size: 14),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Stok: ${hadiah.stok}',
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Tombol Tukar
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                ),
+                                onPressed: () => _tukarHadiah(hadiah.id),
+                                child: const Text(
+                                  'TUKAR',
+                                  style: TextStyle(
+                                    color: Colors.white,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
+                                    fontSize: 12,
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Icon(Icons.inventory, size: 16),
-                                const SizedBox(width: 4),
-                                Text('Stok: ${hadiah['stok']}'),
-                              ],
+                              ),
                             ),
                           ],
                         ),
-                      ),
-
-                      // Tombol Tukar
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          onPressed: () => _tukarHadiah(hadiah['id']),
-                          child: const Text(
-                            'TUKAR SEKARANG',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
+                      );
+                    },
+                  );
+                }
+                else{
+                  return Center(
+                    child: Text("GG")
+                  );
+                }
+              }
+            )
+          )
         ],
       ),
     );

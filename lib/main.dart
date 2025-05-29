@@ -1,7 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/comments/comments_bloc.dart';
+import 'package:project_ta/bloc/hadiah/hadiah_bloc.dart';
+import 'package:project_ta/bloc/history_ujian/history_ujian_bloc.dart';
+import 'package:project_ta/bloc/history_video/history_video_bloc.dart';
+import 'package:project_ta/bloc/kupon/kupon_bloc.dart';
+import 'package:project_ta/bloc/notifikasi/notifikasi_bloc.dart';
+import 'package:project_ta/bloc/soal_ujian/soal_ujian_bloc.dart';
+import 'package:project_ta/bloc/ujian/ujian_bloc.dart';
+import 'package:project_ta/bloc/user/user_bloc.dart';
+import 'package:project_ta/bloc/video_edukasi/video_edukasi_bloc.dart';
+import 'package:project_ta/models/video_edukasi_model.dart';
+import 'package:project_ta/screens/daftar_video_edukasi_screen.dart';
+import 'package:project_ta/screens/detail_ujian_screen.dart';
+import 'package:project_ta/screens/detail_video_screen.dart';
+import 'package:project_ta/screens/home_screen.dart';
+import 'package:project_ta/screens/notifikasi_screen.dart';
+import 'package:project_ta/screens/soal_ujian_screen.dart';
+import 'package:project_ta/screens/ujian_screen.dart';
+import 'package:project_ta/screens/video_edukasi_screen.dart';
+import 'models/ujian_model.dart';
 import 'screens/login_screen.dart';
-import 'blocs/auth/auth_bloc.dart';
+import 'bloc/auth/auth_bloc.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,39 +35,54 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => AuthBloc()),
+        BlocProvider(create: (context) => VideoEdukasiBloc()),
+        BlocProvider(create: (context) => NotifikasiBloc()),
+        BlocProvider(create: (context) => UjianBloc()),
+        BlocProvider(create: (context) => SoalUjianBloc()),
+        BlocProvider(create: (context) => CommentsBloc()),
+        BlocProvider(create: (context) => HistoryVideoBloc()),
+        BlocProvider(create: (context) => HadiahBloc()),
+        BlocProvider(create: (context) => UserBloc()),
+        BlocProvider(create: (context) => KuponBloc()),
+        BlocProvider(create: (context) => HistoryUjianBloc()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Sekolahin',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          fontFamily: 'Poppins',
-          textTheme: const TextTheme(
-            titleLarge: TextStyle(
-              fontSize: 20,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-            ),
-            bodyLarge: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w500,
-            ),
-            bodyMedium: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-            displayMedium: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-              color: Colors.black,
-            ),
-          ),
-        ),
+        title: 'Edukasiin',
         initialRoute: "/login",
         routes: {
           "/login": (context) => LoginScreen(),
+          "/home" : (context) => HomeScreen(),
+          "/notifikasi" : (context) => NotifikasiScreen(),
+          "/ujian" : (context) => UjianScreen(),
+          "/detail-ujian": (context) {
+            // Ambil arguments yang dikirim via Navigator
+            final ujian = ModalRoute.of(context)!.settings.arguments as UjianModel;
+            return DetailUjianScreen(ujian: ujian);
+          },
+          "/soal-ujian" : (context) {
+            final ujian = ModalRoute.of(context)!.settings.arguments as UjianModel;
+            return SoalUjianScreen(
+              ujianId: ujian.id,
+              durationMinutes: ujian.durasi,
+            );
+          },
+          "/video-edukasi": (context) => VideoEdukasiScreen(),
+          "/daftar-video" : (context) {
+            final mapel = ModalRoute.of(context)!.settings.arguments as String;
+            return DaftarVideoEdukasiScreen(
+                mapel: mapel
+            );
+          } ,
+          "/detail-video" : (context){
+            final video = ModalRoute.of(context)!.settings.arguments as VideoEdukasiModel;
+            return DetailVideoScreen(
+              video: video,
+            );
+          },
         },
       ),
     );
   }
 }
+
