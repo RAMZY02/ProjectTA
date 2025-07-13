@@ -6,6 +6,8 @@ import 'package:project_ta/bloc/auth/auth_state.dart';
 import 'package:project_ta/bloc/hadiah/hadiah_bloc.dart';
 import 'package:project_ta/bloc/hadiah/hadiah_event.dart';
 import 'package:project_ta/bloc/hadiah/hadiah_state.dart';
+import 'package:project_ta/bloc/kupon/kupon_bloc.dart';
+import 'package:project_ta/bloc/kupon/kupon_event.dart';
 import 'package:project_ta/bloc/user/user_bloc.dart';
 import 'package:project_ta/bloc/user/user_event.dart';
 import 'package:project_ta/bloc/user/user_state.dart';
@@ -22,25 +24,22 @@ class HadiahScreen extends StatefulWidget {
 }
 
 class _HadiahScreenState extends State<HadiahScreen> {
-
-  int _userPoints = 0;
-
   @override
   void initState() {
     super.initState();
-    final userState = context.read<UserBloc>().state;
-    if(userState is UserLoaded) _userPoints = userState.poin;
   }
 
   void _tukarHadiah(int hadiahId) {
     final hadiahState = context.read<HadiahBloc>().state;
     final authState = context.read<AuthBloc>().state;
+    final userState = context.read<UserBloc>().state;
     late HadiahModel hadiah;
 
     if(authState is! Authenticated) return;
+    if(userState is! UserLoaded) return;
     if(hadiahState is HadiahLoaded) hadiah = hadiahState.hadiah.firstWhere((h) => h.id == hadiahId);
 
-    if (_userPoints < hadiah.poin) {
+    if (userState.poin < hadiah.poin) {
       _showAlertDialog(
         'Poin Tidak Cukup',
         'Maaf, poin Anda tidak cukup untuk menukar hadiah ini. Anda membutuhkan ${hadiah.poin} poin.',
@@ -68,13 +67,12 @@ class _HadiahScreenState extends State<HadiahScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              setState(() {
-                _userPoints -= hadiah.poin;
-              });
               if(hadiahState is HadiahLoaded){
                 context.read<HadiahBloc>().add(TukarHadiah(token: authState.token, userId: authState.id, hadiahId: hadiahId, hadiah: hadiahState.hadiah));
               }
-              context.read<UserBloc>().add(UpdatePoin(token: authState.token, poin: _userPoints));
+              int poin = userState.poin - hadiah.poin;
+              context.read<UserBloc>().add(UpdatePoin(token: authState.token, poin: poin));
+              context.read<KuponBloc>().add(CreateKupon(token: authState.token, hadiah: hadiah, userId: authState.id));
               Navigator.pop(context);
               _showSuccessDialog(hadiah.nama);
             },
@@ -161,14 +159,23 @@ class _HadiahScreenState extends State<HadiahScreen> {
                 ),
                 Chip(
                   backgroundColor: Colors.blue[100],
-                  label: Text(
-                    '$_userPoints Poin',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
+                  label: BlocBuilder<UserBloc, UserState>(
+                    builder: (context, userState){
+                      if(userState is UserLoaded){
+                        return Text(
+                          '${userState.poin} Poin',
+                          style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                          ),
+                        );
+                      }
+                      else{
+                        return CircularProgressIndicator();
+                      }
+                  })
+
                 ),
               ],
             ),

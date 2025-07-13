@@ -1,5 +1,6 @@
 // bloc/ujian/ujian_event.dart
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 
 abstract class UjianEvent extends Equatable {
   @override
@@ -16,3 +17,86 @@ class FetchUjian extends UjianEvent {
   @override
   List<Object> get props => [token];
 }
+
+class AddUjian extends UjianEvent {
+  final String token;
+  final String nama;
+  final String mapel;
+  final String tipe_soal;
+  final String tipe_ujian;
+  final TimeOfDay durasi;
+  final DateTime tanggal;
+  final TimeOfDay mulai;
+  final TimeOfDay selesai;
+  final int jumlah_soal;
+  final String deskripsi;
+  final int id_guru;
+
+  AddUjian({
+    required this.token,
+    required this.nama,
+    required this.mapel,
+    required this.tipe_soal,
+    required this.tipe_ujian,
+    required this.durasi,
+    required this.tanggal,
+    required this.mulai,
+    required this.selesai,
+    required this.jumlah_soal,
+    required this.deskripsi,
+    required this.id_guru,
+  });
+
+  @override
+  List<Object> get props => [token];
+}
+
+class UpdateUjian extends UjianEvent {
+  final String token;
+  final int id_ujian;
+  final String nama;
+  final String mapel;
+  final String tipe_soal;
+  final String tipe_ujian;
+  final TimeOfDay durasi;
+  final DateTime tanggal;
+  final TimeOfDay mulai;
+  final TimeOfDay selesai;
+  final int jumlah_soal;
+  final String deskripsi;
+  final int id_guru;
+
+  UpdateUjian({
+    required this.token,
+    required this.id_ujian,
+    required this.nama,
+    required this.mapel,
+    required this.tipe_soal,
+    required this.tipe_ujian,
+    required this.durasi,
+    required this.tanggal,
+    required this.mulai,
+    required this.selesai,
+    required this.jumlah_soal,
+    required this.deskripsi,
+    required this.id_guru,
+  });
+
+  @override
+  List<Object> get props => [token];
+}
+
+class DeleteUjian extends UjianEvent {
+  final String token;
+  final int id_ujian;
+
+  DeleteUjian({
+    required this.token,
+    required this.id_ujian
+  });
+
+  @override
+  List<Object> get props => [token];
+}
+
+

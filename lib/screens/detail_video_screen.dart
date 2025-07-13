@@ -316,10 +316,7 @@ class _DetailVideoScreenState extends State<DetailVideoScreen> {
                                               ),
                                             ),
                                             const SizedBox(height: 4),
-                                            Text(
-                                              'Video pembelajaran ${widget.video.judul} untuk kelas ${widget.video.kelas}. '
-                                                  'Disediakan oleh Admin dengan durasi ${widget.video.durasi}.',
-                                            ),
+                                            Text(widget.video.deskripsi),
                                           ],
                                         ),
                                       ),

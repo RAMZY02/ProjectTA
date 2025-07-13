@@ -35,6 +35,18 @@ class CommentModel extends Equatable {
     );
   }
 
+  factory CommentModel.fromJson2(Map<String, dynamic> json) {
+    return CommentModel(
+      id: json['id'],
+      idVideo: json['id_video'],
+      komentar: json['komentar'],
+      likes: json['likes'] ?? 0,
+      liked: json['liked'] ?? [],
+      user: UserModel.fromJson(json['user']),
+      waktu: DateTime.parse(json['waktu']),
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

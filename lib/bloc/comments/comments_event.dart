@@ -18,6 +18,15 @@ class FetchComments extends CommentsEvent {
   List<Object> get props => [videoId, token, id_user];
 }
 
+class FetchAllComments extends CommentsEvent {
+  final String token;
+
+  FetchAllComments({required this.token});
+
+  @override
+  List<Object> get props => [token];
+}
+
 class AddComment extends CommentsEvent {
   final int videoId;
   final String komentar;
@@ -33,6 +42,38 @@ class AddComment extends CommentsEvent {
 
   @override
   List<Object> get props => [videoId, komentar, token, id_user];
+}
+
+class UpdateComment extends CommentsEvent {
+  final int videoId;
+  final String komentar;
+  final String token;
+  final int id_user;
+  final int id_comment;
+
+  UpdateComment({
+    required this.videoId,
+    required this.komentar,
+    required this.token,
+    required this.id_user,
+    required this.id_comment,
+  });
+
+  @override
+  List<Object> get props => [videoId, komentar, token, id_user, id_comment];
+}
+
+class DeleteComment extends CommentsEvent {
+  final String token;
+  final int id_comment;
+
+  DeleteComment({
+    required this.token,
+    required this.id_comment,
+  });
+
+  @override
+  List<Object> get props => [token, id_comment];
 }
 
 class InitComment extends CommentsEvent{

@@ -25,7 +25,7 @@ class RekomendasiVideoScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Rekomendasi untuk $userKelas',
+          'Rekomendasi untuk Kelas ${userKelas.substring(0, 1)}',
           style: const TextStyle(color: Colors.white, fontSize: 18),
         ),
         backgroundColor: kPrimaryColor,
@@ -52,7 +52,7 @@ class RekomendasiVideoScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => DetailVideoScreen(
-                    video: recommendedVideos[index],
+                    video: video,
                   ),
                 ),
               );

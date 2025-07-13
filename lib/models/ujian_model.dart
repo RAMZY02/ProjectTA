@@ -4,7 +4,8 @@ class UjianModel {
   final int id;
   final String nama;
   final String mapel;
-  final String tipe;
+  final String tipe_soal;
+  final String tipe_ujian;
   final Duration durasi;
   final DateTime tanggal;
   final TimeOfDay mulai;
@@ -18,7 +19,8 @@ class UjianModel {
     required this.id,
     required this.nama,
     required this.mapel,
-    required this.tipe,
+    required this.tipe_soal,
+    required this.tipe_ujian,
     required this.durasi,
     required this.tanggal,
     required this.mulai,
@@ -34,7 +36,8 @@ class UjianModel {
       id: json['id'],
       nama: json['nama'],
       mapel: json['mapel'],
-      tipe: json['tipe'],
+      tipe_soal: json['tipe_soal'],
+      tipe_ujian: json['tipe_ujian'],
       durasi: _parseDuration(json['durasi']),
       tanggal: DateTime.parse(json['tanggal']),
       mulai: _parseTime(json['mulai']),
@@ -51,7 +54,8 @@ class UjianModel {
       'id': id,
       'nama': nama,
       'mapel': mapel,
-      'tipe': tipe,
+      'tipe_soal': tipe_soal,
+      'tipe_ujian': tipe_ujian,
       'durasi': '${durasi.inHours}:${(durasi.inMinutes % 60).toString().padLeft(2, '0')}:00',
       'tanggal': tanggal.toIso8601String().split('T')[0],
       'mulai': '${mulai.hour}:${mulai.minute.toString().padLeft(2, '0')}',

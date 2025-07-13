@@ -103,7 +103,12 @@ class RiwayatUjianScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Jenis: ${exam.ujian.tipe}',
+                exam.ujian.tipe_ujian,
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Jenis Soal: ${exam.ujian.tipe_soal}',
                 style: TextStyle(color: Colors.grey[600]),
               ),
               const SizedBox(height: 4),

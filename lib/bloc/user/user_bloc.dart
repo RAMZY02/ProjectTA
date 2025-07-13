@@ -10,6 +10,8 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     on<Initial>(onInitial);
     on<LoadUser>(onLoadUser);
     on<UpdatePoin>(onUpdatePoin);
+    on<UpdateProfpic>(onUpdateProfpic);
+    on<ChangePassword>(onChangePassword);
   }
 
   Future<void> onInitial(Initial event, Emitter<UserState> emit) async{
@@ -36,7 +38,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         }),
       );
 
-      print("ini response body");
+      print("ini response body user poin");
       print(response.body);
       final data = jsonDecode(response.body);
       print(data);
@@ -51,13 +53,96 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           poin: data['poin'],
           profpic: data['profpic'],
           email: data['email'],
-          timestamps: DateTime.parse(data['email']),
+          timestamps: DateTime.parse(data['timestamps']),
         ));
       } else {
         emit(UserError(message: 'Gagal update poin'));
       }
     } catch (e) {
       print("ini update poin");
+      print(e);
+      emit(UserError(message: 'Connection error: $e'));
+    }
+  }
+
+  Future<void> onUpdateProfpic (UpdateProfpic event, Emitter<UserState> emit) async {
+    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/users/profpic');
+    try {
+      final response = await http.put(
+        url, // Ganti dengan URL backend Anda
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${event.token}'
+        },
+        body: jsonEncode({
+          'profpic': event.profpic,
+        }),
+      );
+
+      print("ini response body user profpic");
+      print(response.body);
+      final data = jsonDecode(response.body);
+      print(data);
+
+      if (response.statusCode == 200) {
+        emit(UserLoaded(
+          id: data['id'],
+          username: data['nama'],
+          kelas : data['kelas'].toString().substring(0, 1),
+          role: data['role'],
+          token: event.token,
+          poin: data['poin'],
+          profpic: data['profpic'],
+          email: data['email'],
+          timestamps: DateTime.parse(data['timestamps']),
+        ));
+      } else {
+        emit(UserError(message: 'Gagal update profpic'));
+      }
+    } catch (e) {
+      print("ini update profpic");
+      print(e);
+      emit(UserError(message: 'Connection error: $e'));
+    }
+  }
+
+  Future<void> onChangePassword (ChangePassword event, Emitter<UserState> emit) async {
+    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/users/change-password');
+    try {
+      final response = await http.put(
+        url, // Ganti dengan URL backend Anda
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${event.token}'
+        },
+        body: jsonEncode({
+          'currentPassword': event.currentPassword,
+          'newPassword': event.newPassword,
+        }),
+      );
+
+      print("ini response body user ganti password");
+      print(response.body);
+      final data = jsonDecode(response.body);
+      print(data);
+
+      if (response.statusCode == 200) {
+        emit(UserLoaded(
+          id: data['id'],
+          username: data['nama'],
+          kelas : data['kelas'].toString().substring(0, 1),
+          role: data['role'],
+          token: event.token,
+          poin: data['poin'],
+          profpic: data['profpic'],
+          email: data['email'],
+          timestamps: DateTime.parse(data['timestamps']),
+        ));
+      } else {
+        emit(UserError(message: 'Gagal ganti password'));
+      }
+    } catch (e) {
+      print("ini ganti password");
       print(e);
       emit(UserError(message: 'Connection error: $e'));
     }

@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/auth/auth_state.dart';
+import 'package:project_ta/bloc/users/users_event.dart';
+import 'package:project_ta/models/user_model.dart';
+
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/users/users_bloc.dart';
 
 class InsertUserScreen extends StatefulWidget {
-  final Map<String, dynamic>? userData;
+  final UserModel? userData;
   final bool isEdit;
 
   const InsertUserScreen({
@@ -18,24 +25,33 @@ class _InsertUserScreenState extends State<InsertUserScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _emailController;
+  late TextEditingController _passwordController;
   late TextEditingController _roleController;
+  late TextEditingController _kelasController;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(
-      text: widget.userData?['name'] ?? '',
+      text: widget.userData?.nama ?? '',
     );
     _emailController = TextEditingController(
-      text: widget.userData?['email'] ?? '',
+      text: widget.userData?.email ?? '',
     );
     _roleController = TextEditingController(
-      text: widget.userData?['role'] ?? 'User',
+      text: widget.userData?.role ?? 'siswa',
+    );
+    _passwordController = TextEditingController(
+      text: '',
+    );
+    _kelasController = TextEditingController(
+      text: widget.userData?.kelas ?? '',
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEdit ? 'Edit User' : 'Tambah User'),
@@ -77,9 +93,25 @@ class _InsertUserScreenState extends State<InsertUserScreen> {
                 },
               ),
               const SizedBox(height: 16),
+              if(!widget.isEdit)
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: const InputDecoration(
+                    labelText: 'Password',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Password tidak boleh kosong';
+                    }
+                    return null;
+                  },
+                ),
+              if(!widget.isEdit)
+                const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: _roleController.text,
-                items: ['Admin', 'User']
+                items: ['admin', 'siswa', 'guru']
                     .map((role) => DropdownMenuItem(
                   value: role,
                   child: Text(role),
@@ -87,17 +119,45 @@ class _InsertUserScreenState extends State<InsertUserScreen> {
                     .toList(),
                 onChanged: (value) {
                   _roleController.text = value!;
+                  if(value != 'siswa'){
+                    _kelasController.text = '-';
+                  }
+                  setState(() {});
                 },
                 decoration: const InputDecoration(
                   labelText: 'Role',
                   border: OutlineInputBorder(),
                 ),
               ),
+              const SizedBox(height: 16),
+              // TextField Kelas akan muncul/hilang otomatis
+              Visibility(
+                visible: _roleController.text == 'siswa',
+                child: TextFormField(
+                  controller: _kelasController,
+                  decoration: InputDecoration(
+                    labelText: 'Kelas',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    _kelasController.text = value;
+                  },
+                ),
+              ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    // Save logic here
+                    if(!widget.isEdit){
+                      if(authState is Authenticated){
+                        context.read<UsersBloc>().add(AddUsers(token: authState.token, nama: _nameController.text, email: _emailController.text, password: _passwordController.text, role: _roleController.text, kelas: _kelasController.text));
+                      }
+                    }
+                    else{
+                      if(authState is Authenticated){
+                        context.read<UsersBloc>().add(UpdateUsers(token: authState.token, id_user: widget.userData!.id, nama: _nameController.text, email: _emailController.text, role: _roleController.text, kelas: _kelasController.text));
+                      }
+                    }
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(

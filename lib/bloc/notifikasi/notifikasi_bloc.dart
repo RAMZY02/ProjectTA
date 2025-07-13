@@ -7,8 +7,14 @@ import 'dart:convert';
 
 class NotifikasiBloc extends Bloc<NotifikasiEvent, NotifikasiState> {
   NotifikasiBloc() : super(NotifikasiInitial()) {
-    on<Init>(_onInit);
+    on<InitNotif>(_onInit);
     on<FetchNotifikasi>(_onFetchNotifikasi);
+    on<MarkAsRead>(_onMarkAsRead);
+    on<MarkAllAsRead>(_onMarkAllAsRead);
+  }
+
+  Future<void> _onInit(InitNotif event, Emitter<NotifikasiState> emit) async {
+    emit(NotifikasiInitial());
   }
 
   Future<void> _onFetchNotifikasi(FetchNotifikasi event, Emitter<NotifikasiState> emit) async {
@@ -44,7 +50,55 @@ class NotifikasiBloc extends Bloc<NotifikasiEvent, NotifikasiState> {
     }
   }
 
-  Future<void> _onInit(Init event, Emitter<NotifikasiState> emit) async {
-    emit(NotifikasiInitial());
+  Future<void> _onMarkAsRead(MarkAsRead event, Emitter<NotifikasiState> emit) async {
+    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/notifikasi/markasread/${event.id}');
+    try{
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${event.token}',
+        },
+      );
+
+      final List<dynamic> data = json.decode(response.body);
+      print("ini data notif");
+      print(data);
+
+      if (response.statusCode == 200) {
+        emit(NotifikasiInitial());
+      } else {
+        emit(NotifikasiError(message: 'Failed to read notif'));
+      }
+    } catch (e) {
+      print(e);
+      emit(NotifikasiError(message: 'Error: $e'));
+    }
+  }
+
+  Future<void> _onMarkAllAsRead(MarkAllAsRead event, Emitter<NotifikasiState> emit) async {
+    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/notifikasi/markallasread');
+    try{
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${event.token}',
+        },
+      );
+
+      final List<dynamic> data = json.decode(response.body);
+      print("ini data notif");
+      print(data);
+
+      if (response.statusCode == 200) {
+        emit(NotifikasiInitial());
+      } else {
+        emit(NotifikasiError(message: 'Failed to read notif'));
+      }
+    } catch (e) {
+      print(e);
+      emit(NotifikasiError(message: 'Error: $e'));
+    }
   }
 }

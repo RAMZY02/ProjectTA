@@ -41,3 +41,37 @@ class UnlikeVideo extends VideoEdukasiEvent {
   @override
   List<Object> get props => [token, userId, videoId, videos];
 }
+
+class AddVideo extends VideoEdukasiEvent {
+  String token;
+  int idUser;
+  Map<String, Object> videoEdukasi;
+
+  AddVideo({required this.token, required this.idUser, required this.videoEdukasi});
+
+  @override
+  List<Object> get props => [token, idUser, videoEdukasi];
+}
+
+class UpdateVideo extends VideoEdukasiEvent {
+  String token;
+  int idUser;
+  int idVideo;
+  Map<String, Object> videoEdukasi;
+
+  UpdateVideo({required this.token, required this.idVideo, required this.idUser, required this.videoEdukasi});
+
+  @override
+  List<Object> get props => [token, idVideo, idUser, videoEdukasi];
+}
+
+class DeleteVideo extends VideoEdukasiEvent {
+  String token;
+  int idUser;
+  int idVideo;
+
+  DeleteVideo({required this.token, required this.idVideo, required this.idUser});
+
+  @override
+  List<Object> get props => [token, idVideo, idUser];
+}

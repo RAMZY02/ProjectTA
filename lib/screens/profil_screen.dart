@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/notifikasi/notifikasi_bloc.dart';
+import 'package:project_ta/bloc/notifikasi/notifikasi_event.dart';
+import 'package:project_ta/bloc/notifikasi/notifikasi_state.dart';
 import 'package:project_ta/bloc/user/user_bloc.dart';
 import 'package:project_ta/bloc/user/user_state.dart';
 import 'package:project_ta/bloc/video_edukasi/video_edukasi_bloc.dart';
@@ -11,7 +14,7 @@ import 'package:project_ta/screens/info_pengguna_screen.dart';
 import 'package:project_ta/screens/login_screen.dart';
 import 'package:project_ta/screens/rapot_siswa_screen.dart';
 import 'package:project_ta/screens/riwayat_ujian_screen.dart';
-import 'package:project_ta/screens/teman_kelas_screen.dart';
+import 'package:project_ta/screens/riwayat_video_screen.dart';
 
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
@@ -162,16 +165,16 @@ class _ProfileMenu extends StatelessWidget {
       'route': '/riwayat-ujian',
     },
     {
+      'icon': Icons.history,
+      'title': 'Riwayat Video',
+      'color': Colors.green,
+      'route': '/riwayat-video',
+    },
+    {
       'icon': Icons.assignment,
       'title': 'Rapot',
       'color': Colors.grey,
       'route': '/rapot',
-    },
-    {
-      'icon': Icons.people,
-      'title': 'Teman Kelas',
-      'color': Colors.green,
-      'route': '/teman-kelas',
     },
     {
       'icon': Icons.logout,
@@ -256,14 +259,15 @@ class _ProfileMenu extends StatelessWidget {
                     builder: (context) => const RiwayatUjianScreen(),
                   ),
                 );
-              } else if (menu['route'] == '/teman-kelas') {
+              } else if (menu['route'] == '/riwayat-video') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const TemanKelasScreen(),
+                    builder: (context) => const RiwayatVideoScreen(),
                   ),
                 );
               } else {
+                context.read<NotifikasiBloc>().add(InitNotif());
                 context.read<AuthBloc>().add(LogoutEvent());
               }
             },

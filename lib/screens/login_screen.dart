@@ -134,6 +134,7 @@ class LoginScreen extends StatelessWidget {
                                 );
                               } else if (state is Authenticated) {
                                 if (state.role == 'admin') {
+                                  context.read<UserBloc>().add(LoadUser(id: state.id, username: state.username, kelas: state.kelas, role: state.role, token: state.token, poin: state.poin, profpic: state.profpic, email: state.email, timestamps: state.timestamps));
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(

@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:project_ta/bloc/auth/auth_bloc.dart';
+import 'package:project_ta/bloc/auth/auth_state.dart';
+import 'package:project_ta/bloc/kupon/kupon_bloc.dart';
+import 'package:project_ta/bloc/kupon/kupon_event.dart';
+import 'package:project_ta/bloc/kupon/kupon_state.dart';
 
 class ScanBarcodeScreen extends StatefulWidget {
   const ScanBarcodeScreen({super.key});
@@ -14,6 +20,8 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
   bool _isProcessing = false;
   bool _torchEnabled = false;
   CameraFacing _cameraFacing = CameraFacing.back;
+  int selectedKupon = 0;
+  String namaHadiah = '';
 
   @override
   void dispose() {
@@ -22,11 +30,52 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
   }
 
   // Function to validate barcode (mock implementation)
-  bool _isValidBarcode(String barcode) {
-    // In a real app, you would check against your database/API
-    // Here we just check if it's 12 or 13 digits (common barcode formats)
-    final validFormats = RegExp(r'^(\d{12}|\d{13})$');
-    return validFormats.hasMatch(barcode);
+  Future<bool> _isValidBarcode(String barcode, AuthState state) async {
+    bool valid = false;
+    final kuponBloc = context.read<KuponBloc>();
+    var kuponState = kuponBloc.state;
+
+    if (state is Authenticated) {
+      // Trigger fetch data
+      kuponBloc.add(FetchAllKupon(token: state.token));
+
+      // Tunggu sampai state berubah menjadi KuponLoaded
+      await for (final state in kuponBloc.stream) {
+        if (state is KuponLoaded) {
+          kuponState = state;
+          break;
+        }
+      }
+    }
+
+    if (kuponState is KuponLoaded) {
+      for (final kupon in kuponState.kupons) {
+        if (kupon.kode == barcode) {
+          valid = true;
+          selectedKupon = kupon.id;
+          namaHadiah = kupon.hadiah.nama;
+          break;
+        }
+      }
+    }
+
+    return valid;
+  }
+
+  Future<bool> _isClaimed(int idKupon, AuthState state) async {
+    print("ini id kupon $idKupon");
+    bool claimed = false;
+    final kuponState = context.read<KuponBloc>().state;
+
+    print("kupon state $kuponState");
+    if(kuponState is KuponLoaded){
+      print("ini status kupon ${kuponState.kupons[idKupon-1].status}");
+      if(kuponState.kupons[idKupon-1].status == 'claimed'){
+        claimed = true;
+      }
+    }
+
+    return claimed;
   }
 
   // Function to show invalid barcode dialog
@@ -52,13 +101,35 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
     );
   }
 
+  void _showClaimedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Barcode Sudah Diclaim'),
+        content: const Text('Barcode yang discan sudah diclaim sebelumnya.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _isScanning = true;
+                _isProcessing = false;
+              });
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Function to show confirmation dialog for valid barcode
-  void _showConfirmationDialog(String barcode) {
+  void _showConfirmationDialog(String barcode, String token, int idKupon, String namaHadiah) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Konfirmasi Penukaran'),
-        content: Text('Apakah Anda yakin ingin menukarkan kupon $barcode dengan hadiah?'),
+        content: Text('Apakah Anda yakin ingin menukarkan kupon dengan hadiah $namaHadiah?'),
         actions: [
           TextButton(
             onPressed: () {
@@ -77,7 +148,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
             onPressed: () {
               Navigator.pop(context);
               // Here you would typically call your API to redeem the coupon
-              _processCouponRedemption(barcode);
+              _processCouponRedemption(barcode, token, idKupon);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
@@ -90,11 +161,10 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
   }
 
   // Mock function to process coupon redemption
-  Future<void> _processCouponRedemption(String barcode) async {
+  Future<void> _processCouponRedemption(String barcode, String token, int idKupon) async {
     setState(() => _isProcessing = true);
 
-    // Simulate API call delay
-    await Future.delayed(const Duration(seconds: 1));
+    context.read<KuponBloc>().add(ClaimKupon(token: token, idKupon: idKupon));
 
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
@@ -112,6 +182,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Scan Barcode'),
@@ -140,6 +211,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
                 _cameraFacing = _cameraFacing == CameraFacing.front
                     ? CameraFacing.back
                     : CameraFacing.front;
+                _torchEnabled = !_torchEnabled;
               });
               cameraController.switchCamera();
             },
@@ -159,6 +231,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
               });
 
               final List<Barcode> barcodes = capture.barcodes;
+              print(barcodes);
               if (barcodes.isEmpty) {
                 setState(() {
                   _isScanning = true;
@@ -168,8 +241,13 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
               }
 
               final String barcode = barcodes.first.rawValue ?? '';
-              if (_isValidBarcode(barcode)) {
-                _showConfirmationDialog(barcode);
+              if (await _isValidBarcode(barcode, authState)) {
+                if(await _isClaimed(selectedKupon, authState)){
+                  _showClaimedDialog();
+                }
+                else if(authState is Authenticated){
+                  _showConfirmationDialog(barcode, authState.token, selectedKupon, namaHadiah);
+                }
               } else {
                 _showInvalidBarcodeDialog();
               }
@@ -180,7 +258,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
           if (_isProcessing)
             const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
               ),
             ),
         ],

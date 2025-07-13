@@ -12,12 +12,11 @@ class HistoryVideoBloc extends Bloc<HistoryVideoEvent, HistoryVideoState> {
     on<CreateHistoryVideo>(_onCreateHistoryVideo);
   }
 
-  Future<void> _onFetchHistoryVideo(
-      FetchHistoryVideo event, Emitter<HistoryVideoState> emit) async {
+  Future<void> _onFetchHistoryVideo(FetchHistoryVideo event, Emitter<HistoryVideoState> emit) async {
     emit(HistoryVideoLoading());
     try {
       final url = Uri.parse(
-          'https://flounder-moved-roster.ngrok-free.app/api/history-video');
+          'https://flounder-moved-rooster.ngrok-free.app/api/history-video/user/${event.userId}');
       final response = await http.get(
         url,
         headers: {
@@ -26,17 +25,22 @@ class HistoryVideoBloc extends Bloc<HistoryVideoEvent, HistoryVideoState> {
         },
       );
 
+      print(response.body);
+      final List<dynamic> data = json.decode(response.body);
+      print("ini video history 1");
+      print(data);
+
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        final historyVideos = data
-            .map((history) => HistoryVideo.fromJson(history))
-            .toList();
+        final historyVideos = data.map((history) => HistoryVideo.fromJson(history)).toList();
+        print(historyVideos);
         emit(HistoryVideoLoaded(historyVideos: historyVideos));
       } else {
         emit(HistoryVideoError(
             message: 'Failed to load history: ${response.statusCode}'));
       }
     } catch (e) {
+      print("ini error");
+      print(e);
       emit(HistoryVideoError(message: 'Error: $e'));
     }
   }

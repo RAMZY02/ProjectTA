@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/auth/auth_bloc.dart';
+import 'package:project_ta/bloc/ujian/ujian_bloc.dart';
+import 'package:project_ta/bloc/ujian/ujian_event.dart';
+import 'package:project_ta/bloc/ujian/ujian_state.dart';
+import 'package:project_ta/models/ujian_model.dart';
 import 'package:project_ta/screens/insert_ujian_screen.dart';
-import 'package:project_ta/screens/master_soal_dan_jawaban_screen.dart'; // Import the soal screen
+import 'package:project_ta/screens/master_soal_dan_jawaban_screen.dart';
+
+import '../bloc/auth/auth_state.dart';
 
 class MasterUJianScreen extends StatefulWidget {
   const MasterUJianScreen({super.key});
@@ -10,41 +18,14 @@ class MasterUJianScreen extends StatefulWidget {
 }
 
 class _MasterUJianScreenState extends State<MasterUJianScreen> {
-  final List<Map<String, dynamic>> _ujian = [
-    {
-      'id': 1,
-      'nama': 'Matematika - Kelas 7',
-      "tipe": "Ujian Harian",
-      "waktu": "01:30:00",
-      "tanggal": "15-03-2024",
-      "mulai": "08.00",
-      "selesai": "09.30",
-      "jumlah_soal": "25",
-      "guru": "Budi Santoso, S.Pd"
-    },
-    {
-      'id': 2,
-      'nama': 'Matematika - Kelas 8',
-      "tipe": "Ujian Harian",
-      "waktu": "01:30:00",
-      "tanggal": "15-03-2024",
-      "mulai": "08.00",
-      "selesai": "09.30",
-      "jumlah_soal": "25",
-      "guru": "uda Santoso, S.Pd"
-    },
-  ];
-
-  void _deleteUjian(int id) {
-    setState(() {
-      _ujian.removeWhere((ujian) => ujian['id'] == id);
-    });
+  void _deleteUjian(String token, int id) {
+    context.read<UjianBloc>().add(DeleteUjian(token: token, id_ujian: id));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Ujian deleted successfully')),
     );
   }
 
-  void _navigateToSoalScreen(Map<String, dynamic> ujian) {
+  Future<void> _navigateToSoalScreen(UjianModel ujian) async {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -55,6 +36,7 @@ class _MasterUJianScreenState extends State<MasterUJianScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -78,63 +60,90 @@ class _MasterUJianScreenState extends State<MasterUJianScreen> {
           const SizedBox(height: 16),
           // DataTable
           Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                columns: const [
-                  DataColumn(label: Text('ID')),
-                  DataColumn(label: Text('Nama')),
-                  DataColumn(label: Text('Tipe')),
-                  DataColumn(label: Text('Waktu')),
-                  DataColumn(label: Text('Tanggal')),
-                  DataColumn(label: Text('Mulai')),
-                  DataColumn(label: Text('Selesai')),
-                  DataColumn(label: Text('Jumlah Soal')),
-                  DataColumn(label: Text('Guru')),
-                  DataColumn(label: Text('Actions')),
-                ],
-                rows: _ujian.map((ujian) {
-                  return DataRow(
-                    onSelectChanged: (_) => _navigateToSoalScreen(ujian),
-                    cells: [
-                      DataCell(Text(ujian['id'].toString())),
-                      DataCell(Text(ujian['nama'])),
-                      DataCell(Text(ujian['tipe'])),
-                      DataCell(Text(ujian['waktu'])),
-                      DataCell(Text(ujian['tanggal'])),
-                      DataCell(Text(ujian['mulai'])),
-                      DataCell(Text(ujian['selesai'])),
-                      DataCell(Text(ujian['jumlah_soal'])),
-                      DataCell(Text(ujian['guru'])),
-                      DataCell(
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => InsertUjianScreen(
-                                      ujianData: ujian,
-                                      isEdit: true,
-                                    ),
-                                  ),
-                                );
-                              },
+            child: BlocBuilder<UjianBloc, UjianState>(
+              builder: (context, ujianState){
+                if(authState is! Authenticated){
+                  return Text("Login Dulu min");
+                }
+                if (ujianState is! UjianLoaded || ujianState.ujianList.isEmpty || ujianState is UjianInitial) {
+                  Future.microtask(() {
+                    context.read<UjianBloc>().add(FetchUjian(token: authState.token));
+                  });
+                }
+                if(ujianState is UjianLoaded){
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columns: const [
+                        DataColumn(label: Text('ID')),
+                        DataColumn(label: Text('Nama')),
+                        DataColumn(label: Text('Tipe')),
+                        DataColumn(label: Text('Waktu')),
+                        DataColumn(label: Text('Tanggal')),
+                        DataColumn(label: Text('Mulai')),
+                        DataColumn(label: Text('Selesai')),
+                        DataColumn(label: Text('Jumlah Soal')),
+                        DataColumn(label: Text('Guru')),
+                        DataColumn(
+                          label: SizedBox(
+                            width: 75,
+                            child: Center(
+                              child: Text('Actions'),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _deleteUjian(ujian['id']),
+                          ),
+                        )
+                      ],
+                      rows: ujianState.ujianList.map((ujian){
+                        return DataRow(
+                          cells: [
+                            DataCell(Text(ujian.id.toString())),
+                            DataCell(Text(ujian.nama)),
+                            DataCell(Text(ujian.tipe_ujian)),
+                            DataCell(Text(ujian.durasi.toString())),
+                            DataCell(Text(ujian.tanggal.toString())),
+                            DataCell(Text(ujian.mulai.toString())),
+                            DataCell(Text(ujian.selesai.toString())),
+                            DataCell(Text(ujian.jumlahSoal.toString())),
+                            DataCell(Text(ujian.guru)),
+                            DataCell(
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, color: Colors.blue),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => InsertUjianScreen(
+                                            ujianData: ujian,
+                                            isEdit: true,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => _deleteUjian(authState.token, ujian.id),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.error_outline, color: Colors.grey),
+                                    onPressed: () => _navigateToSoalScreen(ujian),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
-                        ),
-                      ),
-                    ],
+                        );
+                      }).toList(),
+                    ),
                   );
-                }).toList(),
-              ),
-            ),
+                }
+                else{
+                  return CircularProgressIndicator();
+                }
+              }
+            )
           ),
         ],
       ),

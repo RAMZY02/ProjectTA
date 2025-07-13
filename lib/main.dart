@@ -4,11 +4,13 @@ import 'package:project_ta/bloc/comments/comments_bloc.dart';
 import 'package:project_ta/bloc/hadiah/hadiah_bloc.dart';
 import 'package:project_ta/bloc/history_ujian/history_ujian_bloc.dart';
 import 'package:project_ta/bloc/history_video/history_video_bloc.dart';
+import 'package:project_ta/bloc/jawaban_siswa/jawaban_siswa_bloc.dart';
 import 'package:project_ta/bloc/kupon/kupon_bloc.dart';
 import 'package:project_ta/bloc/notifikasi/notifikasi_bloc.dart';
 import 'package:project_ta/bloc/soal_ujian/soal_ujian_bloc.dart';
 import 'package:project_ta/bloc/ujian/ujian_bloc.dart';
 import 'package:project_ta/bloc/user/user_bloc.dart';
+import 'package:project_ta/bloc/users/users_bloc.dart';
 import 'package:project_ta/bloc/video_edukasi/video_edukasi_bloc.dart';
 import 'package:project_ta/models/video_edukasi_model.dart';
 import 'package:project_ta/screens/daftar_video_edukasi_screen.dart';
@@ -45,6 +47,9 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (context) => UserBloc()),
         BlocProvider(create: (context) => KuponBloc()),
         BlocProvider(create: (context) => HistoryUjianBloc()),
+        BlocProvider(create: (context) => HistoryVideoBloc()),
+        BlocProvider(create: (context) => UsersBloc()),
+        BlocProvider(create: (context) => JawabanSiswaBloc()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

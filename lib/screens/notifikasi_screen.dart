@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:project_ta/bloc/auth/auth_bloc.dart';
 import 'package:project_ta/bloc/auth/auth_state.dart';
 import 'package:project_ta/bloc/notifikasi/notifikasi_bloc.dart';
@@ -24,6 +25,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifikasi', style: TextStyle(fontSize: 18, color: Colors.white)),
@@ -34,40 +36,68 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
           statusBarColor: Colors.grey,
           statusBarIconBrightness: Brightness.light,
         ),
+        actions: [
+          BlocBuilder<NotifikasiBloc, NotifikasiState>(
+            builder: (context, state) {
+              if (state is NotifikasiLoaded && state.notif.any((n) => n.status == 'belum dibaca')) {
+                return TextButton(
+                  onPressed: () {
+                    if (authState is Authenticated) {
+                      context.read<NotifikasiBloc>().add(
+                        MarkAllAsRead(token: authState.token),
+                      );
+                    }
+                  },
+                  child: const Text(
+                    'Baca Semua',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
       ),
       body: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, authState) {
           return BlocBuilder<NotifikasiBloc, NotifikasiState>(
-            builder: (context, notifState){
-              if(authState is Authenticated &&
-                  (notifState is! NotifikasiLoaded || notifState.notif.isEmpty)){
-                Future.microtask(() {
-                  context.read<NotifikasiBloc>().add(FetchNotifikasi(token: authState.token));
-                });
-              }
+              builder: (context, notifState){
+                if(authState is Authenticated &&
+                    (notifState is! NotifikasiLoaded || notifState.notif.isEmpty || notifState is NotifikasiInitial)){
+                  Future.microtask(() {
+                    context.read<NotifikasiBloc>().add(FetchNotifikasi(token: authState.token));
+                  });
+                }
 
-              if(notifState is NotifikasiLoaded){
-                final allNotifikasi = notifState.notif;
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: allNotifikasi.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final notification = allNotifikasi[index];
-                    return _buildNotificationCard(notification);
-                  },
-                );
+                if(notifState is NotifikasiLoaded){
+                  final allNotifikasi = notifState.notif;
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: allNotifikasi.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final notification = allNotifikasi[index];
+                      return GestureDetector(
+                        onTap: () => _showNotificationDetail(context, notification),
+                        child: _buildNotificationCard(notification),
+                      );
+                    },
+                  );
+                }
+                else if (notifState is NotifikasiLoading) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                else if (notifState is NotifikasiError) {
+                  return Center(child: Text(notifState.message));
+                }
+                else{
+                  return Center(child: Text(""));
+                }
               }
-              else if (notifState is NotifikasiLoading) {
-                return Center(child: CircularProgressIndicator());
-              }
-              else if (notifState is NotifikasiError) {
-                return Center(child: Text(notifState.message));
-              }
-              else{
-                return Center(child: Text(""));
-              }
-            }
           );
         },
       ),
@@ -120,7 +150,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    notification.waktu.toString(),
+                    DateFormat('d MMMM y, HH:mm').format(notification.waktu),
                     style: TextStyle(
                       color: Colors.grey[500],
                       fontSize: 12,
@@ -142,6 +172,121 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showNotificationDetail(BuildContext context, NotifikasiModel notification) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+              maxHeight: MediaQuery.of(context).size.height * 0.4,
+            ),
+            child: Stack(
+              children: [
+                // Blurred background with icon
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.white,
+                  ),
+                  child: Opacity(
+                    opacity: 0.1,
+                    child: Container(
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(20),
+                      child: Icon(
+                        notification.icon == "celebration" ? Icons.celebration : Icons.quiz,
+                        color: notification.warna == 'purple' ? Colors.purple : Colors.green,
+                        size: 80,
+                      ),
+                    ),
+                  ),
+                ),
+                // Content
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title and content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              notification.judul,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              DateFormat('d MMMM y, HH:mm').format(notification.waktu),
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              notification.pesan,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Full-width OK Button at bottom
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kPrimaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () {
+                          final authState = context.read<AuthBloc>().state;
+                          if (authState is Authenticated) {
+                            context.read<NotifikasiBloc>().add(
+                              MarkAsRead(id: notification.id, token: authState.token),
+                            );
+                          }
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text(
+                          'OK',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

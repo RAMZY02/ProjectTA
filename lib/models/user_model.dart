@@ -1,10 +1,9 @@
 class UserModel {
   final int id;
   final String email;
-  final String password;
   final String nama;
   final String role;
-  final String? kelas;
+  final String kelas;
   final int poin;
   final String profpic;
   final DateTime timestamps;
@@ -12,10 +11,9 @@ class UserModel {
   UserModel({
     required this.id,
     required this.email,
-    required this.password,
     required this.nama,
     required this.role,
-    this.kelas,
+    required this.kelas,
     required this.poin,
     required this.profpic,
     required this.timestamps,
@@ -25,7 +23,6 @@ class UserModel {
     return UserModel(
       id: json['id'],
       email: json['email'],
-      password: json['password'],
       nama: json['nama'],
       role: json['role'],
       kelas: json['kelas'],
@@ -39,7 +36,6 @@ class UserModel {
     return {
       'id': id,
       'email': email,
-      'password': password,
       'nama': nama,
       'role': role,
       'kelas': kelas,

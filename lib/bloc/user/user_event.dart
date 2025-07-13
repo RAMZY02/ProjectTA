@@ -22,3 +22,18 @@ class UpdatePoin extends UserEvent {
 
   UpdatePoin({required this.token, required this.poin});
 }
+
+class UpdateProfpic extends UserEvent{
+  String token;
+  String profpic;
+
+  UpdateProfpic({required this.token, required this.profpic});
+}
+
+class ChangePassword extends UserEvent{
+  String token;
+  String currentPassword;
+  String newPassword;
+
+  ChangePassword({required this.token, required this.currentPassword, required this.newPassword});
+}

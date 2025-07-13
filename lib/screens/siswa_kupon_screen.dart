@@ -134,14 +134,14 @@ class SiswaKuponScreen extends StatelessWidget {
             Text('Jenis: ${coupon.hadiah.kategori}'),
             const SizedBox(height: 16),
             BarcodeWidget(
-              barcode: Barcode.code128(), // Jenis barcode
-              data: coupon.kode, // Data unik untuk barcode
+              barcode: Barcode.qrCode(), // Menggunakan QR code instead of code128
+              data: coupon.kode, // Data unik untuk QR code
               width: 200,
-              height: 100,
+              height: 200, // QR code biasanya berbentuk persegi
             ),
             const SizedBox(height: 16),
             Text(
-              'Tunjukkan barcode ini ke guru yang ada diruang osis',
+              'Tunjukkan QR code ini ke guru yang ada diruang osis',
               style: TextStyle(color: Colors.grey[600]),
             ),
           ],

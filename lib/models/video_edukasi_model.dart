@@ -9,6 +9,7 @@ class VideoEdukasiModel {
   final Duration durasi; // Using Duration to represent TIME
   final List<dynamic> liked;
   final bool isLikedByMe;
+  final String deskripsi;
 
   VideoEdukasiModel({
     required this.id,
@@ -20,6 +21,7 @@ class VideoEdukasiModel {
     required this.likes,
     required this.durasi,
     required this.liked,
+    required this.deskripsi,
     this.isLikedByMe = false,
   });
 
@@ -29,6 +31,7 @@ class VideoEdukasiModel {
       judul: json['judul'],
       mata_pelajaran: json['mata_pelajaran'],
       link_video: json['link_video'],
+      deskripsi: json['deskripsi'],
       kelas: json['kelas'],
       views: json['views'] ?? 0,
       likes: json['likes'] ?? 0,
@@ -49,7 +52,8 @@ class VideoEdukasiModel {
       'likes': likes,
       'durasi': _formatDuration(durasi),
       'liked': liked,
-      'isLikedByMe' : isLikedByMe
+      'isLikedByMe' : isLikedByMe,
+      'deskripsi' : deskripsi
     };
   }
 

@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_ta/bloc/hadiah/hadiah_bloc.dart';
+import 'package:project_ta/bloc/ujian/ujian_bloc.dart';
+import 'package:project_ta/bloc/ujian/ujian_event.dart';
 import 'package:project_ta/bloc/user/user_bloc.dart';
 import 'package:project_ta/bloc/user/user_event.dart';
 import 'package:project_ta/bloc/user/user_state.dart';
@@ -89,6 +91,7 @@ class _BottomNavbarSiswaState extends State<BottomNavbarSiswaScreen> {
           setState(() {
             context.read<VideoEdukasiBloc>().add(Init());
             context.read<HadiahBloc>().add(Inits());
+            context.read<UjianBloc>().add(InitUjian());
             // context.read<UserBloc>().add(Initial());
             _selectedIndex = index;
           });

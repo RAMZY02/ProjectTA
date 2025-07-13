@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:project_ta/constants/color.dart';
 import 'package:project_ta/screens/detail_ujian_screen.dart';
 
@@ -18,7 +19,6 @@ class UjianScreen extends StatelessWidget {
     if (title.contains('Matematika')) return Icons.calculate;
     if (title.contains('IPA')) return Icons.science;
     if (title.contains('Bahasa')) return Icons.language;
-    if (title.contains('Sejarah')) return Icons.history;
     if (title.contains('IPS')) return Icons.public;
     return Icons.menu_book; // Default
   }
@@ -28,7 +28,6 @@ class UjianScreen extends StatelessWidget {
     if (title.contains('Matematika')) return Colors.blue;
     if (title.contains('IPA')) return Colors.green;
     if (title.contains('Bahasa')) return Colors.purple;
-    if (title.contains('Sejarah')) return Colors.orange;
     if (title.contains('IPS')) return Colors.brown;
     return Colors.grey; // Default
   }
@@ -132,7 +131,7 @@ class UjianScreen extends StatelessWidget {
                                         const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
                                         const SizedBox(width: 8),
                                         Text(
-                                          ujian.tanggal.toString(),
+                                          _formatDate(ujian.tanggal),
                                           style: const TextStyle(color: Colors.grey, fontSize: 12),
                                         ),
                                       ],
@@ -143,7 +142,7 @@ class UjianScreen extends StatelessWidget {
                                         const Icon(Icons.access_time, size: 16, color: Colors.grey),
                                         const SizedBox(width: 8),
                                         Text(
-                                          '${ujian.mulai} - ${ujian.selesai}',
+                                          '${formatTimeOfDay(ujian.mulai)} - ${formatTimeOfDay(ujian.selesai)}',
                                           style: const TextStyle(color: Colors.grey, fontSize: 12),
                                         ),
                                       ],
@@ -174,5 +173,21 @@ class UjianScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    try {
+      final formatter = DateFormat('d MMMM yyyy', 'id_ID');
+      return formatter.format(date);
+    } catch (e) {
+      return DateFormat('d MMMM yyyy').format(date); // Fallback format
+    }
+  }
+
+  String formatTimeOfDay(TimeOfDay time) {
+    // Format jam dan menit dengan leading zero
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour.$minute'; // Format 10.00
   }
 }

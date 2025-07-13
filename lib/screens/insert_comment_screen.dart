@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/comments/comments_bloc.dart';
+import 'package:project_ta/bloc/comments/comments_event.dart';
+import 'package:project_ta/models/comment_model.dart';
+
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_state.dart';
 
 class InsertCommentScreen extends StatefulWidget {
-  final Map<String, dynamic>? commentData;
-  final List<Map<String, dynamic>> videos;
-  final List<Map<String, dynamic>> users;
+  final CommentModel? commentData;
 
   bool get isEdit => commentData != null;
 
   const InsertCommentScreen({
     super.key,
     this.commentData,
-    this.videos = const [],
-    this.users = const [],
   });
 
   @override
@@ -23,25 +26,22 @@ class _InsertCommentScreenState extends State<InsertCommentScreen> {
   late int? _selectedVideoId;
   late int? _selectedUserId;
   late TextEditingController _commentController;
-  late TextEditingController _likesController;
 
   @override
   void initState() {
     super.initState();
-    _selectedVideoId = widget.commentData?['id_video'];
-    _selectedUserId = widget.commentData?['id_user'];
-    _commentController = TextEditingController(text: widget.commentData?['comment'] ?? '');
-    _likesController = TextEditingController(text: widget.commentData?['likes']?.toString() ?? '0');
+    _selectedVideoId = widget.commentData?.idVideo;
+    _selectedUserId = widget.commentData?.user.id;
+    _commentController = TextEditingController(text: widget.commentData?.komentar ?? '');
   }
 
   @override
   void dispose() {
     _commentController.dispose();
-    _likesController.dispose();
     super.dispose();
   }
 
-  void _submitForm() {
+  void _submitForm(AuthState state) async {
     if (_formKey.currentState!.validate()) {
       if (_selectedVideoId == null || _selectedUserId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -54,11 +54,18 @@ class _InsertCommentScreenState extends State<InsertCommentScreen> {
         'id_video': _selectedVideoId,
         'id_user': _selectedUserId,
         'comment': _commentController.text,
-        'likes': int.parse(_likesController.text),
-        'user_name': widget.users.firstWhere(
-                (u) => u['id'] == _selectedUserId,
-            orElse: () => {'name': 'Unknown'})['name'],
       };
+
+      if (!widget.isEdit) {
+        if (state is Authenticated) {
+          print("masuk sini kah");
+          context.read<CommentsBloc>().add(AddComment(token: state.token, id_user: _selectedUserId!, komentar: _commentController.text, videoId: _selectedVideoId!));
+        }
+      } else {
+        if (state is Authenticated) {
+          context.read<CommentsBloc>().add(UpdateComment(token: state.token, id_user: _selectedUserId!, komentar: _commentController.text, videoId: _selectedVideoId!, id_comment: widget.commentData!.id));
+        }
+      }
 
       Navigator.pop(context, commentData);
     }
@@ -66,6 +73,7 @@ class _InsertCommentScreenState extends State<InsertCommentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEdit ? 'Edit Komentar' : 'Tambah Komentar'),
@@ -83,10 +91,10 @@ class _InsertCommentScreenState extends State<InsertCommentScreen> {
                   labelText: 'Video',
                   border: OutlineInputBorder(),
                 ),
-                items: widget.videos
+                items: [1, 2, 3, 4, 5, 6]
                     .map<DropdownMenuItem<int>>((video) => DropdownMenuItem<int>(
-                  value: video['id'] as int,
-                  child: Text(video['title']),
+                  value: video,
+                  child: Text(video.toString()),
                 ))
                     .toList(),
                 onChanged: (value) {
@@ -108,10 +116,10 @@ class _InsertCommentScreenState extends State<InsertCommentScreen> {
                   labelText: 'User',
                   border: OutlineInputBorder(),
                 ),
-                items: widget.users
+                items: [1, 2]
                     .map<DropdownMenuItem<int>>((user) => DropdownMenuItem<int>(
-                  value: user['id'] as int,
-                  child: Text(user['name']),
+                  value: user,
+                  child: Text(user.toString()),
                 ))
                     .toList(),
                 onChanged: (value) {
@@ -141,27 +149,11 @@ class _InsertCommentScreenState extends State<InsertCommentScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _likesController,
-                decoration: const InputDecoration(
-                  labelText: 'Likes',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Jumlah likes tidak boleh kosong';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'Masukkan angka yang valid';
-                  }
-                  return null;
-                },
-              ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _submitForm,
+                onPressed: () {
+                  _submitForm(authState);
+                },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),

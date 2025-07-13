@@ -32,3 +32,33 @@ class SubmitJawaban extends SoalUjianEvent {
   @override
   List<Object> get props => [token, soalId, jawaban];
 }
+
+class AddSoal extends SoalUjianEvent {
+  final String token;
+  final Map<String, Object?> soalData;
+
+  AddSoal({required this.token, required this.soalData});
+
+  @override
+  List<Object> get props => [token, soalData];
+}
+
+class UpdateSoal extends SoalUjianEvent {
+  final String token;
+  final Map<String, Object?> soalData;
+
+  UpdateSoal({required this.token, required this.soalData});
+
+  @override
+  List<Object> get props => [token, soalData];
+}
+
+class DeleteSoal extends SoalUjianEvent {
+  final String token;
+  final int id;
+
+  DeleteSoal({required this.token, required this.id});
+
+  @override
+  List<Object> get props => [token, id];
+}

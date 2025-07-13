@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:project_ta/bloc/auth/auth_state.dart';
+import 'package:project_ta/bloc/soal_ujian/soal_ujian_bloc.dart';
+import 'package:project_ta/bloc/soal_ujian/soal_ujian_event.dart';
 import 'dart:io';
 
+import 'package:project_ta/models/soal_model.dart';
+
+import '../bloc/auth/auth_bloc.dart';
+
 class InsertSoalDanJawabanScreen extends StatefulWidget {
-  final Map<String, dynamic>? soalData;
+  final SoalModel? soalData;
   final bool isEdit;
   final int? idUjian;
 
@@ -49,25 +57,25 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
   @override
   void initState() {
     super.initState();
-    _soalController = TextEditingController(text: widget.soalData?['soal'] ?? '');
-    _opsi1Controller = TextEditingController(text: widget.soalData?['opsi1'] ?? '');
-    _opsi2Controller = TextEditingController(text: widget.soalData?['opsi2'] ?? '');
-    _opsi3Controller = TextEditingController(text: widget.soalData?['opsi3'] ?? '');
-    _opsi4Controller = TextEditingController(text: widget.soalData?['opsi4'] ?? '');
-    _opsi5Controller = TextEditingController(text: widget.soalData?['opsi5'] ?? '');
-    _jawabanController = TextEditingController(text: widget.soalData?['jawaban'] ?? '');
-    _pembahasanController = TextEditingController(text: widget.soalData?['pembahasan'] ?? '');
+    _soalController = TextEditingController(text: widget.soalData?.soal ?? '');
+    _opsi1Controller = TextEditingController(text: widget.soalData?.opsiA ?? '');
+    _opsi2Controller = TextEditingController(text: widget.soalData?.opsiB ?? '');
+    _opsi3Controller = TextEditingController(text: widget.soalData?.opsiC ?? '');
+    _opsi4Controller = TextEditingController(text: widget.soalData?.opsiD ?? '');
+    _opsi5Controller = TextEditingController(text: widget.soalData?.opsiE ?? '');
+    _jawabanController = TextEditingController(text: widget.soalData?.jawaban ?? '');
+    _pembahasanController = TextEditingController(text: widget.soalData?.pembahasan ?? '');
 
-    _selectedTipe = widget.soalData?['tipe'] ?? 'Pilihan Ganda';
-    _selectedJawaban = widget.soalData?['jawaban'] != null
-        ? _getJawabanOption(widget.soalData?['jawaban'])
+    _selectedTipe = widget.soalData?.tipe ?? 'Pilihan Ganda';
+    _selectedJawaban = widget.soalData?.jawaban != null
+        ? _getJawabanOption(widget.soalData?.jawaban)
         : null;
 
     // Initialize file paths from existing data
-    _gambarPath = widget.soalData?['link_gambar'] ?? '-';
-    _videoPath = widget.soalData?['link_video'] ?? '-';
-    _audioPath = widget.soalData?['link_audio'] ?? '-';
-    _docPath = widget.soalData?['link_file'] ?? '-';
+    _gambarPath = widget.soalData?.linkGambar ?? '-';
+    _videoPath = widget.soalData?.linkVideo ?? '-';
+    _audioPath = widget.soalData?.linkAudio ?? '-';
+    _docPath = widget.soalData?.linkFile ?? '-';
   }
 
   String? _getJawabanOption(String? jawaban) {
@@ -132,6 +140,7 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEdit ? 'Edit Soal' : 'Tambah Soal'),
@@ -290,7 +299,9 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  onPressed: _submitForm,
+                  onPressed: () {
+                    _submitForm(authState);
+                  },
                   child: Text(widget.isEdit ? 'Update Soal' : 'Simpan Soal'),
                 ),
               ),
@@ -380,31 +391,40 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
     );
   }
 
-  void _submitForm() {
+  void _submitForm(AuthState state) async {
     if (_formKey.currentState!.validate()) {
       final jawaban = _selectedTipe == 'Pilihan Ganda'
-          ? _getJawabanText(_selectedJawaban!)
+          ? _getJawabanOption(_jawabanController.text)
           : _jawabanController.text;
 
       final soalData = {
-        'id': widget.soalData?['id'] != null
-            ? (widget.soalData!['id'] + 1).toString()
-            : (lastUsedId + 1).toString(),
-        'id_ujian': widget.idUjian ?? widget.soalData?['id_ujian'],
-        'soal': _soalController.text,
-        'opsi1': _selectedTipe == 'Pilihan Ganda' ? _opsi1Controller.text : '-',
-        'opsi2': _selectedTipe == 'Pilihan Ganda' ? _opsi2Controller.text : '-',
-        'opsi3': _selectedTipe == 'Pilihan Ganda' ? _opsi3Controller.text : '-',
-        'opsi4': _selectedTipe == 'Pilihan Ganda' ? _opsi4Controller.text : '-',
-        'opsi5': _selectedTipe == 'Pilihan Ganda' ? _opsi5Controller.text : '-',
-        'jawaban': jawaban,
+        'id' : widget.soalData?.id ?? '-',
+        'id_ujian': widget.idUjian ?? widget.soalData?.idUjian,
         'tipe': _selectedTipe,
+        'soal': _soalController.text,
+        'opsi_a': _selectedTipe == 'Pilihan Ganda' ? _opsi1Controller.text : '-',
+        'opsi_b': _selectedTipe == 'Pilihan Ganda' ? _opsi2Controller.text : '-',
+        'opsi_c': _selectedTipe == 'Pilihan Ganda' ? _opsi3Controller.text : '-',
+        'opsi_d': _selectedTipe == 'Pilihan Ganda' ? _opsi4Controller.text : '-',
+        'opsi_e': _selectedTipe == 'Pilihan Ganda' ? _opsi5Controller.text : '-',
+        'jawaban': jawaban,
         'pembahasan': _pembahasanController.text,
         'link_video': _videoPath ?? '-',
         'link_gambar': _gambarPath ?? '-',
         'link_audio': _audioPath ?? '-',
         'link_file': _docPath ?? '-',
       };
+
+      if (!widget.isEdit) {
+        if (state is Authenticated) {
+          print("masuk sini kah");
+          context.read<SoalUjianBloc>().add(AddSoal(token: state.token, soalData: soalData));
+        }
+      } else {
+        if (state is Authenticated) {
+          context.read<SoalUjianBloc>().add(UpdateSoal(token: state.token, soalData: soalData));
+        }
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

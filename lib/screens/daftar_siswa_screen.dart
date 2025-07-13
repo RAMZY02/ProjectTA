@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/users/users_bloc.dart';
+import 'package:project_ta/bloc/users/users_event.dart';
+import 'package:project_ta/bloc/users/users_state.dart';
+import 'package:project_ta/models/ujian_model.dart';
 import 'package:project_ta/screens/pemeriksaan_jawaban_screen.dart';
 
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_state.dart';
+
 class DaftarSiswaScreen extends StatefulWidget {
-  final Map<String, dynamic> ujian;
+  final UjianModel ujian;
 
   const DaftarSiswaScreen({super.key, required this.ujian});
 
@@ -11,36 +19,20 @@ class DaftarSiswaScreen extends StatefulWidget {
 }
 
 class _DaftarSiswaScreenState extends State<DaftarSiswaScreen> {
-  String selectedClass = '7A';
+  String selectedClass = '7D';
   final List<String> classes = ['7A', '7B', '7C', '7D', '7E', '7F', '7G', '7H', '7I', '7J'];
-
-  // Mock data for students
-  final Map<String, List<Map<String, dynamic>>> studentsByClass = {
-    '7A': [
-      {'id': '1', 'name': 'Ani', 'score': null},
-      {'id': '2', 'name': 'Budi', 'score': 85},
-      {'id': '3', 'name': 'Citra', 'score': null},
-    ],
-    '7B': [
-      {'id': '4', 'name': 'Dewi', 'score': 78},
-      {'id': '5', 'name': 'Eka', 'score': null},
-      {'id': '6', 'name': 'Fajar', 'score': 92},
-    ],
-    // Add more classes as needed
-  };
 
   @override
   void initState() {
     super.initState();
-    // Initialize with empty list if class doesn't exist
-    studentsByClass.putIfAbsent(selectedClass, () => []);
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Daftar Siswa - ${widget.ujian['title']}'),
+        title: Text('Daftar Siswa - ${widget.ujian.nama}'),
       ),
       body: Column(
         children: [
@@ -60,8 +52,6 @@ class _DaftarSiswaScreenState extends State<DaftarSiswaScreen> {
                     onSelected: (selected) {
                       setState(() {
                         selectedClass = className;
-                        // Initialize with empty list if class doesn't exist
-                        studentsByClass.putIfAbsent(selectedClass, () => []);
                       });
                     },
                   ),
@@ -71,52 +61,74 @@ class _DaftarSiswaScreenState extends State<DaftarSiswaScreen> {
           ),
           const Divider(),
           // Student list
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: studentsByClass[selectedClass]!.length,
-              itemBuilder: (context, index) {
-                final student = studentsByClass[selectedClass]![index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: ListTile(
-                    title: Text(student['name']),
-                    trailing: student['score'] != null
-                        ? Text(
-                      'Nilai: ${student['score']}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
-                    )
-                        : const Text(
-                      'Belum dinilai',
-                      style: TextStyle(
-                        fontStyle: FontStyle.italic,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => PemeriksaanJawabanScreen(examData: widget.ujian, student: student, studentClass: selectedClass)
-                        )
-                      ).then((value) {
-                        // This will be called when returning from PemeriksaanJawabanScreen
-                        if (value != null) {
-                          setState(() {
-                            // Update the student's score
-                            studentsByClass[selectedClass]![index]['score'] = value;
-                          });
-                        }
-                      });
+          BlocBuilder<UsersBloc, UsersState>(
+            builder: (context, usersState){
+              if (authState is Authenticated &&
+                  (usersState is! UsersLoaded || usersState.users.isEmpty)) {
+                Future.microtask(() {
+                  context.read<UsersBloc>().add(FetchUsersByKelas(token: authState.token, kelas: selectedClass));
+                });
+              }
+
+              if(usersState is UsersLoaded){
+                return Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: usersState.users.length,
+                    itemBuilder: (context, index) {
+                      final student = usersState.users[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        child: ListTile(
+                          title: Text(student.nama),
+                          trailing: student.poin != null
+                              ? Text(
+                            'Nilai: ${student.poin}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          )
+                              : const Text(
+                            'Belum dinilai',
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => PemeriksaanJawabanScreen(examData: widget.ujian, student: student, studentClass: selectedClass)
+                                )
+                            ).then((value) {
+                              // This will be called when returning from PemeriksaanJawabanScreen
+                              if (value != null) {
+                                setState(() {
+                                  // Update the student's score
+                                  // studentsByClass[selectedClass]![index]['score'] = value;
+                                });
+                              }
+                            });
+                          },
+                        ),
+                      );
                     },
                   ),
                 );
-              },
-            ),
-          ),
+              }
+              else if (usersState is UsersLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              else if (usersState is UsersError) {
+                return Center(child: Text(usersState.message));
+              }
+              else {
+                return const Center(child: Text(""));
+              }
+            }
+          )
         ],
       ),
     );

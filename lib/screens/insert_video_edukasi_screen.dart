@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/auth/auth_bloc.dart';
+import 'package:project_ta/bloc/auth/auth_state.dart';
+import 'package:project_ta/bloc/video_edukasi/video_edukasi_bloc.dart';
+import 'package:project_ta/bloc/video_edukasi/video_edukasi_event.dart';
+import 'package:project_ta/models/video_edukasi_model.dart';
 
 class InsertVideoEdukasiScreen extends StatefulWidget {
-  final Map<String, dynamic>? videoData;
+  final VideoEdukasiModel? videoData;
 
   bool get isEdit => videoData != null;
 
@@ -22,18 +28,20 @@ class _InsertVideoEdukasiScreenState extends State<InsertVideoEdukasiScreen> {
   late TextEditingController _mataPelajaranController;
   late TextEditingController _viewsController;
   late TextEditingController _likesController;
+  late TextEditingController _durasiController;
   late String _selectedKelas;
 
   @override
   void initState() {
     super.initState();
-    _judulController = TextEditingController(text: widget.videoData?['judul'] ?? '');
-    _linkController = TextEditingController(text: widget.videoData?['link_video'] ?? '');
-    _deskripsiController = TextEditingController(text: widget.videoData?['deskripsi'] ?? '');
-    _mataPelajaranController = TextEditingController(text: widget.videoData?['mata_pelajaran'] ?? '');
-    _viewsController = TextEditingController(text: widget.videoData?['views']?.toString() ?? '0');
-    _likesController = TextEditingController(text: widget.videoData?['likes']?.toString() ?? '0');
-    _selectedKelas = widget.videoData?['kelas'] ?? '7';
+    _judulController = TextEditingController(text: widget.videoData?.judul ?? '');
+    _linkController = TextEditingController(text: widget.videoData?.link_video ?? '');
+    _deskripsiController = TextEditingController(text: widget.videoData?.deskripsi ?? '');
+    _mataPelajaranController = TextEditingController(text: widget.videoData?.mata_pelajaran ?? '');
+    _viewsController = TextEditingController(text: widget.videoData?.views.toString() ?? '0');
+    _likesController = TextEditingController(text: widget.videoData?.likes.toString() ?? '0');
+    _durasiController = TextEditingController(text: widget.videoData?.durasi.toString() ?? '00:00:00');
+    _selectedKelas = widget.videoData?.kelas ?? '7';
   }
 
   @override
@@ -44,13 +52,13 @@ class _InsertVideoEdukasiScreenState extends State<InsertVideoEdukasiScreen> {
     _mataPelajaranController.dispose();
     _viewsController.dispose();
     _likesController.dispose();
+    _durasiController.dispose();
     super.dispose();
   }
 
-  void _submitForm() {
+  void _submitForm(AuthState state) async{
     if (_formKey.currentState!.validate()) {
       final videoData = {
-        'id': widget.isEdit ? widget.videoData!['id'] : null,
         'judul': _judulController.text,
         'link_video': _linkController.text,
         'deskripsi': _deskripsiController.text,
@@ -58,7 +66,19 @@ class _InsertVideoEdukasiScreenState extends State<InsertVideoEdukasiScreen> {
         'views': int.parse(_viewsController.text),
         'likes': int.parse(_likesController.text),
         'kelas': _selectedKelas,
+        'durasi': _durasiController.text,
       };
+
+      if (!widget.isEdit) {
+        if (state is Authenticated) {
+          print("masuk sini kah");
+          context.read<VideoEdukasiBloc>().add(AddVideo(token: state.token, idUser: state.id, videoEdukasi: videoData));
+        }
+      } else {
+        if (state is Authenticated) {
+          context.read<VideoEdukasiBloc>().add(UpdateVideo(token: state.token, idUser: state.id, idVideo: widget.videoData!.id, videoEdukasi: videoData));
+        }
+      }
 
       Navigator.pop(context, videoData);
     }
@@ -66,6 +86,7 @@ class _InsertVideoEdukasiScreenState extends State<InsertVideoEdukasiScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEdit ? 'Edit Video Edukasi' : 'Tambah Video Edukasi'),
@@ -142,6 +163,25 @@ class _InsertVideoEdukasiScreenState extends State<InsertVideoEdukasiScreen> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                controller: _durasiController,
+                decoration: const InputDecoration(
+                  labelText: 'Durasi (HH:MM:SS)',
+                  border: OutlineInputBorder(),
+                  hintText: '00:05:30',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Durasi tidak boleh kosong';
+                  }
+                  // Basic validation for HH:MM:SS format
+                  if (!RegExp(r'^\d{2}:\d{2}:\d{2}$').hasMatch(value)) {
+                    return 'Format durasi harus HH:MM:SS';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
                 controller: _viewsController,
                 decoration: const InputDecoration(
                   labelText: 'Jumlah Views',
@@ -184,10 +224,18 @@ class _InsertVideoEdukasiScreenState extends State<InsertVideoEdukasiScreen> {
                   labelText: 'Deskripsi Video',
                   border: OutlineInputBorder(),
                 ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Deskripsi tidak boleh kosong';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _submitForm,
+                onPressed: () {
+                  _submitForm(authState);
+                },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),

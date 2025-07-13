@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:project_ta/bloc/auth/auth_bloc.dart';
+import 'package:project_ta/bloc/soal_ujian/soal_ujian_bloc.dart';
+import 'package:project_ta/bloc/soal_ujian/soal_ujian_event.dart';
+import 'package:project_ta/bloc/soal_ujian/soal_ujian_state.dart';
+import 'package:project_ta/models/soal_model.dart';
+import 'package:project_ta/models/ujian_model.dart';
+
+import '../bloc/auth/auth_state.dart';
 
 class MembuatSoalScreen extends StatefulWidget {
-  final Map<String, dynamic> ujian;
+  final UjianModel ujian;
 
   const MembuatSoalScreen({super.key, required this.ujian});
 
@@ -11,44 +20,6 @@ class MembuatSoalScreen extends StatefulWidget {
 }
 
 class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
-  final List<Map<String, dynamic>> _questions = [
-    {
-      'id': '1',
-      "id_ujian": "1",
-      'soal': 'Ibu kota Indonesia',
-      'opsi_a': 'Jakarta',
-      'opsi_b': 'Bandung',
-      'opsi_c': 'Thailand',
-      'opsi_d': 'Korea',
-      'opsi_e': 'China',
-      'jawaban': 'Jakarta',
-      "tipe": "pilihan_ganda",
-      "pembahasan": "Jakarta adalah ibukota Indonesia sejak tahun 1946",
-      "link_video": "-",
-      "link_gambar": "-",
-      "link_audio": "-",
-      "link_file": "-",
-      "notasi_matematika": '-'
-    },
-    {
-      'id': '2',
-      "id_ujian": "1",
-      'soal': '2 + 2 = ?',
-      'opsi_a': '-',
-      'opsi_b': '-',
-      'opsi_c': '-',
-      'opsi_d': '-',
-      'opsi_e': '-',
-      'jawaban': '-',
-      "tipe": "isian",
-      "pembahasan": "Penjumlahan dasar",
-      "link_video": "-",
-      "link_gambar": "-",
-      "link_audio": "-",
-      "link_file": "-",
-      "notasi_matematika": '-'
-    },
-  ];
 
   final TextEditingController _questionController = TextEditingController();
   final TextEditingController _optionAController = TextEditingController();
@@ -60,13 +31,13 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
   final TextEditingController _mathNotationController = TextEditingController();
 
   String? _selectedAnswer;
-  String _questionType = 'pilihan_ganda';
+  String _questionType = 'Pilihan Ganda';
   String? _imagePath;
   String? _audioPath;
   String? _videoPath;
   String? _filePath;
 
-  void _addQuestion() {
+  void _addQuestion(AuthState state) {
     if (_questionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Soal tidak boleh kosong')),
@@ -74,7 +45,7 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
       return;
     }
 
-    if (_questionType == 'pilihan_ganda' && _selectedAnswer == null) {
+    if (_questionType == 'Pilihan Ganda' && _selectedAnswer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pilih jawaban yang benar')),
       );
@@ -82,16 +53,15 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
     }
 
     final newQuestion = {
-      'id': DateTime.now().millisecondsSinceEpoch.toString(),
-      'id_ujian': widget.ujian['id'],
+      'id_ujian': widget.ujian.id,
       'tipe': _questionType,
       'soal': _questionController.text,
-      'opsi_a': _questionType == 'pilihan_ganda' ? _optionAController.text : '-',
-      'opsi_b': _questionType == 'pilihan_ganda' ? _optionBController.text : '-',
-      'opsi_c': _questionType == 'pilihan_ganda' ? _optionCController.text : '-',
-      'opsi_d': _questionType == 'pilihan_ganda' ? _optionDController.text : '-',
-      'opsi_e': _questionType == 'pilihan_ganda' ? _optionEController.text : '-',
-      'jawaban': _questionType == 'pilihan_ganda' ? _selectedAnswer : '-',
+      'opsi_a': _questionType == 'Pilihan Ganda' ? _optionAController.text : '-',
+      'opsi_b': _questionType == 'Pilihan Ganda' ? _optionBController.text : '-',
+      'opsi_c': _questionType == 'Pilihan Ganda' ? _optionCController.text : '-',
+      'opsi_d': _questionType == 'Pilihan Ganda' ? _optionDController.text : '-',
+      'opsi_e': _questionType == 'Pilihan Ganda' ? _optionEController.text : '-',
+      'jawaban': _questionType == 'Pilihan Ganda' ? _selectedAnswer : '-',
       'pembahasan': _explanationController.text,
       'link_video': _videoPath ?? '-',
       'link_gambar': _imagePath ?? '-',
@@ -102,8 +72,11 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
           : '-',
     };
 
+    if(state is Authenticated){
+      context.read<SoalUjianBloc>().add(AddSoal(token: state.token, soalData: newQuestion));
+    }
+
     setState(() {
-      _questions.add(newQuestion);
       _clearForm();
     });
   }
@@ -181,35 +154,52 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Buat Soal untuk ${widget.ujian['title']}'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: (){},
-          ),
-        ],
+        title: Text('Buat Soal untuk ${widget.ujian.nama}'),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Question Form Card
-              _buildQuestionForm(),
-              const SizedBox(height: 16),
-              // List of Added Questions
-              if (_questions.isNotEmpty) _buildQuestionList(),
-            ],
-          ),
-        ),
+        child: BlocBuilder<SoalUjianBloc, SoalUjianState>(
+          builder: (context, soalState){
+            if (authState is Authenticated &&
+                (soalState is! SoalUjianLoaded || soalState.soalList.isEmpty)) {
+              Future.microtask(() {
+                context.read<SoalUjianBloc>().add(FetchSoalUjian(token: authState.token, ujianId: widget.ujian.id));
+              });
+            }
+
+            if(soalState is SoalUjianLoaded){
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Question Form Card
+                    _buildQuestionForm(authState),
+                    const SizedBox(height: 16),
+                    // List of Added Questions
+                    if (soalState.soalList.isNotEmpty) _buildQuestionList(soalState.soalList, authState),
+                  ],
+                ),
+              );
+            }
+            else if (soalState is SoalUjianLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            else if (soalState is SoalUjianError) {
+              return Center(child: Text(soalState.message));
+            }
+            else {
+              return const Center(child: Text(""));
+            }
+          }
+        )
       ),
     );
   }
 
-  Widget _buildQuestionForm() {
+  Widget _buildQuestionForm(AuthState authState) {
     return Card(
       elevation: 4,
       child: Padding(
@@ -247,14 +237,16 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
             // Math Notation Preview
             if (_mathNotationController.text.isNotEmpty) _buildMathPreview(),
             // Options for Multiple Choice
-            if (_questionType == 'pilihan_ganda') _buildMultipleChoiceOptions(),
+            if (_questionType == 'Pilihan Ganda') _buildMultipleChoiceOptions(),
             // Explanation Field
             _buildExplanationField(),
             const SizedBox(height: 16),
             // Add Question Button
             Center(
               child: ElevatedButton(
-                onPressed: _addQuestion,
+                onPressed: () {
+                  _addQuestion(authState);
+                },
                 child: const Text('Tambah Soal'),
               ),
             ),
@@ -272,7 +264,7 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
         children: [
           RadioListTile<String>(
             title: const Text('Pilihan Ganda'),
-            value: 'pilihan_ganda',
+            value: 'Pilihan Ganda',
             groupValue: _questionType,
             onChanged: (value) => _updateQuestionType(value!),
           ),
@@ -284,7 +276,7 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
           ),
           RadioListTile<String>(
             title: const Text('Upload File'),
-            value: 'upload_file',
+            value: 'upload file',
             groupValue: _questionType,
             onChanged: (value) => _updateQuestionType(value!),
           ),
@@ -404,7 +396,7 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
     );
   }
 
-  Widget _buildQuestionList() {
+  Widget _buildQuestionList(List<SoalModel> soal, AuthState authState) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -416,7 +408,8 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        ..._questions.map((question) => _buildQuestionCard(question)).toList(),
+        if(authState is Authenticated)
+        ...soal.map((question) => _buildQuestionCard(question, soal, authState.token)),
       ],
     );
   }
@@ -435,7 +428,7 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
     );
   }
 
-  Widget _buildQuestionCard(Map<String, dynamic> question) {
+  Widget _buildQuestionCard(SoalModel question, List<SoalModel> soal, String token) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -446,7 +439,7 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
             Row(
               children: [
                 Text(
-                  'Soal ${_questions.indexOf(question) + 1}',
+                  'Soal ${soal.indexOf(question) + 1}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -462,66 +455,67 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
                 IconButton(
                   icon: const Icon(Icons.delete, size: 20, color: Colors.red),
                   onPressed: () {
+                    context.read<SoalUjianBloc>().add(DeleteSoal(token: token, id: question.id));
                     setState(() {
-                      _questions.remove(question);
+                      soal.remove(question);
                     });
                   },
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            Text(question['soal']),
-            if (question['notasi_matematika'] != '-') ...[
-              const SizedBox(height: 8),
-              Math.tex(
-                question['notasi_matematika'],
-                textStyle: const TextStyle(fontSize: 16),
-              ),
-            ],
-            if (question['tipe'] == 'pilihan_ganda') ...[
+            Text(question.soal),
+            // if (question['notasi_matematika'] != '-') ...[
+            //   const SizedBox(height: 8),
+            //   Math.tex(
+            //     question['notasi_matematika'],
+            //     textStyle: const TextStyle(fontSize: 16),
+            //   ),
+            // ],
+            if (question.tipe == 'Pilihan Ganda') ...[
               const SizedBox(height: 8),
               const Text('Pilihan Jawaban:'),
-              _buildOptionPreview('A', question['opsi_a']),
-              _buildOptionPreview('B', question['opsi_b']),
-              _buildOptionPreview('C', question['opsi_c']),
-              _buildOptionPreview('D', question['opsi_d']),
-              _buildOptionPreview('E', question['opsi_e']),
+              _buildOptionPreview('A', question.opsiA),
+              _buildOptionPreview('B', question.opsiB),
+              _buildOptionPreview('C', question.opsiC),
+              _buildOptionPreview('D', question.opsiD),
+              _buildOptionPreview('E', question.opsiE),
               const SizedBox(height: 8),
               Text(
-                'Jawaban benar: ${question['jawaban']}',
+                'Jawaban benar: ${question.jawaban}',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
-            if (question['pembahasan'] != null && question['pembahasan'].isNotEmpty) ...[
-              const SizedBox(height: 8),
-              const Text('Pembahasan:'),
-              Text(question['pembahasan']),
-            ],
-            if (question['link_gambar'] != '-' ||
-                question['link_audio'] != '-' ||
-                question['link_video'] != '-' ||
-                question['link_file'] != '-') ...[
+            ...[
+            const SizedBox(height: 8),
+            const Text('Pembahasan:'),
+            Text(question.pembahasan),
+          ],
+            if (question.linkGambar != '-' ||
+                question.linkAudio != '-' ||
+                question.linkVideo != '-' ||
+                question.linkFile != '-') ...[
               const SizedBox(height: 8),
               const Text('Lampiran:'),
               Wrap(
                 spacing: 8,
                 children: [
-                  if (question['link_gambar'] != '-')
+                  if (question.linkGambar != '-')
                     Chip(
                       label: const Text('Gambar'),
                       avatar: const Icon(Icons.image, size: 18),
                     ),
-                  if (question['link_audio'] != '-')
+                  if (question.linkAudio != '-')
                     Chip(
                       label: const Text('Audio'),
                       avatar: const Icon(Icons.audiotrack, size: 18),
                     ),
-                  if (question['link_video'] != '-')
+                  if (question.linkVideo != '-')
                     Chip(
                       label: const Text('Video'),
                       avatar: const Icon(Icons.videocam, size: 18),
                     ),
-                  if (question['link_file'] != '-')
+                  if (question.linkFile != '-')
                     Chip(
                       label: const Text('File'),
                       avatar: const Icon(Icons.insert_drive_file, size: 18),

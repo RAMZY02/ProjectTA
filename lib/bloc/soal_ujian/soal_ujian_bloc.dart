@@ -11,6 +11,9 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
     on<InitSoalUjian>(_onInit);
     on<FetchSoalUjian>(_onFetchSoalUjian);
     on<SubmitJawaban>(_onSubmitJawaban);
+    on<AddSoal>(_onAddSoal);
+    on<UpdateSoal>(_onUpdateSoal);
+    on<DeleteSoal>(_onDeleteSoal);
   }
 
   Future<void> _onFetchSoalUjian(
@@ -70,5 +73,112 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
 
   Future<void> _onInit(InitSoalUjian event, Emitter<SoalUjianState> emit) async {
     emit(SoalUjianInitial());
+  }
+
+  Future<void> _onAddSoal(
+      AddSoal event,
+      Emitter<SoalUjianState> emit,
+      ) async {
+    emit(SoalUjianLoading());
+    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/soal');
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${event.token}',
+        },
+        body: jsonEncode({
+          'id_ujian': event.soalData['id_ujian'],
+          'tipe': event.soalData['tipe'],
+          'soal': event.soalData['soal'],
+          'opsi_a': event.soalData['opsi_a'],
+          'opsi_b': event.soalData['opsi_b'],
+          'opsi_c': event.soalData['opsi_c'],
+          'opsi_d': event.soalData['opsi_d'],
+          'opsi_e': event.soalData['opsi_e'],
+          'jawaban': event.soalData['jawaban'],
+          'pembahasan': event.soalData['pembahasan'],
+          'link_video': event.soalData['link_video'],
+          'link_gambar': event.soalData['link_gambar'],
+          'link_file': event.soalData['link_file'],
+          'link_audio': event.soalData['link_audio'],
+        })
+      );
+
+      if (response.statusCode == 201) {
+        add(FetchSoalUjian(token: event.token, ujianId: int.parse(event.soalData['id_ujian'].toString())));
+      } else {
+        emit(SoalUjianError(message: 'Gagal add soal ujian'));
+      }
+    } catch (e) {
+      emit(SoalUjianError(message: 'Error: $e'));
+    }
+  }
+
+  Future<void> _onUpdateSoal(
+      UpdateSoal event,
+      Emitter<SoalUjianState> emit,
+      ) async {
+    emit(SoalUjianLoading());
+    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/soal/${event.soalData['id']}');
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${event.token}',
+        },
+        body: jsonEncode({
+          'id_ujian': event.soalData['id_ujian'],
+          'tipe': event.soalData['tipe'],
+          'soal': event.soalData['soal'],
+          'opsi_a': event.soalData['opsi_a'],
+          'opsi_b': event.soalData['opsi_b'],
+          'opsi_c': event.soalData['opsi_c'],
+          'opsi_d': event.soalData['opsi_d'],
+          'opsi_e': event.soalData['opsi_e'],
+          'jawaban': event.soalData['jawaban'],
+          'pembahasan': event.soalData['pembahasan'],
+          'link_video': event.soalData['link_video'],
+          'link_gambar': event.soalData['link_gambar'],
+          'link_file': event.soalData['link_file'],
+          'link_audio': event.soalData['link_audio'],
+        })
+      );
+
+      if (response.statusCode == 200) {
+        add(FetchSoalUjian(token: event.token, ujianId: int.parse(event.soalData['id_ujian'].toString())));
+      } else {
+        emit(SoalUjianError(message: 'Gagal add soal ujian'));
+      }
+    } catch (e) {
+      emit(SoalUjianError(message: 'Error: $e'));
+    }
+  }
+
+  Future<void> _onDeleteSoal(
+      DeleteSoal event,
+      Emitter<SoalUjianState> emit,
+      ) async {
+    emit(SoalUjianLoading());
+    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/soal/delete/${event.id}');
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${event.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        add(FetchSoalUjian(token: event.token, ujianId: event.id));
+      } else {
+        emit(SoalUjianError(message: 'Gagal add soal ujian'));
+      }
+    } catch (e) {
+      emit(SoalUjianError(message: 'Error: $e'));
+    }
   }
 }

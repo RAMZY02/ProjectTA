@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:project_ta/bloc/auth/auth_bloc.dart';
+import 'package:project_ta/bloc/ujian/ujian_bloc.dart';
+import 'package:project_ta/bloc/ujian/ujian_state.dart';
 import 'package:project_ta/constants/color.dart';
 import 'package:project_ta/screens/insert_ujian_screen.dart';
 import 'package:project_ta/screens/membuat_soal_screen.dart';
+
+import '../bloc/auth/auth_state.dart';
+import '../bloc/ujian/ujian_event.dart';
 
 class SoalScreen extends StatelessWidget {
   const SoalScreen({super.key});
@@ -27,41 +35,9 @@ class SoalScreen extends StatelessWidget {
     return Colors.grey; // Default
   }
 
-  final List<Map<String, dynamic>> listUjian = const [
-    {
-      'id' : '1',
-      'title': 'Matematika - Kelas 7',
-      'date': '15 Maret 2024',
-      'time': '08.00 - 09.30 WIB',
-      'questions': 25,
-      'duration': '90 menit',
-      'teacher': 'Budi Santoso, S.Pd',
-      'description': 'Ujian tengah semester untuk materi aljabar dan geometri dasar'
-    },
-    {
-      'id' : '2',
-      'title': 'IPA - Kelas 8',
-      'date': '16 Maret 2024',
-      'time': '10.00 - 11.30 WIB',
-      'questions': 30,
-      'duration': '90 menit',
-      'teacher': 'Dewi Anggraeni, S.Pd',
-      'description': 'Ujian tengah semester untuk materi sistem pencernaan dan pernapasan'
-    },
-    {
-      'id' : '3',
-      'title': 'Bahasa Indonesia - Kelas 9',
-      'date': '17 Maret 2024',
-      'time': '11.00 - 12.30 WIB',
-      'questions': 30,
-      'duration': '90 menit',
-      'teacher': 'Dewa Anggra, S.Pd',
-      'description': 'Ujian tengah semester untuk materi sistem pencernaan dan pernapasan'
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -80,19 +56,30 @@ class SoalScreen extends StatelessWidget {
           statusBarIconBrightness: Brightness.light,
         ),
       ),
-      body: listUjian.isEmpty
-          ? const Center(
-        child: Text('Belum ada ujian yang tersedia'),
-      )
-          : Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
+      body: BlocBuilder<UjianBloc, UjianState>(
+        builder: (context, ujianState){
+          if (authState is Authenticated &&
+              (ujianState is! UjianLoaded || ujianState.ujianList.isEmpty)) {
+            Future.microtask(() {
+              context.read<UjianBloc>().add(FetchUjian(token: authState.token));
+            });
+          }
+
+          if (ujianState is UjianLoaded) {
+            final listUjian = ujianState.ujianList;
+            if (listUjian.isEmpty) {
+              return const Center(
+                child: Text('Belum ada ujian yang tersedia'),
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.all(12),
               itemCount: listUjian.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final ujian = listUjian[index];
                 return Card(
-                  margin: const EdgeInsets.all(12),
+                  margin: EdgeInsets.zero,
                   elevation: 2,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -115,12 +102,12 @@ class SoalScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: _getSubjectColor(ujian['title']).withOpacity(0.2),
+                              color: _getSubjectColor(ujian.mapel).withOpacity(0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
-                              _getSubjectIcon(ujian['title']),
-                              color: _getSubjectColor(ujian['title']),
+                              _getSubjectIcon(ujian.mapel),
+                              color: _getSubjectColor(ujian.mapel),
                               size: 40,
                             ),
                           ),
@@ -131,7 +118,7 @@ class SoalScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  ujian['title'],
+                                  ujian.nama,
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFF0D47A1),
@@ -144,7 +131,7 @@ class SoalScreen extends StatelessWidget {
                                     const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
                                     const SizedBox(width: 8),
                                     Text(
-                                      ujian['date'],
+                                      _formatDate(ujian.tanggal),
                                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                                     ),
                                   ],
@@ -155,7 +142,7 @@ class SoalScreen extends StatelessWidget {
                                     const Icon(Icons.access_time, size: 16, color: Colors.grey),
                                     const SizedBox(width: 8),
                                     Text(
-                                      ujian['time'],
+                                      '${formatTimeOfDay(ujian.mulai)} - ${formatTimeOfDay(ujian.selesai)}',
                                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                                     ),
                                   ],
@@ -170,9 +157,18 @@ class SoalScreen extends StatelessWidget {
                   ),
                 );
               },
-            ),
-          ),
-        ],
+            );
+          }
+          else if (ujianState is UjianLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          else if (ujianState is UjianError) {
+            return Center(child: Text(ujianState.message));
+          }
+          else {
+            return const Center(child: Text(""));
+          }
+        }
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -187,5 +183,21 @@ class SoalScreen extends StatelessWidget {
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    try {
+      final formatter = DateFormat('d MMMM yyyy', 'id_ID');
+      return formatter.format(date);
+    } catch (e) {
+      return DateFormat('d MMMM yyyy').format(date); // Fallback format
+    }
+  }
+
+  String formatTimeOfDay(TimeOfDay time) {
+    // Format jam dan menit dengan leading zero
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour.$minute'; // Format 10.00
   }
 }

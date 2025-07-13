@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:project_ta/constants/color.dart';
 import 'package:project_ta/models/ujian_model.dart';
-import 'package:project_ta/screens/soal_ujian_screen.dart';
 
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_state.dart';
@@ -80,9 +80,9 @@ class DetailUjianScreen extends StatelessWidget {
                             ),
                           ),
                           const Divider(height: 24, thickness: 1),
-                          _buildDetailRow(Icons.calendar_today, 'Tanggal', ujian.tanggal.toString()),
-                          _buildDetailRow(Icons.access_time, 'Waktu', '${ujian.mulai} - ${ujian.selesai}'),
-                          _buildDetailRow(Icons.timer, 'Durasi', ujian.durasi.toString()),
+                          _buildDetailRow(Icons.calendar_today, 'Tanggal', _formatDate(ujian.tanggal)),
+                          _buildDetailRow(Icons.access_time, 'Waktu', '${formatTimeOfDay(ujian.mulai)} - ${formatTimeOfDay(ujian.selesai)}'),
+                          _buildDetailRow(Icons.timer, 'Durasi', ujian.durasi.toString().substring(0, 7)),
                           _buildDetailRow(Icons.person, 'Pengajar', ujian.guru),
                           _buildDetailRow(Icons.format_list_numbered, 'Jumlah Soal', '${ujian.jumlahSoal} soal'),
                           const SizedBox(height: 16),
@@ -198,5 +198,21 @@ class DetailUjianScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    try {
+      final formatter = DateFormat('d MMMM yyyy', 'id_ID');
+      return formatter.format(date);
+    } catch (e) {
+      return DateFormat('d MMMM yyyy').format(date); // Fallback format
+    }
+  }
+
+  String formatTimeOfDay(TimeOfDay time) {
+    // Format jam dan menit dengan leading zero
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour.$minute'; // Format 10.00
   }
 }

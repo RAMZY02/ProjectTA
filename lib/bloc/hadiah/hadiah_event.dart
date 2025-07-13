@@ -22,3 +22,55 @@ class TukarHadiah extends HadiahEvent{
 
   TukarHadiah({required this.token, required this.userId, required this.hadiahId, required this.hadiah});
 }
+
+class AddHadiah extends HadiahEvent {
+  String token;
+  String nama;
+  int poin;
+  int stok;
+  String linkGambar;
+  String kategori;
+  String keyStatus;
+
+  AddHadiah({
+    required this.token,
+    required this.nama,
+    required this.poin,
+    required this.stok,
+    this.linkGambar = '-',
+    this.kategori = '-',
+    this.keyStatus = 'active',
+  });
+}
+
+class UpdateHadiah extends HadiahEvent {
+  String token;
+  int hadiahId;
+  String? nama;
+  int? poin;
+  int? stok;
+  String? linkGambar;
+  String? kategori;
+  String? keyStatus;
+
+  UpdateHadiah({
+    required this.token,
+    required this.hadiahId,
+    this.nama,
+    this.poin,
+    this.stok,
+    this.linkGambar,
+    this.kategori,
+    this.keyStatus,
+  });
+}
+
+class DeleteHadiah extends HadiahEvent {
+  String token;
+  int hadiahId; // Corresponds to req.params.id
+
+  DeleteHadiah({
+    required this.token,
+    required this.hadiahId,
+  });
+}

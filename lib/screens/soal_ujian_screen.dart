@@ -153,7 +153,7 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
       final soal = state.soalList[i];
       final jawaban = jawabanSiswa[i] ?? '';
 
-      if (soal.tipe == 'pilihan ganda') {
+      if (soal.tipe == 'Pilihan Ganda') {
         pilihanGandaTotal++;
         if (jawaban.toLowerCase() == soal.jawaban.toLowerCase()) {
           pilihanGandaCorrect++;
@@ -375,7 +375,7 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
         : 0;
 
     switch (soal.tipe) {
-      case 'pilihan ganda':
+      case 'Pilihan Ganda':
       // Create list of options from the soal object
         final List<String?> options = [
           soal.opsiA,
@@ -796,7 +796,7 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
 
   Color _getTypeColor(String type) {
     switch (type) {
-      case 'pilihan ganda': return Colors.blue;
+      case 'Pilihan Ganda': return Colors.blue;
       case 'isian': return Colors.green;
       case 'upload file': return Colors.orange;
       default: return Colors.grey;
@@ -805,7 +805,7 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
 
   String _getTypeLabel(String type) {
     switch (type) {
-      case 'pilihan ganda': return 'PILIHAN GANDA';
+      case 'Pilihan Ganda': return 'PILIHAN GANDA';
       case 'isian': return 'ISIAN';
       case 'upload file': return 'UPLOAD FILE';
       default: return 'UNKNOWN';
