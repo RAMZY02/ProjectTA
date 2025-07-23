@@ -68,7 +68,7 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
 
     _selectedTipe = widget.soalData?.tipe ?? 'Pilihan Ganda';
     _selectedJawaban = widget.soalData?.jawaban != null
-        ? _getJawabanOption(widget.soalData?.jawaban)
+        ? widget.soalData!.jawaban
         : null;
 
     // Initialize file paths from existing data
@@ -327,9 +327,7 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
         return null;
       },
       onChanged: (value) {
-        if (_selectedJawaban != null) {
-          setState(() {});
-        }
+        setState(() {});
       },
     );
   }
@@ -393,12 +391,15 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
 
   void _submitForm(AuthState state) async {
     if (_formKey.currentState!.validate()) {
+      print("ini tipe nya");
+      print(_selectedTipe);
+      print("ini jawaban controller");
+      print(_jawabanController.text);
       final jawaban = _selectedTipe == 'Pilihan Ganda'
-          ? _getJawabanOption(_jawabanController.text)
+          ? _selectedJawaban
           : _jawabanController.text;
 
       final soalData = {
-        'id' : widget.soalData?.id ?? '-',
         'id_ujian': widget.idUjian ?? widget.soalData?.idUjian,
         'tipe': _selectedTipe,
         'soal': _soalController.text,
@@ -418,6 +419,7 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
       if (!widget.isEdit) {
         if (state is Authenticated) {
           print("masuk sini kah");
+          print(soalData);
           context.read<SoalUjianBloc>().add(AddSoal(token: state.token, soalData: soalData));
         }
       } else {

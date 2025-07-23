@@ -28,8 +28,8 @@ class _MasterSoalDanJawabanScreenState extends State<MasterSoalDanJawabanScreen>
     super.initState();
   }
 
-  void _deleteSoal(int id, String token) {
-    context.read<SoalUjianBloc>().add(DeleteSoal(token: token, id: id));
+  void _deleteSoal(int id, int id_ujian, String token) {
+    context.read<SoalUjianBloc>().add(DeleteSoal(token: token, id: id, id_ujian: id_ujian));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Soal berhasil dihapus')),
     );
@@ -70,7 +70,7 @@ class _MasterSoalDanJawabanScreenState extends State<MasterSoalDanJawabanScreen>
                   if(authState is! Authenticated){
                     return Text("Login Dulu min");
                   }
-                  if (soalUjianState is! SoalUjianLoaded || soalUjianState.soalList.isEmpty || soalUjianState is SoalUjianInitial) {
+                  if ((soalUjianState is! SoalUjianLoaded || soalUjianState.soalList.isEmpty || soalUjianState is SoalUjianInitial) && soalUjianState is! SoalUjianNotFound) {
                     Future.microtask(() {
                       context.read<SoalUjianBloc>().add(FetchSoalUjian(token: authState.token, ujianId: widget.ujian.id));
                     });
@@ -154,7 +154,7 @@ class _MasterSoalDanJawabanScreenState extends State<MasterSoalDanJawabanScreen>
                                       ),
                                       IconButton(
                                         icon: const Icon(Icons.delete, color: Colors.red),
-                                        onPressed: () => _deleteSoal(soal.id, authState.token),
+                                        onPressed: () => _deleteSoal(soal.id, widget.ujian.id, authState.token),
                                       ),
                                     ],
                                   ),
@@ -165,6 +165,9 @@ class _MasterSoalDanJawabanScreenState extends State<MasterSoalDanJawabanScreen>
                         ),
                       ),
                     );
+                  }
+                  else if(soalUjianState is SoalUjianNotFound){
+                    return Center(child: Text(soalUjianState.message));
                   }
                   else{
                     return CircularProgressIndicator();

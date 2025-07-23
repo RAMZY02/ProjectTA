@@ -455,7 +455,7 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
                 IconButton(
                   icon: const Icon(Icons.delete, size: 20, color: Colors.red),
                   onPressed: () {
-                    context.read<SoalUjianBloc>().add(DeleteSoal(token: token, id: question.id));
+                    context.read<SoalUjianBloc>().add(DeleteSoal(token: token, id: question.id, id_ujian: widget.ujian.id));
                     setState(() {
                       soal.remove(question);
                     });

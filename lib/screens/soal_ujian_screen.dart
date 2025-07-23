@@ -228,7 +228,7 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
                       'Sisa Waktu: ${_remainingTime.inHours}:${(_remainingTime.inMinutes % 60).toString().padLeft(2, '0')}:${(_remainingTime.inSeconds % 60).toString().padLeft(2, '0')}',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 10,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -397,7 +397,7 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
             return InkWell(
               onTap: () {
                 setState(() {
-                  jawabanSiswa[questionIndex] = '$optionLabel';
+                  jawabanSiswa[questionIndex] = optionLabel;
                 });
               },
               child: Column(

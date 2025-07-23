@@ -56,8 +56,9 @@ class UpdateSoal extends SoalUjianEvent {
 class DeleteSoal extends SoalUjianEvent {
   final String token;
   final int id;
+  final int id_ujian;
 
-  DeleteSoal({required this.token, required this.id});
+  DeleteSoal({required this.token, required this.id, required this.id_ujian});
 
   @override
   List<Object> get props => [token, id];

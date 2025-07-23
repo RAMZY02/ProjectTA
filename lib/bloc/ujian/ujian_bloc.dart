@@ -64,7 +64,6 @@ class UjianBloc extends Bloc<UjianEvent, UjianState> {
           'tanggal' : event.tanggal.toIso8601String().split('T')[0],
           'mulai' : '${event.mulai.hour}:${event.mulai.minute.toString().padLeft(2, '0')}:00',
           'selesai' : '${event.selesai.hour}:${event.selesai.minute.toString().padLeft(2, '0')}:00',
-          'jumlah_soal' : event.jumlah_soal,
           'deskripsi' : event.deskripsi,
           'id_guru' : event.id_guru
         })
@@ -105,7 +104,6 @@ class UjianBloc extends Bloc<UjianEvent, UjianState> {
             'tanggal' : event.tanggal.toIso8601String().split('T')[0],
             'mulai' : '${event.mulai.hour}:${event.mulai.minute.toString().padLeft(2, '0')}:00',
             'selesai' : '${event.selesai.hour}:${event.selesai.minute.toString().padLeft(2, '0')}:00',
-            'jumlah_soal' : event.jumlah_soal,
             'deskripsi' : event.deskripsi,
             'id_guru' : event.id_guru
           })

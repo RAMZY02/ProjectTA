@@ -35,7 +35,11 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
         final List<dynamic> data = json.decode(response.body);
         final soalList = data.map((soal) => SoalModel.fromJson(soal)).toList();
         emit(SoalUjianLoaded(soalList: soalList));
-      } else {
+      }
+      else if(response.statusCode == 404){
+        emit(SoalUjianNotFound(message: "Belum Ada Soal Yang Terdaftar!"));
+      }
+      else {
         emit(SoalUjianError(message: 'Gagal memuat soal ujian'));
       }
     } catch (e) {
@@ -108,7 +112,8 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
 
       if (response.statusCode == 201) {
         add(FetchSoalUjian(token: event.token, ujianId: int.parse(event.soalData['id_ujian'].toString())));
-      } else {
+      }
+      else {
         emit(SoalUjianError(message: 'Gagal add soal ujian'));
       }
     } catch (e) {
@@ -170,6 +175,9 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${event.token}',
         },
+        body: jsonEncode({
+          'id_ujian' : event.id_ujian
+        })
       );
 
       if (response.statusCode == 200) {

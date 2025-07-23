@@ -13,6 +13,12 @@ class SoalUjianLoaded extends SoalUjianState {
   SoalUjianLoaded({required this.soalList});
 }
 
+class SoalUjianNotFound extends SoalUjianState{
+  final String message;
+
+  SoalUjianNotFound({required this.message});
+}
+
 class JawabanSubmitted extends SoalUjianState {
   final bool isCorrect;
 

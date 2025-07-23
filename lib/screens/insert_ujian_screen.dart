@@ -33,7 +33,6 @@ class _InsertUjianScreenState extends State<InsertUjianScreen> {
   late TextEditingController _tanggalController;
   late TextEditingController _mulaiController;
   late TextEditingController _selesaiController;
-  late TextEditingController _jumlahSoalController;
   late TextEditingController _deskripsiController;
   late TextEditingController _guruController;
 
@@ -71,9 +70,6 @@ class _InsertUjianScreenState extends State<InsertUjianScreen> {
     _selesaiController = TextEditingController(
       text: widget.ujianData != null ? formatTimeOfDay(widget.ujianData!.selesai) : '',
     );
-    _jumlahSoalController = TextEditingController(
-      text: widget.ujianData?.jumlahSoal.toString() ?? '',
-    );
     _deskripsiController = TextEditingController(
       text: widget.ujianData?.deskripsi.toString() ?? '',
     );
@@ -101,7 +97,6 @@ class _InsertUjianScreenState extends State<InsertUjianScreen> {
     _tanggalController.dispose();
     _mulaiController.dispose();
     _selesaiController.dispose();
-    _jumlahSoalController.dispose();
     _deskripsiController.dispose();
     _guruController.dispose();
     super.dispose();
@@ -355,30 +350,6 @@ class _InsertUjianScreenState extends State<InsertUjianScreen> {
               ),
               const SizedBox(height: 16),
               TextFormField(
-                controller: _jumlahSoalController,
-                decoration: const InputDecoration(
-                  labelText: 'Jumlah Soal',
-                  border: OutlineInputBorder(),
-                  hintText: 'Contoh: 50',
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Jumlah soal tidak boleh kosong';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'Masukkan angka yang valid';
-                  }
-                  return null;
-                },
-                onChanged: (value) {
-                  setState(() {
-                    jumlahSoal = int.tryParse(value);
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
                 controller: _deskripsiController,
                 decoration: const InputDecoration(
                   labelText: 'Deskripsi',
@@ -447,12 +418,6 @@ class _InsertUjianScreenState extends State<InsertUjianScreen> {
                       );
                       return;
                     }
-                    if (jumlahSoal == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Jumlah soal belum diisi dengan benar')),
-                      );
-                      return;
-                    }
 
                     if (!widget.isEdit) {
                       if (authState is Authenticated) {
@@ -467,7 +432,6 @@ class _InsertUjianScreenState extends State<InsertUjianScreen> {
                           tanggal: _selectedTanggal!,
                           mulai: _selectedMulaiTime!,
                           selesai: _selectedSelesaiTime!,
-                          jumlah_soal: jumlahSoal!,
                           deskripsi: _deskripsiController.text,
                           id_guru: 5,
                         ));
@@ -485,7 +449,6 @@ class _InsertUjianScreenState extends State<InsertUjianScreen> {
                           tanggal: _selectedTanggal!,
                           mulai: _selectedMulaiTime!,
                           selesai: _selectedSelesaiTime!,
-                          jumlah_soal: jumlahSoal!,
                           deskripsi: _deskripsiController.text,
                           id_guru: 5,
                         ));

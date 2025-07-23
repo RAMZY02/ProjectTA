@@ -28,7 +28,6 @@ class AddUjian extends UjianEvent {
   final DateTime tanggal;
   final TimeOfDay mulai;
   final TimeOfDay selesai;
-  final int jumlah_soal;
   final String deskripsi;
   final int id_guru;
 
@@ -42,7 +41,6 @@ class AddUjian extends UjianEvent {
     required this.tanggal,
     required this.mulai,
     required this.selesai,
-    required this.jumlah_soal,
     required this.deskripsi,
     required this.id_guru,
   });
@@ -62,7 +60,6 @@ class UpdateUjian extends UjianEvent {
   final DateTime tanggal;
   final TimeOfDay mulai;
   final TimeOfDay selesai;
-  final int jumlah_soal;
   final String deskripsi;
   final int id_guru;
 
@@ -77,7 +74,6 @@ class UpdateUjian extends UjianEvent {
     required this.tanggal,
     required this.mulai,
     required this.selesai,
-    required this.jumlah_soal,
     required this.deskripsi,
     required this.id_guru,
   });
