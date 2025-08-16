@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:project_ta/bloc/auth/auth_bloc.dart';
 import 'package:project_ta/bloc/auth/auth_state.dart';
 import 'package:project_ta/bloc/kupon/kupon_bloc.dart';
@@ -36,10 +37,13 @@ class SiswaKuponScreen extends StatelessWidget {
       ),
       body: BlocBuilder<KuponBloc, KuponState>(
         builder: (context, kuponState){
-          if(authState is Authenticated && kuponState is! KuponLoaded){
+          if(authState is Authenticated && kuponState is KuponInitial){
             context.read<KuponBloc>().add(FetchKupon(token: authState.token, userId: authState.id));
           }
           if(kuponState is KuponLoaded){
+            if(kuponState.kupons.isEmpty){
+              return Center(child:Text("Belum Memiliki Kupon"));
+            }
             return ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: kuponState.kupons.length,
@@ -51,7 +55,7 @@ class SiswaKuponScreen extends StatelessWidget {
             );
           }
           else{
-            return CircularProgressIndicator();
+            return Center(child: CircularProgressIndicator());
           }
         }
       )
@@ -106,7 +110,7 @@ class SiswaKuponScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Didapatkan: ${coupon.waktu}',
+                      'Didapatkan: ${_formatDate(coupon.waktu)}',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 12,
@@ -154,5 +158,21 @@ class SiswaKuponScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    try {
+      final formatter = DateFormat('d MMMM yyyy', 'id_ID');
+      return formatter.format(date);
+    } catch (e) {
+      return DateFormat('d MMMM yyyy').format(date); // Fallback format
+    }
+  }
+
+  String formatTimeOfDay(TimeOfDay time) {
+    // Format jam dan menit dengan leading zero
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour.$minute'; // Format 10.00
   }
 }

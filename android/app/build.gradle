@@ -45,6 +45,6 @@ flutter {
 
 configurations.all {
     resolutionStrategy {
-        force 'com.android.tools.build:gradle:8.2.1'
+        force 'com.android.tools.build:gradle:8.6.1'
     }
 }

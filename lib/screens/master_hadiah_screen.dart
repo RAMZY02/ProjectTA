@@ -36,8 +36,8 @@ class _MasterHadiahScreenState extends State<MasterHadiahScreen> {
             child: ElevatedButton.icon(
               icon: const Icon(Icons.add),
               label: const Text('Tambah Hadiah'),
-              onPressed: () async {
-                final result = await Navigator.push(
+              onPressed: () {
+                Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const InsertHadiahScreen(),
@@ -54,13 +54,15 @@ class _MasterHadiahScreenState extends State<MasterHadiahScreen> {
                 if(authState is! Authenticated){
                   return Text("Login Dulu min");
                 }
-                if (hadiahState is! HadiahLoaded || hadiahState.hadiah.isEmpty || hadiahState
-                is HadiahInitial) {
+                if (hadiahState is HadiahInitial) {
                   Future.microtask(() {
                     context.read<HadiahBloc>().add(FetchHadiah(token: authState.token));
                   });
                 }
                 if(hadiahState is HadiahLoaded){
+                  if(hadiahState.hadiah.isEmpty){
+                    return Center(child: Text("Belum ada data tersedia"));
+                  }
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(

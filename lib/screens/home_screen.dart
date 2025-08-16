@@ -166,8 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
 
                   // Init fetch videos when authenticated
-                  if (authState is Authenticated && userState is UserLoaded &&
-                      (videoState is! VideoLoaded || videoState.videos.isEmpty || videoState is VideoInitial)) {
+                  if (authState is Authenticated && userState is UserLoaded && videoState is VideoInitial) {
                     Future.microtask(() {
                       context.read<VideoEdukasiBloc>().add(FetchVideos(token: userState.token, userId: userState.id));
                     });

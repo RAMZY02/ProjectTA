@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/WA/WA_bloc.dart';
+import 'package:project_ta/bloc/WA/WA_event.dart';
+import 'package:project_ta/bloc/auth/auth_bloc.dart';
+import 'package:project_ta/bloc/auth/auth_state.dart';
+import 'package:project_ta/models/ujian_model.dart';
 import 'package:project_ta/screens/bottom_navbar_siswa_screen.dart';
 
+import '../bloc/ujian/ujian_bloc.dart';
+import '../bloc/ujian/ujian_event.dart';
 import '../constants/color.dart';
-import '../widgets/segemented_progressbar.dart';
 
 class HasilUjianScreen extends StatelessWidget {
   final double pilihanGandaScore;
   final int pilihanGandaCorrect;
   final int pilihanGandaWrong;
   final int pilihanGandaTotal;
-  final int isianTotal;
-  final int uploadFileTotal;
+  final UjianModel ujian;
 
   const HasilUjianScreen({
     super.key,
@@ -19,19 +25,22 @@ class HasilUjianScreen extends StatelessWidget {
     required this.pilihanGandaCorrect,
     required this.pilihanGandaWrong,
     required this.pilihanGandaTotal,
-    required this.isianTotal,
-    required this.uploadFileTotal,
+    required this.ujian,
   });
 
   @override
   Widget build(BuildContext context) {
-    final totalQuestions = pilihanGandaTotal + isianTotal + uploadFileTotal;
-
+    final authState = context.read<AuthBloc>().state;
+    if(authState is Authenticated){
+      final pesan =  'Nilai ${ujian.tipe_ujian} Mata Pelajaran ${ujian.mapel} anak Anda yang bernama ${authState.username} adalah $pilihanGandaScore';
+      context.read<WaBloc>().add(SendMessage(pesan: pesan, tujuan: authState.nomor_ortu, token: authState.token));
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hasil Ujian', style: TextStyle(fontSize: 18, color: Colors.white)),
         centerTitle: true,
         backgroundColor: kPrimaryColor,
+        automaticallyImplyLeading: false,
         iconTheme: const IconThemeData(color: Colors.white),
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.grey,
@@ -56,7 +65,7 @@ class HasilUjianScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      '${pilihanGandaScore.toStringAsFixed(2)}',
+                      pilihanGandaScore.toStringAsFixed(2),
                       style: const TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
@@ -98,114 +107,14 @@ class HasilUjianScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Card for manually graded questions
-            Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Jawaban yang Perlu Penilaian Guru',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
-                    if (isianTotal > 0)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.edit, color: Colors.orange),
-                              const SizedBox(width: 8),
-                              Text(
-                                '$isianTotal Soal Isian',
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Jawaban Anda akan diperiksa oleh guru terlebih dahulu',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      ),
-                    if (uploadFileTotal > 0)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.upload_file, color: Colors.purple),
-                              const SizedBox(width: 8),
-                              Text(
-                                '$uploadFileTotal Soal Upload File',
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'File Anda akan diperiksa oleh guru terlebih dahulu',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Distribution of question types
-            Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Distribusi Soal',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
-
-                    SegmentedProgressBar(
-                      segments: {
-                        'Pilihan Ganda': pilihanGandaTotal.toDouble(),
-                        'Isian': isianTotal.toDouble(),
-                        'Upload File': uploadFileTotal.toDouble(),
-                      },
-                      height: 24,
-                      showPercentage: true,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Tambahan informasi jumlah soal
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildCountInfo('Pilihan Ganda', pilihanGandaTotal, Colors.blue),
-                        _buildCountInfo('Isian', isianTotal, Colors.orange),
-                        _buildCountInfo('Upload', uploadFileTotal, Colors.purple),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
             Center(
               child: ElevatedButton(
                 onPressed: () {
+                  context.read<UjianBloc>().add(InitUjian());
+                  SystemChrome.setEnabledSystemUIMode(
+                      SystemUiMode.manual,
+                      overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]
+                  );
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -219,25 +128,6 @@ class HasilUjianScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildCountInfo(String label, int count, Color color) {
-    return Column(
-      children: [
-        Text(
-          '$count',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12),
-        ),
-      ],
     );
   }
 
@@ -265,28 +155,6 @@ class HasilUjianScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(label),
-      ],
-    );
-  }
-
-  Widget _buildProgressRow(String label, double percentage, Color color, String info) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label),
-            Text(info),
-          ],
-        ),
-        const SizedBox(height: 4),
-        LinearProgressIndicator(
-          value: percentage / 100,
-          backgroundColor: Colors.grey[300],
-          color: color,
-          minHeight: 8,
-        ),
       ],
     );
   }

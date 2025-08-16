@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:project_ta/bloc/auth/auth_state.dart';
+import 'package:project_ta/bloc/cloudflare/cloudflare_bloc.dart';
 import 'package:project_ta/bloc/soal_ujian/soal_ujian_bloc.dart';
 import 'package:project_ta/bloc/soal_ujian/soal_ujian_event.dart';
 import 'dart:io';
@@ -10,6 +10,8 @@ import 'dart:io';
 import 'package:project_ta/models/soal_model.dart';
 
 import '../bloc/auth/auth_bloc.dart';
+import '../bloc/cloudflare/cloudflare_event.dart';
+import '../bloc/cloudflare/cloudflare_state.dart';
 
 class InsertSoalDanJawabanScreen extends StatefulWidget {
   final SoalModel? soalData;
@@ -28,6 +30,7 @@ class InsertSoalDanJawabanScreen extends StatefulWidget {
 }
 
 class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen> {
+
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _soalController;
   late TextEditingController _opsi1Controller;
@@ -40,12 +43,7 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
 
   String _selectedTipe = 'Pilihan Ganda';
   String? _selectedJawaban;
-  int lastUsedId = 0; // Inisialisasi dengan 0 atau nilai terakhir dari database
 
-  File? _gambarFile;
-  File? _videoFile;
-  File? _audioFile;
-  File? _docFile;
   String? _gambarPath;
   String? _videoPath;
   String? _audioPath;
@@ -75,16 +73,6 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
     _gambarPath = widget.soalData?.linkGambar ?? '-';
     _videoPath = widget.soalData?.linkVideo ?? '-';
     _audioPath = widget.soalData?.linkAudio ?? '-';
-    _docPath = widget.soalData?.linkFile ?? '-';
-  }
-
-  String? _getJawabanOption(String? jawaban) {
-    if (jawaban == _opsi1Controller.text) return 'A';
-    if (jawaban == _opsi2Controller.text) return 'B';
-    if (jawaban == _opsi3Controller.text) return 'C';
-    if (jawaban == _opsi4Controller.text) return 'D';
-    if (jawaban == _opsi5Controller.text) return 'E';
-    return null;
   }
 
   String _getJawabanText(String option) {
@@ -98,38 +86,73 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
     }
   }
 
-  Future<void> _pickFile(String type) async {
+  Future<void> _pickFile(String type, BuildContext context) async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! Authenticated) return;
+
     try {
+      FilePickerResult? result;
+      String contentType = 'application/octet-stream';
+      String filePrefix = '';
+
       if (type == 'gambar') {
-        final file = await ImagePicker().pickImage(source: ImageSource.gallery);
-        if (file != null) {
-          setState(() {
-            _gambarFile = File(file.path);
-            _gambarPath = file.path;
-          });
-        }
+        result = await FilePicker.platform.pickFiles(type: FileType.image);
+        contentType = 'image/jpeg';
+        filePrefix = 'Soal/Gambar';
       } else if (type == 'video') {
-        final file = await ImagePicker().pickVideo(source: ImageSource.gallery);
-        if (file != null) {
-          setState(() {
-            _videoFile = File(file.path);
-            _videoPath = file.path;
-          });
+        result = await FilePicker.platform.pickFiles(type: FileType.video);
+        contentType = 'video/mp4';
+        filePrefix = 'Soal/Video';
+      } else if (type == 'audio') {
+        result = await FilePicker.platform.pickFiles(type: FileType.audio);
+        contentType = 'audio/mpeg';
+        filePrefix = 'Soal/Audio';
+      } else if (type == 'doc') {
+        result = await FilePicker.platform.pickFiles(type: FileType.any);
+        contentType = 'application/pdf';
+        filePrefix = 'Soal/Dokumen';
+      }
+
+      if (result != null) {
+        final file = File(result.files.single.path!);
+
+        // Determine content type based on file extension
+        if (file.path.toLowerCase().endsWith('.png')) {
+          contentType = 'image/png';
+        } else if (file.path.toLowerCase().endsWith('.mov')) {
+          contentType = 'video/quicktime';
+        } else if (file.path.toLowerCase().endsWith('.mp3')) {
+          contentType = 'audio/mpeg';
+        } else if (file.path.toLowerCase().endsWith('.pdf')) {
+          contentType = 'application/pdf';
         }
-      } else if (type == 'audio' || type == 'doc') {
-        FilePickerResult? result = await FilePicker.platform.pickFiles();
-        if (result != null) {
-          final file = File(result.files.single.path!);
-          setState(() {
-            if (type == 'audio') {
-              _audioFile = file;
-              _audioPath = file.path;
-            } else {
-              _docFile = file;
-              _docPath = file.path;
-            }
-          });
-        }
+
+        // Generate unique filename
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final fileName = '$filePrefix/${_soalController.text}-$timestamp${extension(file.path)}';
+
+        // Upload file using Bloc
+        context.read<CloudflareBloc>().add(
+          UploadFile(
+            fileName: fileName,
+            fileContent: file,
+            contentType: contentType,
+            token: authState.token,
+          ),
+        );
+
+        // Show loading state
+        setState(() {
+          if (type == 'gambar') {
+            _gambarPath = 'Uploading...';
+          } else if (type == 'video') {
+            _videoPath = 'Uploading...';
+          } else if (type == 'audio') {
+            _audioPath = 'Uploading...';
+          } else if (type == 'doc') {
+            _docPath = 'Uploading...';
+          }
+        });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -138,177 +161,203 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
     }
   }
 
+  String extension(String path) {
+    return path.substring(path.lastIndexOf('.'));
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEdit ? 'Edit Soal' : 'Tambah Soal'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (widget.idUjian != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: Text(
-                    'Ujian ID: ${widget.idUjian}',
-                    style: Theme.of(context).textTheme.titleMedium,
+    return BlocListener<CloudflareBloc, CloudflareState>(
+      listener: (context, state) {
+        if (state is CloudFlareLoaded) {
+          // Determine which file type was uploaded based on the path
+          if (state.fileName.contains('Soal/Gambar')) {
+            setState(() {
+              _gambarPath = state.fileName;
+            });
+          } else if (state.fileName.contains('Soal/Video')) {
+            setState(() {
+              _videoPath = state.fileName;
+            });
+          } else if (state.fileName.contains('Soal/Audio')) {
+            setState(() {
+              _audioPath = state.fileName;
+            });
+          } else if (state.fileName.contains('Soal/Dokumen')) {
+            setState(() {
+              _docPath = state.fileName;
+            });
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('File berhasil diupload')),
+          );
+        } else if (state is CloudFlareError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal upload file: ${state.message}')),
+          );
+
+          // Reset the uploading state
+          setState(() {
+            if (_gambarPath == 'Uploading...') _gambarPath = '-';
+            if (_videoPath == 'Uploading...') _videoPath = '-';
+            if (_audioPath == 'Uploading...') _audioPath = '-';
+            if (_docPath == 'Uploading...') _docPath = '-';
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.isEdit ? 'Edit Soal' : 'Tambah Soal'),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.idUjian != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Text(
+                      'Ujian ID: ${widget.idUjian}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                   ),
-                ),
 
-              // Tipe Soal Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedTipe,
-                decoration: const InputDecoration(
-                  labelText: 'Tipe Soal',
-                  border: OutlineInputBorder(),
-                ),
-                items: _tipeSoalOptions.map((tipe) {
-                  return DropdownMenuItem(
-                    value: tipe,
-                    child: Text(tipe),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedTipe = value!;
-                    _selectedJawaban = null;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Pilih tipe soal';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Soal Field
-              TextFormField(
-                controller: _soalController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Pertanyaan',
-                  border: OutlineInputBorder(),
-                  hintText: 'Masukkan pertanyaan soal',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Pertanyaan tidak boleh kosong';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Options Fields (only for Pilihan Ganda)
-              if (_selectedTipe == 'Pilihan Ganda') ...[
-                _buildOptionField(_opsi1Controller, 'Opsi A'),
-                const SizedBox(height: 12),
-                _buildOptionField(_opsi2Controller, 'Opsi B'),
-                const SizedBox(height: 12),
-                _buildOptionField(_opsi3Controller, 'Opsi C'),
-                const SizedBox(height: 12),
-                _buildOptionField(_opsi4Controller, 'Opsi D'),
-                const SizedBox(height: 12),
-                _buildOptionField(_opsi5Controller, 'Opsi E'),
-                const SizedBox(height: 16),
-
-                // Jawaban Dropdown for Pilihan Ganda
+                // Tipe Soal Dropdown
                 DropdownButtonFormField<String>(
-                  value: _selectedJawaban,
+                  value: _selectedTipe,
                   decoration: const InputDecoration(
-                    labelText: 'Jawaban Benar',
+                    labelText: 'Tipe Soal',
                     border: OutlineInputBorder(),
                   ),
-                  items: _jawabanOptions.map((option) {
+                  items: _tipeSoalOptions.map((tipe) {
                     return DropdownMenuItem(
-                      value: option,
-                      child: Text('Opsi $option: ${_getJawabanText(option)}'),
+                      value: tipe,
+                      child: Text(tipe),
                     );
                   }).toList(),
                   onChanged: (value) {
                     setState(() {
-                      _selectedJawaban = value;
+                      _selectedTipe = value!;
+                      _selectedJawaban = null;
                     });
                   },
                   validator: (value) {
-                    if (_selectedTipe == 'Pilihan Ganda' && (value == null || value.isEmpty)) {
-                      return 'Pilih jawaban yang benar';
+                    if (value == null || value.isEmpty) {
+                      return 'Pilih tipe soal';
                     }
                     return null;
                   },
                 ),
-              ] else ...[
-                // Jawaban Field for other types
+                const SizedBox(height: 16),
+
+                // Soal Field
                 TextFormField(
-                  controller: _jawabanController,
+                  controller: _soalController,
+                  maxLines: 3,
                   decoration: const InputDecoration(
-                    labelText: 'Jawaban',
+                    labelText: 'Pertanyaan',
                     border: OutlineInputBorder(),
-                    hintText: 'Masukkan jawaban',
+                    hintText: 'Masukkan pertanyaan soal',
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Jawaban tidak boleh kosong';
+                      return 'Pertanyaan tidak boleh kosong';
                     }
                     return null;
                   },
                 ),
-              ],
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // Pembahasan Field
-              TextFormField(
-                controller: _pembahasanController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Pembahasan',
-                  border: OutlineInputBorder(),
-                  hintText: 'Masukkan pembahasan soal',
-                ),
-              ),
-              const SizedBox(height: 16),
+                // Options Fields (only for Pilihan Ganda)
+                if (_selectedTipe == 'Pilihan Ganda') ...[
+                  _buildOptionField(_opsi1Controller, 'Opsi A'),
+                  const SizedBox(height: 12),
+                  _buildOptionField(_opsi2Controller, 'Opsi B'),
+                  const SizedBox(height: 12),
+                  _buildOptionField(_opsi3Controller, 'Opsi C'),
+                  const SizedBox(height: 12),
+                  _buildOptionField(_opsi4Controller, 'Opsi D'),
+                  const SizedBox(height: 12),
+                  _buildOptionField(_opsi5Controller, 'Opsi E'),
+                  const SizedBox(height: 16),
 
-              // Media Upload Section
-              const Text('Tambahkan Media:', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildMediaButton('Gambar', Icons.image, () => _pickFile('gambar')),
-                  _buildMediaButton('Video', Icons.videocam, () => _pickFile('video')),
-                  _buildMediaButton('Audio', Icons.audiotrack, () => _pickFile('audio')),
-                  _buildMediaButton('Dokumen', Icons.insert_drive_file, () => _pickFile('doc')),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildMediaPreview(),
-              const SizedBox(height: 24),
-
-              // Submit Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  // Jawaban Dropdown for Pilihan Ganda
+                  DropdownButtonFormField<String>(
+                    value: _selectedJawaban,
+                    decoration: const InputDecoration(
+                      labelText: 'Jawaban Benar',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _jawabanOptions.map((option) {
+                      return DropdownMenuItem(
+                        value: option,
+                        child: Text('Opsi $option: ${_getJawabanText(option)}'),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedJawaban = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (_selectedTipe == 'Pilihan Ganda' && (value == null || value.isEmpty)) {
+                        return 'Pilih jawaban yang benar';
+                      }
+                      return null;
+                    },
                   ),
-                  onPressed: () {
-                    _submitForm(authState);
-                  },
-                  child: Text(widget.isEdit ? 'Update Soal' : 'Simpan Soal'),
+                  const SizedBox(height: 16),
+                ],
+                // Pembahasan Field
+                TextFormField(
+                  controller: _pembahasanController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Pembahasan',
+                    border: OutlineInputBorder(),
+                    hintText: 'Masukkan pembahasan soal',
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+
+                // Media Upload Section
+                const Text('Tambahkan Media:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildMediaButton('Gambar', Icons.image, () => _pickFile('gambar', context)),
+                    _buildMediaButton('Video', Icons.videocam, () => _pickFile('video', context)),
+                    _buildMediaButton('Audio', Icons.audiotrack, () => _pickFile('audio', context)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildMediaPreview(),
+                const SizedBox(height: 24),
+
+                // Submit Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: () {
+                      _submitForm(authState, context);
+                    },
+                    child: Text(widget.isEdit ? 'Update Soal' : 'Simpan Soal'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
+      )
     );
   }
 
@@ -351,37 +400,69 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
       children: [
         if (_gambarPath != null && _gambarPath != '-')
           Chip(
-            label: Text(_gambarPath!.split('/').last),
+            label: _gambarPath == 'Uploading...'
+                ? const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                SizedBox(width: 8),
+                Text('Uploading...'),
+              ],
+            )
+                : Text(_gambarPath!.split('/').last),
             avatar: const Icon(Icons.image, size: 20),
             onDeleted: () => setState(() {
-              _gambarFile = null;
               _gambarPath = '-';
             }),
           ),
         if (_videoPath != null && _videoPath != '-')
           Chip(
-            label: Text(_videoPath!.split('/').last),
+            label: _videoPath == 'Uploading...'
+                ? const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                SizedBox(width: 8),
+                Text('Uploading...'),
+              ],
+            )
+                : Text(_videoPath!.split('/').last),
             avatar: const Icon(Icons.videocam, size: 20),
             onDeleted: () => setState(() {
-              _videoFile = null;
               _videoPath = '-';
             }),
           ),
         if (_audioPath != null && _audioPath != '-')
           Chip(
-            label: Text(_audioPath!.split('/').last),
+            label: _audioPath == 'Uploading...'
+                ? const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                SizedBox(width: 8),
+                Text('Uploading...'),
+              ],
+            )
+                : Text(_audioPath!.split('/').last),
             avatar: const Icon(Icons.audiotrack, size: 20),
             onDeleted: () => setState(() {
-              _audioFile = null;
               _audioPath = '-';
             }),
           ),
         if (_docPath != null && _docPath != '-')
           Chip(
-            label: Text(_docPath!.split('/').last),
+            label: _docPath == 'Uploading...'
+                ? const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                SizedBox(width: 8),
+                Text('Uploading...'),
+              ],
+            )
+                : Text(_docPath!.split('/').last),
             avatar: const Icon(Icons.insert_drive_file, size: 20),
             onDeleted: () => setState(() {
-              _docFile = null;
               _docPath = '-';
             }),
           ),
@@ -389,7 +470,7 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
     );
   }
 
-  void _submitForm(AuthState state) async {
+  void _submitForm(AuthState state, BuildContext context) async {
     if (_formKey.currentState!.validate()) {
       print("ini tipe nya");
       print(_selectedTipe);
@@ -410,10 +491,9 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
         'opsi_e': _selectedTipe == 'Pilihan Ganda' ? _opsi5Controller.text : '-',
         'jawaban': jawaban,
         'pembahasan': _pembahasanController.text,
-        'link_video': _videoPath ?? '-',
-        'link_gambar': _gambarPath ?? '-',
-        'link_audio': _audioPath ?? '-',
-        'link_file': _docPath ?? '-',
+        'link_video': 'https://edukasiin.animein.net/$_videoPath' ?? '-',
+        'link_gambar': 'https://edukasiin.animein.net/$_gambarPath' ?? '-',
+        'link_audio': 'https://edukasiin.animein.net/$_audioPath' ?? '-',
       };
 
       if (!widget.isEdit) {

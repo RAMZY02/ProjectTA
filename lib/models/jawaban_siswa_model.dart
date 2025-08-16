@@ -3,6 +3,7 @@ class JawabanSiswaModel {
   final int idUjian;
   final int idUser;
   final int idSoal;
+  final int urutan;
   final String jawaban;
   final int nilai;
 
@@ -11,6 +12,7 @@ class JawabanSiswaModel {
     required this.idUjian,
     required this.idUser,
     required this.idSoal,
+    required this.urutan,
     required this.jawaban,
     required this.nilai,
   });
@@ -21,6 +23,7 @@ class JawabanSiswaModel {
       idUjian: json['id_ujian'],
       idUser: json['id_user'],
       idSoal: json['id_soal'],
+      urutan: json['urutan'],
       jawaban: json['jawaban'],
       nilai: json['nilai'] ?? 0,
     );
@@ -32,6 +35,7 @@ class JawabanSiswaModel {
       'id_ujian': idUjian,
       'id_user': idUser,
       'id_soal': idSoal,
+      'urutan': urutan,
       'jawaban': jawaban,
       'nilai': nilai,
     };

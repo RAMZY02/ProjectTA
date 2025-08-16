@@ -11,8 +11,18 @@ class InitUjian extends UjianEvent {}
 
 class FetchUjian extends UjianEvent {
   final String token;
+  final int userId;
 
-  FetchUjian({required this.token});
+  FetchUjian({required this.token, required this.userId});
+
+  @override
+  List<Object> get props => [token];
+}
+
+class FetchUjian2 extends UjianEvent {
+  final String token;
+
+  FetchUjian2({required this.token});
 
   @override
   List<Object> get props => [token];

@@ -9,12 +9,14 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
   VideoEdukasiBloc() : super(VideoInitial()) {
     on<Init>(_onInit);
     on<FetchVideos>(_onFetchVideos);
+    on<LastId>(_onLastId);
     on<LikeVideo>(_onLikeVideo);
     on<UnlikeVideo>(_onUnlikeVideo);
     on<AddVideo>(_onAddVideo);
     on<UpdateVideo>(_onUpdateVideo);
     on<DeleteVideo>(_onDeleteVideo);
   }
+
 
   Future<void> _onInit(Init event, Emitter<VideoEdukasiState> emit) async {
     emit(VideoInitial());
@@ -44,6 +46,30 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
         emit(VideoError(message: 'Failed to load videos'));
       }
     } catch (e) {
+      print(e);
+      emit(VideoError(message: 'Error: $e'));
+    }
+  }
+
+  Future<void> _onLastId(LastId event, Emitter<VideoEdukasiState> emit) async{
+    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/video-edukasi/lastId');
+    try{
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${event.token}',
+        }
+      );
+
+      final responseBody = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        emit(VideoId(IdVideo: responseBody['idvideo']));
+      } else {
+        emit(VideoError(message: 'Failed to get last id'));
+      }
+    }catch(e){
       print(e);
       emit(VideoError(message: 'Error: $e'));
     }
@@ -117,6 +143,7 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
           'Authorization': 'Bearer ${event.token}',
         },
         body: json.encode({
+          'id_user' : event.idUser,
           'judul': event.videoEdukasi['judul'],
           'link_video': event.videoEdukasi['link_video'],
           'deskripsi': event.videoEdukasi['deskripsi'],
@@ -128,8 +155,8 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
         }),
       );
 
-      if (response.statusCode == 200) {
-        add(FetchVideos(token: event.token, userId: event.idUser));
+      if (response.statusCode == 201) {
+        add(Init());
       } else {
         emit(VideoError(message: 'Failed to unlike video'));
       }

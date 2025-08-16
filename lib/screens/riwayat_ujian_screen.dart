@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_ta/bloc/history_ujian/history_ujian_state.dart';
+import 'package:project_ta/bloc/soal_ujian/soal_ujian_bloc.dart';
+import 'package:project_ta/bloc/soal_ujian/soal_ujian_event.dart';
 import 'package:project_ta/constants/color.dart';
 import 'package:intl/intl.dart';
 import 'package:project_ta/models/history_ujian_model.dart';
@@ -10,6 +12,7 @@ import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_state.dart';
 import '../bloc/history_ujian/history_ujian_bloc.dart';
 import '../bloc/history_ujian/history_ujian_event.dart';
+import 'detail_riwayat_ujian_screen.dart';
 
 class RiwayatUjianScreen extends StatelessWidget {
   const RiwayatUjianScreen({super.key});
@@ -37,7 +40,7 @@ class RiwayatUjianScreen extends StatelessWidget {
       ),
       body: BlocBuilder<HistoryUjianBloc, HistoryUjianState>(
           builder: (context, historyUjianState){
-            if(authState is Authenticated && historyUjianState is! HistoryUjianLoaded){
+            if(authState is Authenticated && historyUjianState is HistoryUjianInitial){
               context.read<HistoryUjianBloc>().add(FetchHistoryUjian(token: authState.token, userId: authState.id));
             }
             if(historyUjianState is HistoryUjianLoaded){
@@ -52,7 +55,7 @@ class RiwayatUjianScreen extends StatelessWidget {
               );
             }
             else{
-              return CircularProgressIndicator();
+              return Center(child: CircularProgressIndicator());
             }
           }
       )
@@ -68,7 +71,13 @@ class RiwayatUjianScreen extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          // Navigasi ke detail riwayat ujian
+          context.read<SoalUjianBloc>().add(InitSoalUjian());
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DetailRiwayatUjianScreen(exam: exam),
+            ),
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(16),

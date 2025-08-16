@@ -12,8 +12,9 @@ class SoalModel {
   final String pembahasan;
   final String linkVideo;
   final String linkGambar;
-  final String linkFile;
   final String linkAudio;
+  final String jawabanSiswa;
+  final int nilaiSiswa;
 
   SoalModel({
     required this.id,
@@ -29,8 +30,9 @@ class SoalModel {
     required this.pembahasan,
     required this.linkVideo,
     required this.linkGambar,
-    required this.linkFile,
     required this.linkAudio,
+    required this.jawabanSiswa,
+    required this.nilaiSiswa,
   });
 
   factory SoalModel.fromJson(Map<String, dynamic> json) {
@@ -48,8 +50,9 @@ class SoalModel {
       pembahasan: json['pembahasan'],
       linkVideo: json['link_video'] ?? '-',
       linkGambar: json['link_gambar'] ?? '-',
-      linkFile: json['link_file'] ?? '-',
       linkAudio: json['link_audio'] ?? '-',
+      jawabanSiswa: json['jawabanSiswa'] ?? '-',
+      nilaiSiswa: json['nilaiSiswa'] ?? 0,
     );
   }
 
@@ -68,8 +71,9 @@ class SoalModel {
       'pembahasan': pembahasan,
       'link_video': linkVideo,
       'link_gambar': linkGambar,
-      'link_file': linkFile,
       'link_audio': linkAudio,
+      'jawabanSiswa': jawabanSiswa,
+      'nilaiSiswa': nilaiSiswa,
     };
   }
 }

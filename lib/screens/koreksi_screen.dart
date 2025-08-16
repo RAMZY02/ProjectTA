@@ -21,10 +21,9 @@ class KoreksiScreen extends StatelessWidget {
       ),
       body: BlocBuilder<UjianBloc, UjianState>(
         builder: (context, ujianState){
-          if (authState is Authenticated &&
-              (ujianState is! UjianLoaded || ujianState.ujianList.isEmpty)) {
+          if (authState is Authenticated && ujianState is UjianInitial) {
             Future.microtask(() {
-              context.read<UjianBloc>().add(FetchUjian(token: authState.token));
+              context.read<UjianBloc>().add(FetchUjian2(token: authState.token));
             });
           }
 

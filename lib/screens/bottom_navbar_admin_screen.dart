@@ -3,7 +3,6 @@ import 'package:project_ta/screens/admin_kupon_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:project_ta/screens/master_screen.dart';
 import 'package:project_ta/screens/scan_barcode_screen.dart';
-import 'package:project_ta/screens/upload_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/auth/auth_bloc.dart';
@@ -32,7 +31,6 @@ class _BottomNavbarAdminState extends State<BottomNavbarAdminScreen> {
   static const List<Widget> _widgetOptions = <Widget>[
     MasterScreen(),
     AdminKuponScreen(),
-    UploadScreen(),
     ScanBarcodeScreen(),
   ];
 
@@ -55,7 +53,7 @@ class _BottomNavbarAdminState extends State<BottomNavbarAdminScreen> {
       },
       child: Scaffold(
         body: Center(
-          child: _selectedIndex == 4
+          child: _selectedIndex == 3
               ? Container() // Kosongkan karena logout akan diproses
               : _widgetOptions.elementAt(_selectedIndex),
         ),
@@ -81,11 +79,6 @@ class _BottomNavbarAdminState extends State<BottomNavbarAdminScreen> {
               label: "Kupon",
             ),
             BottomNavigationBarItem(
-              activeIcon: Icon(Icons.cloud_upload, color: Colors.blue),
-              icon: Icon(Icons.cloud_upload_outlined, color: Colors.grey),
-              label: "Upload",
-            ),
-            BottomNavigationBarItem(
               activeIcon: Icon(Icons.qr_code_scanner, color: Colors.blue),
               icon: Icon(Icons.qr_code_scanner_outlined, color: Colors.grey),
               label: "Scan",
@@ -98,7 +91,7 @@ class _BottomNavbarAdminState extends State<BottomNavbarAdminScreen> {
           ],
           currentIndex: _selectedIndex,
           onTap: (int index) {
-            if (index == 4) {
+            if (index == 3) {
               // Jika menekan tombol logout
               context.read<AuthBloc>().add(LogoutEvent());
             } else {

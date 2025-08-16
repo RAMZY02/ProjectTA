@@ -101,8 +101,6 @@ class HadiahBloc extends Bloc<HadiahEvent, HadiahState>{
         })
       );
 
-      final responseData = json.decode(response.body);
-
       if (response.statusCode == 200) {
         add(FetchHadiah(token: event.token));
       } else {
@@ -133,8 +131,6 @@ class HadiahBloc extends Bloc<HadiahEvent, HadiahState>{
         })
       );
 
-      final responseData = json.decode(response.body);
-
       if (response.statusCode == 200) {
         add(FetchHadiah(token: event.token));
       } else {
@@ -157,8 +153,6 @@ class HadiahBloc extends Bloc<HadiahEvent, HadiahState>{
           'Authorization': 'Bearer ${event.token}',
         },
       );
-
-      final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
         add(FetchHadiah(token: event.token));

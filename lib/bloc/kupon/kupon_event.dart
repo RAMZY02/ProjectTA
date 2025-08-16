@@ -2,7 +2,7 @@ import 'package:project_ta/models/hadiah_model.dart';
 
 abstract class KuponEvent{}
 
-class Initial extends KuponEvent {}
+class InitialKupon extends KuponEvent {}
 
 class FetchKupon extends KuponEvent{
   final String token;

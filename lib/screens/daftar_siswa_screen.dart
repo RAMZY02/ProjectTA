@@ -20,7 +20,7 @@ class DaftarSiswaScreen extends StatefulWidget {
 
 class _DaftarSiswaScreenState extends State<DaftarSiswaScreen> {
   String selectedClass = '7D';
-  final List<String> classes = ['7A', '7B', '7C', '7D', '7E', '7F', '7G', '7H', '7I', '7J'];
+  final List<String> classes = ['7D'];
 
   @override
   void initState() {
@@ -63,8 +63,7 @@ class _DaftarSiswaScreenState extends State<DaftarSiswaScreen> {
           // Student list
           BlocBuilder<UsersBloc, UsersState>(
             builder: (context, usersState){
-              if (authState is Authenticated &&
-                  (usersState is! UsersLoaded || usersState.users.isEmpty)) {
+              if (authState is Authenticated && usersState is UsersInitial) {
                 Future.microtask(() {
                   context.read<UsersBloc>().add(FetchUsersByKelas(token: authState.token, kelas: selectedClass));
                 });

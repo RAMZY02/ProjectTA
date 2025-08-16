@@ -2,13 +2,15 @@ class MengikutiUjianModel {
   final int id;
   final int idUser;
   final int idUjian;
-  final String status;
+  final String kehadiran;
+  final String selesai;
 
   MengikutiUjianModel({
     required this.id,
     required this.idUser,
     required this.idUjian,
-    required this.status,
+    required this.kehadiran,
+    required this.selesai,
   });
 
   factory MengikutiUjianModel.fromJson(Map<String, dynamic> json) {
@@ -16,7 +18,8 @@ class MengikutiUjianModel {
       id: json['id'],
       idUser: json['id_user'] ?? 0,
       idUjian: json['id_ujian'] ?? 0,
-      status: json['status'] ?? 'tidak hadir',
+      kehadiran: json['kehadiran'] ?? 'true',
+      selesai: json['selesai'] ?? 'false',
     );
   }
 
@@ -25,7 +28,8 @@ class MengikutiUjianModel {
       'id': id,
       'id_user': idUser,
       'id_ujian': idUjian,
-      'status': status,
+      'kehadiran': kehadiran,
+      'selesai': selesai,
     };
   }
 }

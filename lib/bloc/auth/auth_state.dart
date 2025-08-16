@@ -13,17 +13,19 @@ class Authenticated extends AuthState {
   final int id;
   final String username;
   final String kelas;
+  final String mapel;
   final String role;
+  final String nomor_ortu;
   final String token;
   final int poin;
   final String profpic;
   final String email;
   final DateTime timestamps;
 
-  Authenticated({required this.id, required this.username, required this.kelas, required this.role, required this.token, required this.poin, required this.profpic, required this.email, required this.timestamps});
+  Authenticated({required this.id, required this.username, required this.kelas, required this.mapel, required this.role, required this.nomor_ortu, required this.token, required this.poin, required this.profpic, required this.email, required this.timestamps});
 
   @override
-  List<Object> get props => [id, username, kelas, role, token, poin, profpic];
+  List<Object> get props => [id, username, kelas, mapel, role, token, poin, profpic];
 }
 
 class AuthError extends AuthState {

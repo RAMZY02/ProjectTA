@@ -97,61 +97,6 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
     _filePath = null;
   }
 
-  void _showMediaOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.image),
-                title: const Text('Tambah Gambar'),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _imagePath = 'path/to/image.jpg';
-                  });
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.audiotrack),
-                title: const Text('Tambah Audio'),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _audioPath = 'path/to/audio.mp3';
-                  });
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.videocam),
-                title: const Text('Tambah Video'),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _videoPath = 'path/to/video.mp4';
-                  });
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.insert_drive_file),
-                title: const Text('Tambah File'),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _filePath = 'path/to/file.pdf';
-                  });
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
@@ -162,10 +107,9 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
       body: SafeArea(
         child: BlocBuilder<SoalUjianBloc, SoalUjianState>(
           builder: (context, soalState){
-            if (authState is Authenticated &&
-                (soalState is! SoalUjianLoaded || soalState.soalList.isEmpty)) {
+            if (authState is Authenticated && soalState is SoalUjianInitial) {
               Future.microtask(() {
-                context.read<SoalUjianBloc>().add(FetchSoalUjian(token: authState.token, ujianId: widget.ujian.id));
+                context.read<SoalUjianBloc>().add(FetchSoalUjian2(token: authState.token, ujianId: widget.ujian.id));
               });
             }
 
@@ -180,6 +124,20 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
                     const SizedBox(height: 16),
                     // List of Added Questions
                     if (soalState.soalList.isNotEmpty) _buildQuestionList(soalState.soalList, authState),
+                  ],
+                ),
+              );
+            }
+            else if(soalState is SoalUjianNotFound){
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Question Form Card
+                    _buildQuestionForm(authState),
+                    const SizedBox(height: 16),
+                    Center(child: Text("Belum ada soal yang tersedia"))
                   ],
                 ),
               );
@@ -493,8 +451,7 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
           ],
             if (question.linkGambar != '-' ||
                 question.linkAudio != '-' ||
-                question.linkVideo != '-' ||
-                question.linkFile != '-') ...[
+                question.linkVideo != '-') ...[
               const SizedBox(height: 8),
               const Text('Lampiran:'),
               Wrap(
@@ -514,11 +471,6 @@ class _MembuatSoalScreenState extends State<MembuatSoalScreen> {
                     Chip(
                       label: const Text('Video'),
                       avatar: const Icon(Icons.videocam, size: 18),
-                    ),
-                  if (question.linkFile != '-')
-                    Chip(
-                      label: const Text('File'),
-                      avatar: const Icon(Icons.insert_drive_file, size: 18),
                     ),
                 ],
               ),

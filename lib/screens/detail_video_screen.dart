@@ -247,7 +247,7 @@ class _DetailVideoScreenState extends State<DetailVideoScreen> {
                                                 const Spacer(),
                                                 const Icon(Icons.timer, size: 16),
                                                 const SizedBox(width: 4),
-                                                Text(widget.video.durasi.toString().substring(0, 7)),
+                                                // Text(widget.video.durasi.toString().substring(0, 7)),
                                               ],
                                             ),
                                             const SizedBox(height: 24),

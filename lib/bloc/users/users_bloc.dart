@@ -11,6 +11,7 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
     on<Init>(_onInit);
     on<FetchUsers>(_onFetchUsers);
     on<FetchUsersByKelas>(_onFetchUsersByKelas);
+    on<LoadRapot>(_onLoadRapot);
     on<AddUsers>(_onAddUsers);
     on<UpdateUsers>(_onUpdateUsers);
     on<DeleteUsers>(_onDeleteUsers);
@@ -55,6 +56,37 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
     emit(UsersLoading());
     final url = Uri.parse(
         'https://flounder-moved-rooster.ngrok-free.app/api/users/kelas/${event.kelas}');
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${event.token}',
+        },
+      );
+
+      print("ini users");
+      print(response.body);
+      final List<dynamic> data = json.decode(response.body);
+      print(data);
+
+      if (response.statusCode == 200) {
+        final users = data.map((user) => UserModel.fromJson(user)).toList();
+        print(users);
+        emit(UsersLoaded(users: users));
+      } else {
+        emit(UsersError(message: 'Failed to load users'));
+      }
+    } catch (e) {
+      print(e);
+      emit(UsersError(message: 'Error: $e'));
+    }
+  }
+
+  Future<void> _onLoadRapot(LoadRapot event, Emitter<UsersState> emit) async {
+    emit(UsersLoading());
+    final url = Uri.parse(
+        'https://flounder-moved-rooster.ngrok-free.app/api/users/rapot/${event.kelas}/${event.mapel}');
     try {
       final response = await http.get(
         url,

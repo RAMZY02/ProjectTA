@@ -17,3 +17,9 @@ class VideoError extends VideoEdukasiState {
 
   VideoError({required this.message});
 }
+
+class VideoId extends VideoEdukasiState{
+  final int IdVideo;
+
+  VideoId({required this.IdVideo});
+}

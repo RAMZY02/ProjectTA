@@ -171,8 +171,9 @@ class InfoPenggunaScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: BlocBuilder<UserBloc, UserState>(
               builder: (context, userState){
-                if(authState is! Authenticated) return Text("Login Dulu");
-                else if(userState is UserLoaded){
+                if(authState is! Authenticated) {
+                  return Text("Login Dulu");
+                } else if(userState is UserLoaded){
                   return Column(
                     children: [
                       // Foto Profil Besar

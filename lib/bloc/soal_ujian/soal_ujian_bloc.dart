@@ -10,7 +10,8 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
   SoalUjianBloc() : super(SoalUjianInitial()) {
     on<InitSoalUjian>(_onInit);
     on<FetchSoalUjian>(_onFetchSoalUjian);
-    on<SubmitJawaban>(_onSubmitJawaban);
+    on<FetchSoalUjian2>(_onFetchSoalUjian2);
+    on<FetchSoalUjian3>(_onFetchSoalUjian3);
     on<AddSoal>(_onAddSoal);
     on<UpdateSoal>(_onUpdateSoal);
     on<DeleteSoal>(_onDeleteSoal);
@@ -18,6 +19,37 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
 
   Future<void> _onFetchSoalUjian(
     FetchSoalUjian event,
+    Emitter<SoalUjianState> emit,
+  ) async {
+    emit(SoalUjianLoading());
+    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/soal/${event.ujianId}/${event.userId}');
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${event.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        final soalList = data.map((soal) => SoalModel.fromJson(soal)).toList();
+        emit(SoalUjianLoaded(soalList: soalList));
+      }
+      else if(response.statusCode == 404){
+        emit(SoalUjianNotFound(message: "Belum Ada Soal Yang Terdaftar!"));
+      }
+      else {
+        emit(SoalUjianError(message: 'Gagal memuat soal ujian'));
+      }
+    } catch (e) {
+      emit(SoalUjianError(message: 'Error: $e'));
+    }
+  }
+
+  Future<void> _onFetchSoalUjian2(
+    FetchSoalUjian2 event,
     Emitter<SoalUjianState> emit,
   ) async {
     emit(SoalUjianLoading());
@@ -47,28 +79,31 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
     }
   }
 
-  Future<void> _onSubmitJawaban(
-      SubmitJawaban event,
+  Future<void> _onFetchSoalUjian3(
+      FetchSoalUjian3 event,
       Emitter<SoalUjianState> emit,
       ) async {
     emit(SoalUjianLoading());
-    final url = Uri.parse('http://192.168.1.26:3000/api/soal/${event.soalId}/submit');
-
+    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/soal/urutan/${event.ujianId}/${event.userId}');
     try {
-      final response = await http.post(
+      final response = await http.get(
         url,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${event.token}',
         },
-        body: json.encode({'jawaban': event.jawaban}),
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        emit(JawabanSubmitted(isCorrect: data['isCorrect']));
-      } else {
-        emit(SoalUjianError(message: 'Gagal submit jawaban'));
+        final List<dynamic> data = json.decode(response.body);
+        final soalList = data.map((soal) => SoalModel.fromJson(soal)).toList();
+        emit(SoalUjianLoaded(soalList: soalList));
+      }
+      else if(response.statusCode == 404){
+        emit(SoalUjianNotFound(message: "Belum Ada Soal Yang Terdaftar!"));
+      }
+      else {
+        emit(SoalUjianError(message: 'Gagal memuat soal ujian'));
       }
     } catch (e) {
       emit(SoalUjianError(message: 'Error: $e'));
@@ -111,7 +146,7 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
       );
 
       if (response.statusCode == 201) {
-        add(FetchSoalUjian(token: event.token, ujianId: int.parse(event.soalData['id_ujian'].toString())));
+        add(FetchSoalUjian2(token: event.token, ujianId: int.parse(event.soalData['id_ujian'].toString())));
       }
       else {
         emit(SoalUjianError(message: 'Gagal add soal ujian'));
@@ -153,7 +188,7 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
       );
 
       if (response.statusCode == 200) {
-        add(FetchSoalUjian(token: event.token, ujianId: int.parse(event.soalData['id_ujian'].toString())));
+        add(FetchSoalUjian2(token: event.token, ujianId: int.parse(event.soalData['id_ujian'].toString())));
       } else {
         emit(SoalUjianError(message: 'Gagal add soal ujian'));
       }
@@ -181,7 +216,7 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
       );
 
       if (response.statusCode == 200) {
-        add(FetchSoalUjian(token: event.token, ujianId: event.id));
+        add(FetchSoalUjian2(token: event.token, ujianId: event.id));
       } else {
         emit(SoalUjianError(message: 'Gagal add soal ujian'));
       }

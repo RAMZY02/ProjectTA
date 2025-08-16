@@ -2,14 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_state.dart';
-import '../bloc/history_video/history_video_bloc.dart';
-import '../bloc/history_video/history_video_event.dart';
 import '../bloc/video_edukasi/video_edukasi_bloc.dart';
 import '../bloc/video_edukasi/video_edukasi_event.dart';
 import '../bloc/video_edukasi/video_edukasi_state.dart';
 import '../models/video_edukasi_model.dart';
 import '../constants/color.dart';
-import 'detail_video_screen.dart';
 
 class DaftarVideoEdukasiScreen extends StatefulWidget {
   final String mapel;
@@ -76,11 +73,11 @@ class _DaftarVideoEdukasiScreenState extends State<DaftarVideoEdukasiScreen> {
       case 'Matematika':
         return const Color(0xFF1976D2);
       case 'IPA':
-        return const Color(0xFF4CAF50);
-      case 'Bahasa Inggris':
+        return const Color(0xFF800080);
+      case 'Bahasa Indonesia':
         return const Color(0xFFF44336);
       default:
-        return const Color(0xFF9C27B0);
+        return const Color(0xFFA52A2A);
     }
   }
 
@@ -90,10 +87,10 @@ class _DaftarVideoEdukasiScreenState extends State<DaftarVideoEdukasiScreen> {
         return Icons.calculate;
       case 'IPA':
         return Icons.science;
-      case 'Bahasa Inggris':
+      case 'Bahasa Indonesia':
         return Icons.language;
       default:
-        return Icons.school;
+        return Icons.computer;
     }
   }
 
@@ -202,8 +199,7 @@ class _DaftarVideoEdukasiScreenState extends State<DaftarVideoEdukasiScreen> {
                     return Center(child: Text(videoState.message));
                   }
 
-                  if (authState is Authenticated &&
-                      (videoState is! VideoLoaded || videoState.videos.isEmpty)) {
+                  if (authState is Authenticated && videoState is VideoInitial) {
                     Future.microtask(() {
                       context.read<VideoEdukasiBloc>().add(FetchVideos(token: authState.token, userId: authState.id));
                     });
@@ -227,6 +223,7 @@ class _DaftarVideoEdukasiScreenState extends State<DaftarVideoEdukasiScreen> {
                                   label: Text(_filterOptions[index]),
                                   selected: _selectedFilterIndex == index,
                                   selectedColor: mapelColor,
+                                  checkmarkColor: Colors.white,
                                   labelStyle: TextStyle(
                                     color: _selectedFilterIndex == index ? Colors.white : Colors.black,
                                   ),

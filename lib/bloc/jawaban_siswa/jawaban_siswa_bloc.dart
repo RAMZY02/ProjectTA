@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_ta/bloc/jawaban_siswa/jawaban_siswa_event.dart';
@@ -13,6 +12,7 @@ class JawabanSiswaBloc extends Bloc<JawabanSiswaEvent, JawabanSiswaState> {
     on<Initial>(onInitial);
     on<FetchJawabanSiswa>(onFetchJawabanSiswa);
     on<CreateJawabanSiswa>(onCreateJawabanSiswa);
+    on<UpdateJawabanSiswa>(onUpdateJawabanSiswa);
   }
 
   Future<void> onInitial(Initial event, Emitter<JawabanSiswaState> emit) async{
@@ -49,7 +49,7 @@ class JawabanSiswaBloc extends Bloc<JawabanSiswaEvent, JawabanSiswaState> {
   }
 
   Future<void> onCreateJawabanSiswa(CreateJawabanSiswa event, Emitter<JawabanSiswaState> emit) async{
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/kupon');
+    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/jawaban-siswa');
     try {
       final response = await http.post(
           url,
@@ -58,26 +58,62 @@ class JawabanSiswaBloc extends Bloc<JawabanSiswaEvent, JawabanSiswaState> {
             'Authorization': 'Bearer ${event.token}',
           },
           body: jsonEncode({
-            'id_hadiah' : event.hadiah.id,
-            'id_user' : event.userId,
-            'tipe' : event.hadiah.kategori
+            'id_ujian' : event.ujianId,
+            'id_soal' : event.soalId,
+            'urutan' : event.urutan,
+            'jawaban' : event.jawaban,
+            'nilai' : event.nilai
           })
       );
 
-      print('ini bodynya create kupon');
+      print('ini bodynya create jawaban siswa');
       print(response.body);
       final data = json.decode(response.body);
       print(data);
 
       if (response.statusCode == 201) {
-        final kupon = JawabanSiswaModel.fromJson(data);
-        print(kupon);
+        final jawabanSiswa = JawabanSiswaModel.fromJson(data);
+        print(jawabanSiswa);
         emit(JawabanSiswaInitial());
       } else {
-        emit(JawabanSiswaError(message: 'Failed to load kupons'));
+        emit(JawabanSiswaError(message: 'Failed to load jawaban siswa'));
       }
     } catch (e) {
-      print("ini errornya create kupon");
+      print("ini errornya create jawaban siswa");
+      print(e);
+      emit(JawabanSiswaError(message: 'Error: $e'));
+    }
+  }
+
+  Future<void> onUpdateJawabanSiswa(UpdateJawabanSiswa event, Emitter<JawabanSiswaState> emit) async{
+    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/jawaban-siswa/${event.userId}/${event.ujianId}/${event.soalId}');
+    try {
+      final response = await http.put(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ${event.token}',
+          },
+          body: jsonEncode({
+            'jawaban' : event.jawaban,
+            'nilai' : event.nilai
+          })
+      );
+
+      print('ini bodynya update jawaban siswa');
+      print(response.body);
+      final data = json.decode(response.body);
+      print(data);
+
+      if (response.statusCode == 201) {
+        final jawabanSiswa = JawabanSiswaModel.fromJson(data);
+        print(jawabanSiswa);
+        emit(JawabanSiswaInitial());
+      } else {
+        emit(JawabanSiswaError(message: 'Failed to load jawaban siswa'));
+      }
+    } catch (e) {
+      print("ini errornya create jawaban siswa");
       print(e);
       emit(JawabanSiswaError(message: 'Error: $e'));
     }

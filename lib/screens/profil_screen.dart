@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/history_ujian/history_ujian_bloc.dart';
 import 'package:project_ta/bloc/notifikasi/notifikasi_bloc.dart';
 import 'package:project_ta/bloc/notifikasi/notifikasi_event.dart';
-import 'package:project_ta/bloc/notifikasi/notifikasi_state.dart';
 import 'package:project_ta/bloc/user/user_bloc.dart';
 import 'package:project_ta/bloc/user/user_state.dart';
-import 'package:project_ta/bloc/video_edukasi/video_edukasi_bloc.dart';
-import 'package:project_ta/bloc/video_edukasi/video_edukasi_event.dart';
-import 'package:project_ta/bloc/video_edukasi/video_edukasi_state.dart';
-import 'package:project_ta/constants/color.dart';
 import 'package:project_ta/screens/info_pengguna_screen.dart';
 import 'package:project_ta/screens/login_screen.dart';
 import 'package:project_ta/screens/rapot_siswa_screen.dart';
@@ -19,6 +15,9 @@ import 'package:project_ta/screens/riwayat_video_screen.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_state.dart';
+import '../bloc/history_ujian/history_ujian_event.dart';
+import '../bloc/kupon/kupon_bloc.dart';
+import '../bloc/kupon/kupon_event.dart';
 import 'siswa_kupon_screen.dart';
 
 class ProfilScreen extends StatelessWidget {
@@ -246,6 +245,7 @@ class _ProfileMenu extends StatelessWidget {
                   ),
                 );
               } else if (menu['route'] == '/kupon') {
+                context.read<KuponBloc>().add(InitialKupon());
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -253,6 +253,7 @@ class _ProfileMenu extends StatelessWidget {
                   ),
                 );
               } else if (menu['route'] == '/riwayat-ujian') {
+                context.read<HistoryUjianBloc>().add((InitialHistoryUjian()));
                 Navigator.push(
                   context,
                   MaterialPageRoute(

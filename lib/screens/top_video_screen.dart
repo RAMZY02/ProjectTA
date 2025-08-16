@@ -5,12 +5,11 @@ import 'package:project_ta/models/video_edukasi_model.dart';
 import 'package:project_ta/screens/detail_video_screen.dart';
 import 'package:project_ta/widgets/video_thumbnail_grid_card.dart';
 
-import '../widgets/video_thumbnail_card.dart';
 
 class TopVideoScreen extends StatelessWidget {
   final List<VideoEdukasiModel> videos;
 
-  TopVideoScreen({super.key, required this.videos});
+  const TopVideoScreen({super.key, required this.videos});
 
   @override
   Widget build(BuildContext context) {

@@ -24,7 +24,7 @@ class HistoryUjianModel {
       idUser: json['id_user'],
       nilai: json['nilai'],
       timestamps: DateTime.parse(json['timpstamps']),
-      ujian: UjianModel.fromJson(json['ujian']),
+      ujian: UjianModel.fromJson2(json['ujian']),
     );
   }
 

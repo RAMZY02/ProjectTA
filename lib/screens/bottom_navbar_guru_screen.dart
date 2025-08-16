@@ -1,13 +1,18 @@
+import 'package:project_ta/bloc/history_ujian/history_ujian_bloc.dart';
 import 'package:project_ta/constants/color.dart';
 import 'package:flutter/material.dart';
 import 'package:project_ta/screens/koreksi_screen.dart';
 import 'package:project_ta/screens/rapot_guru_screen.dart';
 import 'package:project_ta/screens/soal_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/screens/video_edukasi_guru_screen.dart';
 
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_state.dart';
+import '../bloc/history_ujian/history_ujian_event.dart';
+import '../bloc/ujian/ujian_bloc.dart';
+import '../bloc/ujian/ujian_event.dart';
 import 'login_screen.dart';
 
 class BottomNavbarGuruScreen extends StatefulWidget {
@@ -30,6 +35,7 @@ class _BottomNavbarGuruScreenState extends State<BottomNavbarGuruScreen> {
 
   static const List<Widget> _widgetOptions = <Widget>[
     SoalScreen(),
+    VideoEdukasiGuruScreen(),
     RapotGuruScreen(),
     KoreksiScreen(),
   ];
@@ -53,7 +59,7 @@ class _BottomNavbarGuruScreenState extends State<BottomNavbarGuruScreen> {
       },
       child: Scaffold(
         body: Center(
-          child: _selectedIndex == 3
+          child: _selectedIndex == 4
               ? Container() // Kosongkan karena logout akan diproses
               : _widgetOptions.elementAt(_selectedIndex),
         ),
@@ -74,6 +80,11 @@ class _BottomNavbarGuruScreenState extends State<BottomNavbarGuruScreen> {
               label: "Soal",
             ),
             BottomNavigationBarItem(
+              activeIcon: Icon(Icons.video_library, color: Colors.blue),
+              icon: Icon(Icons.video_library_outlined, color: Colors.grey),
+              label: "Video Edukasi",
+            ),
+            BottomNavigationBarItem(
               activeIcon: Icon(Icons.assignment, color: Colors.blue),  // Lebih cocok untuk "Rapot"
               icon: Icon(Icons.assignment_outlined, color: Colors.grey),
               label: "Rapot",
@@ -91,11 +102,15 @@ class _BottomNavbarGuruScreenState extends State<BottomNavbarGuruScreen> {
           ],
           currentIndex: _selectedIndex,
           onTap: (int index) {
-            if (index == 3) {
+            if (index == 4) {
               // Jika menekan tombol logout
               context.read<AuthBloc>().add(LogoutEvent());
+              context.read<UjianBloc>().add(InitUjian());
+              context.read<HistoryUjianBloc>().add(InitialHistoryUjian());
             } else {
               setState(() {
+                context.read<UjianBloc>().add(InitUjian());
+                context.read<HistoryUjianBloc>().add(InitialHistoryUjian());
                 _selectedIndex = index;
               });
             }

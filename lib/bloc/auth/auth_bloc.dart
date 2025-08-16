@@ -1,7 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../../models/user_model.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
@@ -34,7 +33,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           id: userData['id'],
           username: userData['nama'],
           kelas : userData['kelas'],
+          mapel : userData['mapel'],
           role: userData['role'],
+          nomor_ortu: userData['nomor_ortu'],
           token: responseData['token'],
           poin: userData['poin'],
           profpic: userData['profpic'],

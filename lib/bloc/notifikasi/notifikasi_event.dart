@@ -8,7 +8,7 @@ abstract class NotifikasiEvent extends Equatable {
 class InitNotif extends NotifikasiEvent {}
 
 class FetchNotifikasi extends NotifikasiEvent {
-  String token;
+  final String token;
 
   FetchNotifikasi({required this.token});
 
@@ -17,8 +17,8 @@ class FetchNotifikasi extends NotifikasiEvent {
 }
 
 class MarkAsRead extends NotifikasiEvent {
-  int id;
-  String token;
+  final int id;
+  final String token;
 
   MarkAsRead({required this.id, required this.token});
 
@@ -27,7 +27,7 @@ class MarkAsRead extends NotifikasiEvent {
 }
 
 class MarkAllAsRead extends NotifikasiEvent {
-  String token;
+  final String token;
 
   MarkAllAsRead({required this.token});
 

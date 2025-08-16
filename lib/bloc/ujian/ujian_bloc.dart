@@ -10,6 +10,7 @@ class UjianBloc extends Bloc<UjianEvent, UjianState> {
   UjianBloc() : super(UjianInitial()) {
     on<InitUjian>(_onInitUjian);
     on<FetchUjian>(_onFetchUjian);
+    on<FetchUjian2>(_onFetchUjian2);
     on<AddUjian>(_onAddUjian);
     on<UpdateUjian>(_onUpdateUjian);
     on<DeleteUjian>(_onDeleteUjian);
@@ -20,6 +21,32 @@ class UjianBloc extends Bloc<UjianEvent, UjianState> {
   }
 
   Future<void> _onFetchUjian(FetchUjian event, Emitter<UjianState> emit) async {
+    emit(UjianLoading());
+    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/ujian/belum-selesai');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${event.token}',
+        },
+      );
+
+      final List<dynamic> data = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        final ujianList = data.map((ujian) => UjianModel.fromJson(ujian, event.userId)).toList();
+        emit(UjianLoaded(ujianList: ujianList));
+      } else {
+        emit(UjianError(message: 'Failed to load ujian data'));
+      }
+    } catch (e) {
+      emit(UjianError(message: 'Error: $e'));
+    }
+  }
+
+  Future<void> _onFetchUjian2(FetchUjian2 event, Emitter<UjianState> emit) async {
     emit(UjianLoading());
     final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/ujian');
 
@@ -35,7 +62,7 @@ class UjianBloc extends Bloc<UjianEvent, UjianState> {
       final List<dynamic> data = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        final ujianList = data.map((ujian) => UjianModel.fromJson(ujian)).toList();
+        final ujianList = data.map((ujian) => UjianModel.fromJson2(ujian)).toList();
         emit(UjianLoaded(ujianList: ujianList));
       } else {
         emit(UjianError(message: 'Failed to load ujian data'));
@@ -73,7 +100,7 @@ class UjianBloc extends Bloc<UjianEvent, UjianState> {
       print("ini add ujian");
 
       if (response.statusCode == 201) {
-        add(FetchUjian(token: event.token));
+        add(FetchUjian2(token: event.token));
       } else {
         print('ini errornya 2');
         emit(UjianError(message: 'Failed to load ujian data'));
@@ -112,7 +139,7 @@ class UjianBloc extends Bloc<UjianEvent, UjianState> {
       print("ini update ujian");
 
       if (response.statusCode == 200) {
-        add(FetchUjian(token: event.token));
+        add(FetchUjian2(token: event.token));
       } else {
         print('ini errornya 2');
         emit(UjianError(message: 'Failed to update ujian data'));
@@ -139,7 +166,7 @@ class UjianBloc extends Bloc<UjianEvent, UjianState> {
       print("ini delete ujian");
 
       if (response.statusCode == 200) {
-        add(FetchUjian(token: event.token));
+        add(FetchUjian2(token: event.token));
       } else {
         print('ini errornya 2');
         emit(UjianError(message: 'Failed to update ujian data'));

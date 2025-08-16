@@ -47,12 +47,17 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                 if(authState is! Authenticated){
                   return Text("Login Dulu min");
                 }
-                if (usersState is! UsersLoaded || usersState.users.isEmpty || usersState is UsersInitial) {
+                if (usersState is UsersInitial) {
                   Future.microtask(() {
                     context.read<UsersBloc>().add(FetchUsers(token: authState.token));
                   });
                 }
                 if(usersState is UsersLoaded){
+
+                  if(usersState.users.isEmpty){
+                    return Center(child: Text("Belum ada data tersedia"));
+                  }
+
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
@@ -62,6 +67,9 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                         DataColumn(label: Text('Email')),
                         DataColumn(label: Text('Role')),
                         DataColumn(label: Text('Kelas')),
+                        DataColumn(label: Text('Mata Pelajaran')),
+                        DataColumn(label: Text('Poin')),
+                        DataColumn(label: Text('Profil Picture')),
                         DataColumn(label: Text('Actions')),
                       ],
                       rows: usersState.users.map((user) {
@@ -72,6 +80,9 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                             DataCell(Text(user.email)),
                             DataCell(Text(user.role)),
                             DataCell(Text(user.kelas)),
+                            DataCell(Text(user.mapel)),
+                            DataCell(Text(user.poin.toString())),
+                            DataCell(Text(user.profpic)),
                             DataCell(
                               Row(
                                 children: [

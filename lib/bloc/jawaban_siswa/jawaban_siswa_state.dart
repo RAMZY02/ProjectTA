@@ -1,5 +1,4 @@
 import 'package:project_ta/models/jawaban_siswa_model.dart';
-import 'package:project_ta/models/kupon_model.dart';
 
 abstract class JawabanSiswaState {}
 

@@ -28,8 +28,8 @@ class _MasterSoalDanJawabanScreenState extends State<MasterSoalDanJawabanScreen>
     super.initState();
   }
 
-  void _deleteSoal(int id, int id_ujian, String token) {
-    context.read<SoalUjianBloc>().add(DeleteSoal(token: token, id: id, id_ujian: id_ujian));
+  void _deleteSoal(int id, int idUjian, String token) {
+    context.read<SoalUjianBloc>().add(DeleteSoal(token: token, id: id, id_ujian: idUjian));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Soal berhasil dihapus')),
     );
@@ -51,8 +51,8 @@ class _MasterSoalDanJawabanScreenState extends State<MasterSoalDanJawabanScreen>
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.add),
                 label: const Text('Tambah Soal'),
-                onPressed: () async {
-                  final result = await Navigator.push(
+                onPressed: () {
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => InsertSoalDanJawabanScreen(
@@ -70,9 +70,9 @@ class _MasterSoalDanJawabanScreenState extends State<MasterSoalDanJawabanScreen>
                   if(authState is! Authenticated){
                     return Text("Login Dulu min");
                   }
-                  if ((soalUjianState is! SoalUjianLoaded || soalUjianState.soalList.isEmpty || soalUjianState is SoalUjianInitial) && soalUjianState is! SoalUjianNotFound) {
+                  if (soalUjianState is SoalUjianInitial) {
                     Future.microtask(() {
-                      context.read<SoalUjianBloc>().add(FetchSoalUjian(token: authState.token, ujianId: widget.ujian.id));
+                      context.read<SoalUjianBloc>().add(FetchSoalUjian2(token: authState.token, ujianId: widget.ujian.id));
                     });
                   }
                   if(soalUjianState is SoalUjianLoaded){
@@ -94,7 +94,6 @@ class _MasterSoalDanJawabanScreenState extends State<MasterSoalDanJawabanScreen>
                             DataColumn(label: Text('Pembahasan')),
                             DataColumn(label: Text('Link Video')),
                             DataColumn(label: Text('Link Gambar')),
-                            DataColumn(label: Text('Link File')),
                             DataColumn(label: Text('Link Audio')),
                             DataColumn(label: Text('Actions')),
                           ],
@@ -122,10 +121,9 @@ class _MasterSoalDanJawabanScreenState extends State<MasterSoalDanJawabanScreen>
                                     child: Text(soal.pembahasan),
                                   ),
                                 ),
-                                DataCell(Text(soal.linkVideo != null && soal.linkVideo != '-' ? soal.linkVideo : '-')),
-                                DataCell(Text(soal.linkGambar != null && soal.linkGambar != '-' ? soal.linkGambar : '-')),
-                                DataCell(Text(soal.linkFile != null && soal.linkFile != '-' ? soal.linkFile : '-')),
-                                DataCell(Text(soal.linkAudio != null && soal.linkAudio != '-' ? soal.linkAudio : '-')),
+                                DataCell(Text(soal.linkVideo != '-' ? soal.linkVideo : '-')),
+                                DataCell(Text(soal.linkGambar != '-' ? soal.linkGambar : '-')),
+                                DataCell(Text(soal.linkAudio != '-' ? soal.linkAudio : '-')),
                                 DataCell(
                                   Row(
                                     children: [
@@ -167,7 +165,7 @@ class _MasterSoalDanJawabanScreenState extends State<MasterSoalDanJawabanScreen>
                     );
                   }
                   else if(soalUjianState is SoalUjianNotFound){
-                    return Center(child: Text(soalUjianState.message));
+                    return Center(child: Text("Belum ada data tersedia"));
                   }
                   else{
                     return CircularProgressIndicator();

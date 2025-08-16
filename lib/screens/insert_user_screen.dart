@@ -28,6 +28,7 @@ class _InsertUserScreenState extends State<InsertUserScreen> {
   late TextEditingController _passwordController;
   late TextEditingController _roleController;
   late TextEditingController _kelasController;
+  late TextEditingController _mapelController;
 
   @override
   void initState() {
@@ -46,6 +47,9 @@ class _InsertUserScreenState extends State<InsertUserScreen> {
     );
     _kelasController = TextEditingController(
       text: widget.userData?.kelas ?? '',
+    );
+    _mapelController = TextEditingController(
+      text: widget.userData?.mapel ?? '',
     );
   }
 
@@ -107,6 +111,37 @@ class _InsertUserScreenState extends State<InsertUserScreen> {
                     return null;
                   },
                 ),
+              // TextField Kelas akan muncul/hilang otomatis
+              if(_roleController.text == "siswa")
+                const SizedBox(height: 16),
+              Visibility(
+                visible: _roleController.text == 'siswa',
+                child: TextFormField(
+                  controller: _kelasController,
+                  decoration: InputDecoration(
+                    labelText: 'Kelas',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    _kelasController.text = value;
+                  },
+                ),
+              ),
+              if(_roleController.text == "guru")
+                const SizedBox(height: 16),
+              Visibility(
+                visible: _roleController.text == 'guru',
+                child: TextFormField(
+                  controller: _mapelController,
+                  decoration: InputDecoration(
+                    labelText: 'Mata Pelajaran',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    _mapelController.text = value;
+                  },
+                ),
+              ),
               if(!widget.isEdit)
                 const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -127,21 +162,6 @@ class _InsertUserScreenState extends State<InsertUserScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Role',
                   border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // TextField Kelas akan muncul/hilang otomatis
-              Visibility(
-                visible: _roleController.text == 'siswa',
-                child: TextFormField(
-                  controller: _kelasController,
-                  decoration: InputDecoration(
-                    labelText: 'Kelas',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
-                    _kelasController.text = value;
-                  },
                 ),
               ),
               const SizedBox(height: 24),

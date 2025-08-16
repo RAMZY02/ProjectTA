@@ -2,9 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_ta/bloc/hadiah/hadiah_bloc.dart';
 import 'package:project_ta/bloc/ujian/ujian_bloc.dart';
 import 'package:project_ta/bloc/ujian/ujian_event.dart';
-import 'package:project_ta/bloc/user/user_bloc.dart';
-import 'package:project_ta/bloc/user/user_event.dart';
-import 'package:project_ta/bloc/user/user_state.dart';
 import 'package:project_ta/constants/color.dart';
 import 'package:project_ta/screens/hadiah_screen.dart';
 import 'package:project_ta/screens/home_screen.dart';
@@ -16,12 +13,11 @@ import 'package:project_ta/screens/video_edukasi_screen.dart';
 import '../bloc/hadiah/hadiah_event.dart';
 import '../bloc/video_edukasi/video_edukasi_bloc.dart';
 import '../bloc/video_edukasi/video_edukasi_event.dart';
-import 'login_screen.dart';
 
 class BottomNavbarSiswaScreen extends StatefulWidget {
   final int initialIndex; // Tambahkan parameter ini
 
-  const BottomNavbarSiswaScreen({Key? key, this.initialIndex = 0}) : super(key: key);
+  const BottomNavbarSiswaScreen({super.key, this.initialIndex = 0});
 
   @override
   _BottomNavbarSiswaState createState() => _BottomNavbarSiswaState();

@@ -38,8 +38,8 @@ class _MasterCommentsScreenState extends State<MasterCommentsScreen> {
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.add),
                 label: const Text('Tambah Komentar'),
-                onPressed: () async {
-                  final result = await Navigator.push(
+                onPressed: () {
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const InsertCommentScreen(),
@@ -56,13 +56,15 @@ class _MasterCommentsScreenState extends State<MasterCommentsScreen> {
                   if(authState is! Authenticated){
                     return Text("Login Dulu min");
                   }
-                  if (commentState is! CommentsLoaded || commentState.comments.isEmpty || commentState
-                  is CommentsInitial) {
+                  if (commentState is CommentsInitial) {
                     Future.microtask(() {
                       context.read<CommentsBloc>().add(FetchAllComments(token: authState.token));
                     });
                   }
                   if(commentState is CommentsLoaded){
+                    if(commentState.comments.isEmpty){
+                      return Center(child: Text("Belum ada data tersedia"));
+                    }
                     return SingleChildScrollView(
                       scrollDirection: Axis.vertical,
                       child: SingleChildScrollView(
@@ -100,8 +102,8 @@ class _MasterCommentsScreenState extends State<MasterCommentsScreen> {
                                     children: [
                                       IconButton(
                                         icon: const Icon(Icons.edit, color: Colors.blue),
-                                        onPressed: () async {
-                                          final result = await Navigator.push(
+                                        onPressed: () {
+                                          Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) => InsertCommentScreen(

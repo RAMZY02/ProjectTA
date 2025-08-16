@@ -9,8 +9,8 @@ abstract class VideoEdukasiEvent extends Equatable {
 class Init extends VideoEdukasiEvent {}
 
 class FetchVideos extends VideoEdukasiEvent {
-  String token;
-  int userId;
+  final String token;
+  final int userId;
 
   FetchVideos({required this.token, required this.userId});
 
@@ -18,11 +18,20 @@ class FetchVideos extends VideoEdukasiEvent {
   List<Object> get props => [token, userId];
 }
 
+class LastId extends VideoEdukasiEvent {
+  final String token;
+
+  LastId({required this.token});
+
+  @override
+  List<Object> get props => [token];
+}
+
 class LikeVideo extends VideoEdukasiEvent {
-  String token;
-  int userId;
-  int videoId;
-  List<VideoEdukasiModel> videos;
+  final String token;
+  final int userId;
+  final int videoId;
+  final List<VideoEdukasiModel> videos;
 
   LikeVideo({required this.token, required this.userId, required this.videoId, required this.videos});
 
@@ -31,10 +40,10 @@ class LikeVideo extends VideoEdukasiEvent {
 }
 
 class UnlikeVideo extends VideoEdukasiEvent {
-  String token;
-  int userId;
-  int videoId;
-  List<VideoEdukasiModel> videos;
+  final String token;
+  final int userId;
+  final int videoId;
+  final List<VideoEdukasiModel> videos;
 
   UnlikeVideo({required this.token, required this.userId, required this.videoId, required this.videos});
 
@@ -43,9 +52,9 @@ class UnlikeVideo extends VideoEdukasiEvent {
 }
 
 class AddVideo extends VideoEdukasiEvent {
-  String token;
-  int idUser;
-  Map<String, Object> videoEdukasi;
+  final String token;
+  final int idUser;
+  final Map<String, Object> videoEdukasi;
 
   AddVideo({required this.token, required this.idUser, required this.videoEdukasi});
 
@@ -54,10 +63,10 @@ class AddVideo extends VideoEdukasiEvent {
 }
 
 class UpdateVideo extends VideoEdukasiEvent {
-  String token;
-  int idUser;
-  int idVideo;
-  Map<String, Object> videoEdukasi;
+  final String token;
+  final int idUser;
+  final int idVideo;
+  final Map<String, Object> videoEdukasi;
 
   UpdateVideo({required this.token, required this.idVideo, required this.idUser, required this.videoEdukasi});
 
@@ -66,9 +75,9 @@ class UpdateVideo extends VideoEdukasiEvent {
 }
 
 class DeleteVideo extends VideoEdukasiEvent {
-  String token;
-  int idUser;
-  int idVideo;
+  final String token;
+  final int idUser;
+  final int idVideo;
 
   DeleteVideo({required this.token, required this.idVideo, required this.idUser});
 

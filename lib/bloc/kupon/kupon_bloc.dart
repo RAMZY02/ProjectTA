@@ -9,14 +9,14 @@ import 'package:http/http.dart' as http;
 
 class KuponBloc extends Bloc<KuponEvent, KuponState> {
   KuponBloc() : super(KuponInitial()) {
-    on<Initial>(onInitial);
+    on<InitialKupon>(onInitial);
     on<FetchKupon>(onFetchKupon);
     on<FetchAllKupon>(onFetchAllKupon);
     on<ClaimKupon>(onClaimKupon);
     on<CreateKupon>(onCreateKupon);
   }
 
-  Future<void> onInitial(Initial event, Emitter<KuponState> emit) async{
+  Future<void> onInitial(InitialKupon event, Emitter<KuponState> emit) async{
     emit(KuponInitial());
   }
 

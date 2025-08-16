@@ -1,35 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:project_ta/constants/color.dart';
-import 'package:project_ta/screens/daftar_video_edukasi_screen.dart';
-import 'package:project_ta/screens/detail_ujian_screen.dart';
 
 class VideoEdukasiScreen extends StatelessWidget {
   const VideoEdukasiScreen({super.key});
 
   // Fungsi untuk mendapatkan icon berdasarkan mata pelajaran
   IconData _getSubjectIcon(String title) {
-    if (title.contains('Matematika')) return Icons.calculate;
+    if (title.contains('Bahasa Indonesia')) return Icons.language;
     if (title.contains('IPA')) return Icons.science;
-    if (title.contains('Bahasa')) return Icons.language;
-    if (title.contains('IPS')) return Icons.public;
+    if (title.contains('Matematika')) return Icons.calculate;
+    if (title.contains('TIK')) return Icons.computer;
     return Icons.menu_book; // Default
   }
 
   // Fungsi untuk mendapatkan warna icon
   Color _getSubjectColor(String title) {
+    if (title.contains('Bahasa Indonesia')) return Colors.red;
+    if (title.contains('IPA')) return Colors.purple;
     if (title.contains('Matematika')) return Colors.blue;
-    if (title.contains('IPA')) return Colors.green;
-    if (title.contains('Bahasa')) return Colors.purple;
-    if (title.contains('IPS')) return Colors.brown;
+    if (title.contains('TIK')) return Colors.brown;
     return Colors.grey; // Default
   }
 
   final List<String> mata_pelajaran = const [
-    'Matematika',
+    'Bahasa Indonesia',
     'IPA',
-    'Bahasa',
-    'IPS'
+    'Matematika',
+    'TIK'
   ];
 
   @override

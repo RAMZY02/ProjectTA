@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:project_ta/constants/color.dart';
 import 'package:project_ta/models/video_edukasi_model.dart';
 import 'package:project_ta/screens/detail_video_screen.dart';
-import 'package:project_ta/widgets/list_rekomendasi.dart';
 import 'package:project_ta/widgets/list_semua_rekomendasi.dart';
 
 class RekomendasiVideoScreen extends StatelessWidget {

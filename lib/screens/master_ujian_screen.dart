@@ -65,12 +65,16 @@ class _MasterUJianScreenState extends State<MasterUJianScreen> {
                 if(authState is! Authenticated){
                   return Text("Login Dulu min");
                 }
-                if (ujianState is! UjianLoaded || ujianState.ujianList.isEmpty || ujianState is UjianInitial) {
+                if (ujianState is UjianInitial) {
                   Future.microtask(() {
-                    context.read<UjianBloc>().add(FetchUjian(token: authState.token));
+                    context.read<UjianBloc>().add(FetchUjian2(token: authState.token));
                   });
                 }
                 if(ujianState is UjianLoaded){
+
+                  if(ujianState.ujianList.isEmpty){
+                    return Center(child: Text("Belum ada data tersedia"));
+                  }
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(

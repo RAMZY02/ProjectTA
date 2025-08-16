@@ -17,21 +17,19 @@ class SoalScreen extends StatelessWidget {
 
   // Fungsi untuk mendapatkan icon berdasarkan mata pelajaran
   IconData _getSubjectIcon(String title) {
-    if (title.contains('Matematika')) return Icons.calculate;
+    if (title.contains('Bahasa Indonesia')) return Icons.language;
     if (title.contains('IPA')) return Icons.science;
-    if (title.contains('Bahasa')) return Icons.language;
-    if (title.contains('Sejarah')) return Icons.history;
-    if (title.contains('IPS')) return Icons.public;
+    if (title.contains('Matematika')) return Icons.calculate;
+    if (title.contains('TIK')) return Icons.computer;
     return Icons.menu_book; // Default
   }
 
   // Fungsi untuk mendapatkan warna icon
   Color _getSubjectColor(String title) {
+    if (title.contains('Bahasa Indonesia')) return Colors.red;
+    if (title.contains('IPA')) return Colors.purple;
     if (title.contains('Matematika')) return Colors.blue;
-    if (title.contains('IPA')) return Colors.green;
-    if (title.contains('Bahasa')) return Colors.purple;
-    if (title.contains('Sejarah')) return Colors.orange;
-    if (title.contains('IPS')) return Colors.brown;
+    if (title.contains('TIK')) return Colors.brown;
     return Colors.grey; // Default
   }
 
@@ -48,6 +46,7 @@ class SoalScreen extends StatelessWidget {
             fontSize: 18,
           ),
         ),
+        automaticallyImplyLeading: false,
         centerTitle: true,
         backgroundColor: kPrimaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -58,10 +57,9 @@ class SoalScreen extends StatelessWidget {
       ),
       body: BlocBuilder<UjianBloc, UjianState>(
         builder: (context, ujianState){
-          if (authState is Authenticated &&
-              (ujianState is! UjianLoaded || ujianState.ujianList.isEmpty)) {
+          if (authState is Authenticated && ujianState is UjianInitial) {
             Future.microtask(() {
-              context.read<UjianBloc>().add(FetchUjian(token: authState.token));
+              context.read<UjianBloc>().add(FetchUjian2(token: authState.token));
             });
           }
 

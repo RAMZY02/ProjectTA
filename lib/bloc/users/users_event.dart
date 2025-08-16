@@ -8,7 +8,7 @@ abstract class UsersEvent extends Equatable {
 class Init extends UsersEvent {}
 
 class FetchUsers extends UsersEvent {
-  String token;
+  final String token;
 
   FetchUsers({required this.token});
 
@@ -17,8 +17,8 @@ class FetchUsers extends UsersEvent {
 }
 
 class FetchUsersByKelas extends UsersEvent {
-  String token;
-  String kelas;
+  final String token;
+  final String kelas;
 
   FetchUsersByKelas({required this.token, required this.kelas});
 
@@ -26,13 +26,21 @@ class FetchUsersByKelas extends UsersEvent {
   List<Object> get props => [token, kelas];
 }
 
+class LoadRapot extends UsersEvent{
+  final String token;
+  final String kelas;
+  final String mapel;
+
+  LoadRapot({required this.token, required this.kelas, required this.mapel});
+}
+
 class AddUsers extends UsersEvent {
-  String token;
-  String nama;
-  String email;
-  String password;
-  String role;
-  String kelas;
+  final String token;
+  final String nama;
+  final String email;
+  final String password;
+  final String role;
+  final String kelas;
 
   AddUsers({required this.token, required this.nama, required this.email, required this.password, required this.role, required this.kelas });
 
@@ -41,12 +49,12 @@ class AddUsers extends UsersEvent {
 }
 
 class UpdateUsers extends UsersEvent {
-  String token;
-  int id_user;
-  String nama;
-  String email;
-  String role;
-  String kelas;
+  final String token;
+  final int id_user;
+  final String nama;
+  final String email;
+  final String role;
+  final String kelas;
 
   UpdateUsers({required this.token, required this.id_user, required this.nama, required this.email, required this.role, required this.kelas });
 
@@ -55,8 +63,8 @@ class UpdateUsers extends UsersEvent {
 }
 
 class DeleteUsers extends UsersEvent {
-  String token;
-  int id_user;
+  final String token;
+  final int id_user;
 
   DeleteUsers({required this.token, required this.id_user});
 

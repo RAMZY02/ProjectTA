@@ -11,26 +11,33 @@ class InitSoalUjian extends SoalUjianEvent {}
 class FetchSoalUjian extends SoalUjianEvent {
   final String token;
   final int ujianId;
+  final int userId;
 
-  FetchSoalUjian({required this.token, required this.ujianId});
+  FetchSoalUjian({required this.token, required this.ujianId, required this.userId});
 
   @override
   List<Object> get props => [token, ujianId];
 }
 
-class SubmitJawaban extends SoalUjianEvent {
+class FetchSoalUjian2 extends SoalUjianEvent {
   final String token;
-  final String soalId;
-  final String jawaban;
+  final int ujianId;
 
-  SubmitJawaban({
-    required this.token,
-    required this.soalId,
-    required this.jawaban,
-  });
+  FetchSoalUjian2({required this.token, required this.ujianId});
 
   @override
-  List<Object> get props => [token, soalId, jawaban];
+  List<Object> get props => [token, ujianId];
+}
+
+class FetchSoalUjian3 extends SoalUjianEvent {
+  final String token;
+  final int ujianId;
+  final int userId;
+
+  FetchSoalUjian3({required this.token, required this.ujianId, required this.userId});
+
+  @override
+  List<Object> get props => [token, ujianId];
 }
 
 class AddSoal extends SoalUjianEvent {

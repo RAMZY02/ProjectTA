@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,23 +19,15 @@ class DetailUjianScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    // 1. Dapatkan token dari state auth
-    final token = context.select<AuthBloc, String>((authBloc) {
-      if (authBloc.state is Authenticated) {
-        return (authBloc.state as Authenticated).token;
-      }
-      return '';
-    });
-
-    // 2. Trigger fetch soal ujian
-    context.read<SoalUjianBloc>().add(
-      FetchSoalUjian(
-        token: token,
-        ujianId: ujian.id, // Pastikan Anda memiliki akses ke object ujian
-      ),
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.immersiveSticky,
+      overlays: []
     );
 
+    final authState = context.read<AuthBloc>().state;
+
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
         title: Text(
           "Detail Ujian",
@@ -64,43 +57,48 @@ class DetailUjianScreen extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Center(
-                            child: Text(
-                              ujian.nama,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: kPrimaryColor,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minWidth: double.infinity, // Ini yang membuat lebar sama
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Text(
+                                ujian.nama,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: kPrimaryColor,
+                                ),
                               ),
                             ),
-                          ),
-                          const Divider(height: 24, thickness: 1),
-                          _buildDetailRow(Icons.calendar_today, 'Tanggal', _formatDate(ujian.tanggal)),
-                          _buildDetailRow(Icons.access_time, 'Waktu', '${formatTimeOfDay(ujian.mulai)} - ${formatTimeOfDay(ujian.selesai)}'),
-                          _buildDetailRow(Icons.timer, 'Durasi', ujian.durasi.toString().substring(0, 7)),
-                          _buildDetailRow(Icons.person, 'Pengajar', ujian.guru),
-                          _buildDetailRow(Icons.format_list_numbered, 'Jumlah Soal', '${ujian.jumlahSoal} soal'),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Deskripsi:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                            const Divider(height: 24, thickness: 1),
+                            _buildDetailRow(Icons.calendar_today, 'Tanggal', _formatDate(ujian.tanggal)),
+                            _buildDetailRow(Icons.access_time, 'Waktu', '${formatTimeOfDay(ujian.mulai)} - ${formatTimeOfDay(ujian.selesai)}'),
+                            _buildDetailRow(Icons.timer, 'Durasi', ujian.durasi.toString().substring(0, 7)),
+                            _buildDetailRow(Icons.person, 'Pengajar', ujian.guru),
+                            _buildDetailRow(Icons.format_list_numbered, 'Jumlah Soal', '${ujian.jumlahSoal} soal'),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Deskripsi:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            ujian.deskripsi,
-                            style: const TextStyle(
-                              fontSize: 14,
+                            const SizedBox(height: 4),
+                            Text(
+                              ujian.deskripsi,
+                              style: const TextStyle(
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -110,29 +108,34 @@ class DetailUjianScreen extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Petunjuk Ujian:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minWidth: double.infinity, // Sama dengan Card pertama
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Petunjuk Ujian:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 8),
-                          Text('1. Baca soal dengan teliti', style: TextStyle(fontSize: 14)),
-                          Text('2. Waktu ujian tidak dapat dihentikan', style: TextStyle(fontSize: 14)),
-                          Text('3. Jawaban tidak dapat diubah setelah dikirim', style: TextStyle(fontSize: 14)),
-                          Text('4. Dilarang bekerja sama dengan peserta lain', style: TextStyle(fontSize: 14)),
-                        ],
+                            SizedBox(height: 8),
+                            Text('1. Baca soal dengan teliti', style: TextStyle(fontSize: 14)),
+                            Text('2. Waktu ujian tidak dapat dihentikan', style: TextStyle(fontSize: 14)),
+                            Text('3. Jawaban tidak dapat diubah setelah dikirim', style: TextStyle(fontSize: 14)),
+                            Text('4. Dilarang bekerja sama dengan peserta lain', style: TextStyle(fontSize: 14)),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ],
-              ),
+              )
             ),
           ),
           Container(
@@ -146,12 +149,56 @@ class DetailUjianScreen extends StatelessWidget {
                 ),
               ),
               onPressed: () {
-                // 3. Navigasi ke halaman soal
-                Navigator.pushNamed(
-                  context,
-                  '/soal-ujian',
-                  arguments: ujian,
-                );
+                // 1. Cek apakah user sudah terautentikasi
+                if (authState is! Authenticated) {
+                  return; // atau tampilkan snackbar error
+                }
+
+                // 2. Dapatkan waktu dan tanggal sekarang
+                final now = DateTime.now();
+                final currentDate = DateTime(now.year, now.month, now.day);
+                final currentTime = TimeOfDay.fromDateTime(now);
+
+                // 3. Parse tanggal dan waktu ujian
+                final ujianDate = ujian.tanggal; // Asumsi ini adalah DateTime
+                final ujianTime = ujian.mulai;   // Asumsi ini adalah TimeOfDay
+
+                // 4. Bandingkan tanggal dan waktu
+                final isSameDate = currentDate.year == ujianDate.year &&
+                    currentDate.month == ujianDate.month &&
+                    currentDate.day == ujianDate.day;
+
+                final isTimeValid = currentTime.hour > ujianTime.hour ||
+                    (currentTime.hour == ujianTime.hour &&
+                        currentTime.minute >= ujianTime.minute);
+
+                // 5. Logika pengecekan
+                if (!isSameDate) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Ujian belum dimulai, tanggal ujian: ${_formatDate(ujian.tanggal)}')),
+                  );
+                } else if (!isTimeValid) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Ujian belum dimulai, waktu ujian: ${ujian.mulai.format(context)}')),
+                  );
+                } else {
+
+                    // Jika semua kondisi terpenuhi, lanjutkan ke halaman soal
+                    // context.read<MengikutiUjianBloc>().add(
+                    //   CreateMengikutiUjian(
+                    //     token: authState.token,
+                    //     userId: authState.id,
+                    //     ujianId: ujian.id,
+                    //   ),
+                    // );
+                    context.read<SoalUjianBloc>().add(InitSoalUjian());
+                    Navigator.pushNamed(
+                      context,
+                      '/soal-ujian',
+                      arguments: ujian,
+                    );
+
+                }
               },
               child: const Text(
                 'MULAI UJIAN',

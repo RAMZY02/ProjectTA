@@ -14,6 +14,8 @@ class UjianModel {
   final String deskripsi;
   final int id_guru;
   final String guru;
+  final List<dynamic> userDone;
+  final bool isDone;
 
   UjianModel({
     required this.id,
@@ -29,9 +31,11 @@ class UjianModel {
     required this.deskripsi,
     required this.id_guru,
     required this.guru,
+    required this.userDone,
+    this.isDone = false,
   });
 
-  factory UjianModel.fromJson(Map<String, dynamic> json) {
+  factory UjianModel.fromJson(Map<String, dynamic> json, int currentUserId) {
     return UjianModel(
       id: json['id'],
       nama: json['nama'],
@@ -46,6 +50,27 @@ class UjianModel {
       deskripsi: json['deskripsi'],
       id_guru: json['id_guru'],
       guru: json['guru'] ?? '',
+      userDone: json['userDone'] ?? [],
+      isDone: (json['userDone'] as List<dynamic>).contains(currentUserId),
+    );
+  }
+
+  factory UjianModel.fromJson2(Map<String, dynamic> json) {
+    return UjianModel(
+      id: json['id'],
+      nama: json['nama'],
+      mapel: json['mapel'],
+      tipe_soal: json['tipe_soal'],
+      tipe_ujian: json['tipe_ujian'],
+      durasi: _parseDuration(json['durasi']),
+      tanggal: DateTime.parse(json['tanggal']),
+      mulai: _parseTime(json['mulai']),
+      selesai: _parseTime(json['selesai']),
+      jumlahSoal: json['jumlah_soal'],
+      deskripsi: json['deskripsi'],
+      id_guru: json['id_guru'],
+      guru: json['guru'] ?? '',
+      userDone: json['userDone'] ?? []
     );
   }
 
@@ -64,6 +89,8 @@ class UjianModel {
       'deskripsi': deskripsi,
       'id_guru': id_guru,
       'guru': guru,
+      'userDone': userDone,
+      'isDone': isDone,
     };
   }
 

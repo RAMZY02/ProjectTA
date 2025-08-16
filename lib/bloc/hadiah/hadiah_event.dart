@@ -9,28 +9,28 @@ abstract class HadiahEvent extends Equatable {
 class Inits extends HadiahEvent {}
 
 class FetchHadiah extends HadiahEvent {
-  String token;
+  final String token;
 
   FetchHadiah({required this.token});
 }
 
 class TukarHadiah extends HadiahEvent{
-  String token;
-  int userId;
-  int hadiahId;
-  List<HadiahModel> hadiah;
+  final String token;
+  final int userId;
+  final int hadiahId;
+  final List<HadiahModel> hadiah;
 
   TukarHadiah({required this.token, required this.userId, required this.hadiahId, required this.hadiah});
 }
 
 class AddHadiah extends HadiahEvent {
-  String token;
-  String nama;
-  int poin;
-  int stok;
-  String linkGambar;
-  String kategori;
-  String keyStatus;
+  final String token;
+  final String nama;
+  final int poin;
+  final int stok;
+  final String linkGambar;
+  final String kategori;
+  final String keyStatus;
 
   AddHadiah({
     required this.token,
@@ -44,14 +44,14 @@ class AddHadiah extends HadiahEvent {
 }
 
 class UpdateHadiah extends HadiahEvent {
-  String token;
-  int hadiahId;
-  String? nama;
-  int? poin;
-  int? stok;
-  String? linkGambar;
-  String? kategori;
-  String? keyStatus;
+  final String token;
+  final int hadiahId;
+  final String? nama;
+  final int? poin;
+  final int? stok;
+  final String? linkGambar;
+  final String? kategori;
+  final String? keyStatus;
 
   UpdateHadiah({
     required this.token,
@@ -66,8 +66,8 @@ class UpdateHadiah extends HadiahEvent {
 }
 
 class DeleteHadiah extends HadiahEvent {
-  String token;
-  int hadiahId; // Corresponds to req.params.id
+  final String token;
+  final int hadiahId; // Corresponds to req.params.id
 
   DeleteHadiah({
     required this.token,

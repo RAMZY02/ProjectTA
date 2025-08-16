@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/cloudflare/cloudflare_bloc.dart';
 import 'package:project_ta/bloc/comments/comments_bloc.dart';
 import 'package:project_ta/bloc/hadiah/hadiah_bloc.dart';
 import 'package:project_ta/bloc/history_ujian/history_ujian_bloc.dart';
 import 'package:project_ta/bloc/history_video/history_video_bloc.dart';
 import 'package:project_ta/bloc/jawaban_siswa/jawaban_siswa_bloc.dart';
 import 'package:project_ta/bloc/kupon/kupon_bloc.dart';
+import 'package:project_ta/bloc/mengikuti_ujian/mengikuti_ujian_bloc.dart';
 import 'package:project_ta/bloc/notifikasi/notifikasi_bloc.dart';
 import 'package:project_ta/bloc/soal_ujian/soal_ujian_bloc.dart';
 import 'package:project_ta/bloc/ujian/ujian_bloc.dart';
@@ -13,6 +15,7 @@ import 'package:project_ta/bloc/user/user_bloc.dart';
 import 'package:project_ta/bloc/users/users_bloc.dart';
 import 'package:project_ta/bloc/video_edukasi/video_edukasi_bloc.dart';
 import 'package:project_ta/models/video_edukasi_model.dart';
+import 'package:project_ta/screens/daftar_video_edukasi_guru_screen.dart';
 import 'package:project_ta/screens/daftar_video_edukasi_screen.dart';
 import 'package:project_ta/screens/detail_ujian_screen.dart';
 import 'package:project_ta/screens/detail_video_screen.dart';
@@ -21,6 +24,7 @@ import 'package:project_ta/screens/notifikasi_screen.dart';
 import 'package:project_ta/screens/soal_ujian_screen.dart';
 import 'package:project_ta/screens/ujian_screen.dart';
 import 'package:project_ta/screens/video_edukasi_screen.dart';
+import 'bloc/WA/WA_bloc.dart';
 import 'models/ujian_model.dart';
 import 'screens/login_screen.dart';
 import 'bloc/auth/auth_bloc.dart';
@@ -50,6 +54,9 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (context) => HistoryVideoBloc()),
         BlocProvider(create: (context) => UsersBloc()),
         BlocProvider(create: (context) => JawabanSiswaBloc()),
+        BlocProvider(create: (context) => MengikutiUjianBloc()),
+        BlocProvider(create: (context) => WaBloc()),
+        BlocProvider(create: (context) => CloudflareBloc()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -68,7 +75,7 @@ class MyApp extends StatelessWidget {
           "/soal-ujian" : (context) {
             final ujian = ModalRoute.of(context)!.settings.arguments as UjianModel;
             return SoalUjianScreen(
-              ujianId: ujian.id,
+              ujian: ujian,
               durationMinutes: ujian.durasi,
             );
           },
@@ -76,6 +83,12 @@ class MyApp extends StatelessWidget {
           "/daftar-video" : (context) {
             final mapel = ModalRoute.of(context)!.settings.arguments as String;
             return DaftarVideoEdukasiScreen(
+                mapel: mapel
+            );
+          } ,
+          "/daftar-video-guru" : (context) {
+            final mapel = ModalRoute.of(context)!.settings.arguments as String;
+            return DaftarVideoEdukasiGuruScreen(
                 mapel: mapel
             );
           } ,

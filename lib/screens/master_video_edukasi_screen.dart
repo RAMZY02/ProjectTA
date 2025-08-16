@@ -39,11 +39,11 @@ class _MasterVideoEdukasiScreenState extends State<MasterVideoEdukasiScreen> {
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.add),
                 label: const Text('Tambah Video'),
-                onPressed: () async {
-                  final result = await Navigator.push(
+                onPressed: () {
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const InsertVideoEdukasiScreen(),
+                      builder: (context) => InsertVideoEdukasiScreen(),
                     ),
                   );
                 },
@@ -57,13 +57,15 @@ class _MasterVideoEdukasiScreenState extends State<MasterVideoEdukasiScreen> {
                   if(authState is! Authenticated){
                     return Text("Login Dulu min");
                   }
-                  if (videoState is! VideoLoaded || videoState.videos.isEmpty || videoState
-                  is VideoInitial) {
+                  if (videoState is VideoInitial) {
                     Future.microtask(() {
                       context.read<VideoEdukasiBloc>().add(FetchVideos(token: authState.token, userId: authState.id));
                     });
                   }
                   if(videoState is VideoLoaded){
+                    if(videoState.videos.isEmpty){
+                      return Center(child: Text("Belum ada data tersedia"));
+                    }
                     return SingleChildScrollView(
                       scrollDirection: Axis.vertical,
                       child: SingleChildScrollView(
@@ -72,6 +74,7 @@ class _MasterVideoEdukasiScreenState extends State<MasterVideoEdukasiScreen> {
                           columnSpacing: 20,
                           columns: const [
                             DataColumn(label: Text('ID')),
+                            DataColumn(label: Text('ID User')),
                             DataColumn(label: Text('Judul')),
                             DataColumn(label: Text('Mata Pelajaran')),
                             DataColumn(label: Text('Kelas')),
@@ -79,13 +82,13 @@ class _MasterVideoEdukasiScreenState extends State<MasterVideoEdukasiScreen> {
                             DataColumn(label: Text('Likes'), numeric: true),
                             DataColumn(label: Text('Link Video')),
                             DataColumn(label: Text('Deskripsi')),
-                            DataColumn(label: Text('Durasi')),
                             DataColumn(label: Text('Aksi')),
                           ],
                           rows: videoState.videos.map((video) {
                             return DataRow(
                               cells: [
                                 DataCell(Text(video.id.toString())),
+                                DataCell(Text(video.id_user.toString())),
                                 DataCell(
                                   ConstrainedBox(
                                     constraints: const BoxConstraints(maxWidth: 200),
@@ -101,14 +104,13 @@ class _MasterVideoEdukasiScreenState extends State<MasterVideoEdukasiScreen> {
                                 DataCell(Text(video.likes.toString())),
                                 DataCell(Text(video.link_video.toString())),
                                 DataCell(Text(video.deskripsi)),
-                                DataCell(Text(video.durasi.toString())),
                                 DataCell(
                                   Row(
                                     children: [
                                       IconButton(
                                         icon: const Icon(Icons.edit, color: Colors.blue),
-                                        onPressed: () async {
-                                          final result = await Navigator.push(
+                                        onPressed: () {
+                                          Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) => InsertVideoEdukasiScreen(
@@ -133,7 +135,7 @@ class _MasterVideoEdukasiScreenState extends State<MasterVideoEdukasiScreen> {
                     );
                   }
                   else {
-                    return CircularProgressIndicator();
+                    return Center(child: CircularProgressIndicator());
                   }
                 }
               )

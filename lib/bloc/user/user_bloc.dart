@@ -19,7 +19,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   }
 
   Future<void> onLoadUser(LoadUser event, Emitter<UserState> emit) async{
-    emit(UserLoaded(id: event.id, username: event.username, kelas: event.kelas.toString(), role: event.role, token: event.token, poin: event.poin, profpic: event.profpic, email: event.email, timestamps: event.timestamps));
+    emit(UserLoaded(id: event.id, username: event.username, kelas: event.kelas.toString(), role: event.role, nomor_ortu: event.nomor_ortu, mapel: event.mapel, token: event.token, poin: event.poin, profpic: event.profpic, email: event.email, timestamps: event.timestamps));
   }
   
   Future<void> onUpdatePoin (UpdatePoin event, Emitter<UserState> emit) async{
@@ -49,6 +49,8 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           username: data['nama'],
           kelas : data['kelas'].toString().substring(0, 1),
           role: data['role'],
+          mapel: data['mapel'],
+          nomor_ortu: data['nomor'],
           token: event.token,
           poin: data['poin'],
           profpic: data['profpic'],
@@ -90,6 +92,8 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           username: data['nama'],
           kelas : data['kelas'].toString().substring(0, 1),
           role: data['role'],
+          mapel: data['mapel'],
+          nomor_ortu: data['nomor_ortu'],
           token: event.token,
           poin: data['poin'],
           profpic: data['profpic'],
@@ -132,6 +136,8 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           username: data['nama'],
           kelas : data['kelas'].toString().substring(0, 1),
           role: data['role'],
+          mapel: data['mapel'],
+          nomor_ortu: data['nomor_ortu'],
           token: event.token,
           poin: data['poin'],
           profpic: data['profpic'],
