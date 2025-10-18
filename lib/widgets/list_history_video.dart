@@ -24,18 +24,22 @@ class ListHistoryVideo extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             ClipRRect(
+              borderRadius: BorderRadius.circular(12),
               child: Image.network(
-                "https://picsum.photos/850/650?random=2",
-                width: 110,
+                video.thumbnail != '-' && video.thumbnail.isNotEmpty
+                    ? video.thumbnail
+                    : "https://dummy-url.com", // URL dummy untuk memicu error
                 height: 140,
+                width: 110,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    Container(
-                      width: 110,
-                      height: 140,
-                      color: Colors.grey,
-                      child: Icon(Icons.error),
-                    ),
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.asset(
+                    "assets/icons/default-course.png",
+                    height: 140,
+                    width: 110,
+                    fit: BoxFit.cover,
+                  );
+                },
               ),
             ),
             const SizedBox(width: 10),
@@ -54,7 +58,7 @@ class ListHistoryVideo extends StatelessWidget {
                 SizedBox(
                   width: 220,
                   child: Text(
-                    '${video.mata_pelajaran} • Kelas ${video.kelas}',
+                    '${video.mapel} • Kelas ${video.kelas}',
                     style: TextStyle(fontSize: 10, color: kPrimaryColor),
                     maxLines: 2,
                   ),

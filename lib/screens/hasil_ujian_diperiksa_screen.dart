@@ -29,37 +29,39 @@ class HasilUjianDiperiksaScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Text(
-                      'Status Ujian',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
-                    Icon(
-                      Icons.hourglass_top,
-                      size: 48,
-                      color: Colors.orange,
-                    ),
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text(
-                        'Ujian akan diperiksa terlebih dahulu, hasil akan muncul pada history ujian setelah guru anda selesai memeriksa ujian anda',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
+            Center(
+              child: Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Status Ujian',
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                      const SizedBox(height: 16),
+                      Icon(
+                        Icons.hourglass_top,
+                        size: 48,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text(
+                          'Ujian akan diperiksa terlebih dahulu, hasil akan muncul pada history ujian setelah guru anda selesai memeriksa ujian anda',
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
                 ),
               ),
             ),

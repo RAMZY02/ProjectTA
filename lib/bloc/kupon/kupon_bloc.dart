@@ -8,6 +8,10 @@ import 'kupon_state.dart';
 import 'package:http/http.dart' as http;
 
 class KuponBloc extends Bloc<KuponEvent, KuponState> {
+
+  // final baseUrl = 'http://localhost:3000';
+  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+
   KuponBloc() : super(KuponInitial()) {
     on<InitialKupon>(onInitial);
     on<FetchKupon>(onFetchKupon);
@@ -22,7 +26,7 @@ class KuponBloc extends Bloc<KuponEvent, KuponState> {
 
   Future<void> onFetchKupon(FetchKupon event, Emitter<KuponState> emit) async{
     emit(KuponLoading());
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/kupon/${event.userId}');
+    final url = Uri.parse('$baseUrl/api/kupon/${event.userId}');
     try {
       final response = await http.get(
         url,
@@ -51,7 +55,7 @@ class KuponBloc extends Bloc<KuponEvent, KuponState> {
 
   Future<void> onFetchAllKupon(FetchAllKupon event, Emitter<KuponState> emit) async{
     emit(KuponLoading());
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/kupon');
+    final url = Uri.parse('$baseUrl/api/kupon');
     try {
       final response = await http.get(
         url,
@@ -80,7 +84,7 @@ class KuponBloc extends Bloc<KuponEvent, KuponState> {
 
   Future<void> onClaimKupon(ClaimKupon event, Emitter<KuponState> emit) async{
     emit(KuponLoading());
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/kupon/claim/${event.idKupon}');
+    final url = Uri.parse('$baseUrl/api/kupon/claim/${event.idKupon}');
     try {
       final response = await http.put(
         url,
@@ -106,7 +110,7 @@ class KuponBloc extends Bloc<KuponEvent, KuponState> {
   }
 
   Future<void> onCreateKupon(CreateKupon event, Emitter<KuponState> emit) async{
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/kupon');
+    final url = Uri.parse('$baseUrl/api/kupon');
     String randomString = generateRandomString();
     try {
       final response = await http.post(

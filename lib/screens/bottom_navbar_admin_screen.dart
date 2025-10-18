@@ -1,13 +1,20 @@
+import 'package:project_ta/bloc/kupon/kupon_bloc.dart';
+import 'package:project_ta/bloc/users/users_bloc.dart';
+import 'package:project_ta/bloc/users/users_event.dart';
 import 'package:project_ta/constants/color.dart';
 import 'package:project_ta/screens/admin_kupon_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:project_ta/screens/master_screen.dart';
+import 'package:project_ta/screens/profil_admin_screen.dart';
 import 'package:project_ta/screens/scan_barcode_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/screens/siswa_screen.dart';
+import 'package:project_ta/screens/tahun_pelajaran_screen.dart';
 
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_state.dart';
+import '../bloc/kupon/kupon_event.dart';
 import 'login_screen.dart';
 
 class BottomNavbarAdminScreen extends StatefulWidget {
@@ -30,8 +37,10 @@ class _BottomNavbarAdminState extends State<BottomNavbarAdminScreen> {
 
   static const List<Widget> _widgetOptions = <Widget>[
     MasterScreen(),
-    AdminKuponScreen(),
+    SiswaScreen(),
+    TahunPelajaranScreen(),
     ScanBarcodeScreen(),
+    ProfilAdminScreen(),
   ];
 
   @override
@@ -53,9 +62,7 @@ class _BottomNavbarAdminState extends State<BottomNavbarAdminScreen> {
       },
       child: Scaffold(
         body: Center(
-          child: _selectedIndex == 3
-              ? Container() // Kosongkan karena logout akan diproses
-              : _widgetOptions.elementAt(_selectedIndex),
+          child: _widgetOptions.elementAt(_selectedIndex),
         ),
         bottomNavigationBar: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
@@ -74,9 +81,14 @@ class _BottomNavbarAdminState extends State<BottomNavbarAdminScreen> {
               label: "Master",
             ),
             BottomNavigationBarItem(
-              activeIcon: Icon(Icons.card_giftcard, color: Colors.blue),
-              icon: Icon(Icons.card_giftcard_outlined, color: Colors.grey),
-              label: "Kupon",
+              activeIcon: Icon(Icons.account_box, color: Colors.blue),
+              icon: Icon(Icons.account_box_outlined, color: Colors.grey),
+              label: "Naik Kelas",
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.calendar_month, color: Colors.blue),
+              icon: Icon(Icons.calendar_month_outlined, color: Colors.grey),
+              label: "Tahun Ajar",
             ),
             BottomNavigationBarItem(
               activeIcon: Icon(Icons.qr_code_scanner, color: Colors.blue),
@@ -84,21 +96,18 @@ class _BottomNavbarAdminState extends State<BottomNavbarAdminScreen> {
               label: "Scan",
             ),
             BottomNavigationBarItem(
-              activeIcon: Icon(Icons.exit_to_app, color: Colors.blue),
-              icon: Icon(Icons.exit_to_app_outlined, color: Colors.grey),
-              label: "Logout",
+              activeIcon: Icon(Icons.person, color: Colors.blue),
+              icon: Icon(Icons.person_outline, color: Colors.grey),
+              label: "Profil",
             ),
           ],
           currentIndex: _selectedIndex,
           onTap: (int index) {
-            if (index == 3) {
-              // Jika menekan tombol logout
-              context.read<AuthBloc>().add(LogoutEvent());
-            } else {
-              setState(() {
-                _selectedIndex = index;
-              });
-            }
+            context.read<UsersBloc>().add(Init());
+            context.read<KuponBloc>().add(InitialKupon());
+            setState(() {
+              _selectedIndex = index;
+            });
           },
         ),
       ),

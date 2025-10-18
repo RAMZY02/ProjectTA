@@ -1,7 +1,12 @@
+import 'dart:ui';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_ta/bloc/auth/auth_state.dart';
+import 'package:project_ta/bloc/ujian/ujian_bloc.dart';
+import 'package:project_ta/bloc/ujian/ujian_state.dart';
 import 'package:project_ta/bloc/user/user_bloc.dart';
 import 'package:project_ta/bloc/user/user_state.dart';
 import 'package:project_ta/constants/color.dart';
@@ -51,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.black.withOpacity(0.2),
@@ -63,9 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Container(
             height: 178,
             width: double.infinity,
-            decoration: const BoxDecoration(
-                color: kPrimaryColor
-            ),
+            decoration: const BoxDecoration(color: kPrimaryColor),
             child: Column(
               children: [
                 Padding(
@@ -76,9 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Text(
                         "Halo,\n${_getGreeting()}",
-                        style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.white
+                        style: const TextStyle(
+                          fontSize: 20,
+                          color: Colors.white,
                         ),
                       ),
                       Container(
@@ -100,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Container(
@@ -109,12 +113,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.2),
                         blurRadius: 10,
-                        offset: Offset(0, 4),
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
@@ -123,174 +130,227 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 30,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
-                        color: kPrimaryColor
+                      borderRadius: const BorderRadius.all(Radius.circular(10)),
+                      color: kPrimaryColor,
                     ),
                     child: Row(
                       children: [
                         BlocBuilder<UserBloc, UserState>(
-                          builder: (context, state){
-                            if(state is UserLoaded && authState is Authenticated){
+                          builder: (context, state) {
+                            if (state is UserLoaded && authState is Authenticated) {
                               return Text(
                                 state.username,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 18,
                                   color: Colors.white,
                                 ),
                               );
+                            } else {
+                              return const SizedBox.shrink();
                             }
-                            else{
-                              return Text('');
-                            }
-                          }
-                        )
+                          },
+                        ),
                       ],
-                    )
-                  )
+                    ),
+                  ),
                 ),
               ],
             ),
-          )
+          ),
         ),
-          body: BlocBuilder<UserBloc, UserState>(
-            builder: (context, userState) {
-              return BlocBuilder<VideoEdukasiBloc, VideoEdukasiState>(
-                builder: (context, videoState) {
-                  // Handle loading/error states first
-                  if (videoState is VideoLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+        body: BlocConsumer<UjianBloc, UjianState>(
+          listener: (context, ujianState) {
+            // Listen untuk state UjianBerlangsung dan navigasi
+            if (ujianState is UjianBerlangsung) {
+              print('masuk ke soal ujian');
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.pushNamed(
+                  context,
+                  '/soal-ujian',
+                  arguments: {
+                    'ujian': ujianState.ujian,
+                    'melanjutkan': true,
+                  },
+                );
+              });
+            }
+          },
+          builder: (context, ujianState) {
+            // Tampilkan loading indicator jika ujian sedang loading
+            if (ujianState is UjianLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-                  if (videoState is VideoError) {
-                    return Center(child: Text(videoState.message));
-                  }
+            // Jika tidak ada ujian berlangsung, tampilkan konten normal
+            return BlocBuilder<UserBloc, UserState>(
+              builder: (context, userState) {
+                return BlocBuilder<VideoEdukasiBloc, VideoEdukasiState>(
+                  builder: (context, videoState) {
+                    // Handle loading state
+                    if (videoState is VideoLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                  // Init fetch videos when authenticated
-                  if (authState is Authenticated && userState is UserLoaded && videoState is VideoInitial) {
-                    Future.microtask(() {
-                      context.read<VideoEdukasiBloc>().add(FetchVideos(token: userState.token, userId: userState.id));
-                    });
-                  }
+                    // Handle error state
+                    if (videoState is VideoError) {
+                      return Center(child: Text(videoState.message));
+                    }
 
-                  // Main content when videos are loaded
-                  if (videoState is VideoLoaded) {
-                    final allVideos = videoState.videos;
+                    // Fetch videos when authenticated
+                    if (authState is Authenticated &&
+                        userState is UserLoaded && videoState is VideoInitial ) {
+                      Future.microtask(() {
+                        context.read<VideoEdukasiBloc>().add(
+                          FetchVideos(
+                              token: userState.token,
+                              userId: userState.id
+                          ),
+                        );
+                      });
+                    }
 
-                    // Filter rekomendasi videos
-                    final rekomendasiVideos = authState is Authenticated && userState is UserLoaded
-                        ? (allVideos
-                        .where((video) => video.kelas == userState.kelas.substring(0, 1))
-                        .toList()
-                      ..sort((a, b) => b.likes.compareTo(a.likes)))
-                        : [];
+                    // Handle loaded state
+                    if (videoState is VideoLoaded) {
+                      final allVideos = videoState.videos;
 
-                    // Get top videos
-                    final sortedVideos = List<VideoEdukasiModel>.from(allVideos);
-                    sortedVideos.sort((a, b) => b.likes.compareTo(a.likes));
-                    final topVideos = sortedVideos.take(4).toList();
+                      // Filter rekomendasi videos
+                      List<VideoEdukasiModel> rekomendasiVideos = [];
+                      if (authState is Authenticated && userState is UserLoaded) {
+                        rekomendasiVideos = allVideos
+                            .where((video) => video.kelas == userState.kelas.substring(0, 1))
+                            .toList();
+                        rekomendasiVideos.sort((a, b) => b.likes.compareTo(a.likes));
+                      }
 
-                    return SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          // Top Video Section
-                          Padding(
-                            padding: const EdgeInsets.only(top: 10, left: 10, right: 5),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  "Top Video Edukasi",
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => TopVideoScreen(videos: allVideos),
+                      // Get top videos
+                      final sortedVideos = List<VideoEdukasiModel>.from(allVideos);
+                      sortedVideos.sort((a, b) => b.likes.compareTo(a.likes));
+                      final topVideos = sortedVideos.take(10).toList();
+
+                      return SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            // Top Video Section
+                            Padding(
+                              padding: const EdgeInsets.only(top: 10, left: 10, right: 5),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    "Top Video Edukasi",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold
                                     ),
                                   ),
-                                  child: const Text("Lihat Semua"),
-                                ),
-                              ],
+                                  TextButton(
+                                    onPressed: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => TopVideoScreen(videos: allVideos),
+                                      ),
+                                    ),
+                                    child: const Text("Lihat Semua"),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
 
-                          // Top Videos List
-                          SizedBox(
-                            height: 275,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: topVideos.length,
-                              itemBuilder: (context, index) => VideoThumbnailCard(
-                                video: topVideos[index],
+                            // Top Videos List
+                            SizedBox(
+                              height: 275,
+                              child: ScrollConfiguration(
+                                behavior: ScrollConfiguration.of(context).copyWith(
+                                  dragDevices: {
+                                    // Memungkinkan mouse secondary button untuk scroll
+                                    PointerDeviceKind.touch,
+                                    PointerDeviceKind.mouse,
+                                    PointerDeviceKind.stylus,
+                                    PointerDeviceKind.invertedStylus,
+                                  },
+                                ),
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: topVideos.length,
+                                  dragStartBehavior: DragStartBehavior.start,
+                                  itemBuilder: (context, index) => VideoThumbnailCard(
+                                    video: topVideos[index],
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => DetailVideoScreen(
+                                          video: topVideos[index],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // Rekomendasi Section
+                            Padding(
+                              padding: const EdgeInsets.only(top: 5, left: 10, right: 5),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    "Rekomendasi Lainnya",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      if (authState is Authenticated && userState is UserLoaded) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => RekomendasiVideoScreen(
+                                              videos: allVideos,
+                                              userKelas: userState.kelas,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: const Text("Lihat Semua"),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Rekomendasi List
+                            Column(
+                              children: rekomendasiVideos
+                                  .take(5)
+                                  .map((video) => ListRekomendasi(
+                                video: video,
                                 onTap: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => DetailVideoScreen(
-                                      video: topVideos[index],
+                                      video: video,
                                     ),
                                   ),
                                 ),
-                              ),
+                              ))
+                                  .toList(),
                             ),
-                          ),
+                          ],
+                        ),
+                      );
+                    }
 
-                          // Rekomendasi Section
-                          Padding(
-                            padding: const EdgeInsets.only(top: 5, left: 10, right: 5),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  "Rekomendasi Lainnya",
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    if (authState is Authenticated && userState is UserLoaded) {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => RekomendasiVideoScreen(
-                                            videos: allVideos,
-                                            userKelas: userState.kelas,
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  child: const Text("Lihat Semua"),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Rekomendasi List
-                          Column(
-                            children: rekomendasiVideos
-                                .take(5)
-                                .map((video) => ListRekomendasi(
-                              video: video,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => DetailVideoScreen(
-                                    video: video,
-                                  ),
-                                ),
-                              ),
-                            ))
-                                .toList(),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  return const Center(child: Text("Tidak ada data"));
-                },
-              );
-            },
-          )
+                    // Default return when no videos are loaded
+                    return const Center(child: Text("Tidak ada data video"));
+                  },
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }

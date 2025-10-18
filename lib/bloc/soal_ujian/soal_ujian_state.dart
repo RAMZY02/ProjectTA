@@ -30,3 +30,36 @@ class SoalUjianError extends SoalUjianState {
 
   SoalUjianError({required this.message});
 }
+
+// Tambahkan state-state AI
+class SoalUjianAILoading extends SoalUjianState {
+  @override
+  List<Object> get props => [];
+}
+
+class SoalUjianAILoaded extends SoalUjianState {
+  final List<SoalModel> aiSoalList;
+
+  SoalUjianAILoaded(this.aiSoalList);
+
+  @override
+  List<Object> get props => [aiSoalList];
+}
+
+class SoalUjianAIError extends SoalUjianState {
+  final String message;
+
+  SoalUjianAIError(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
+
+class SoalUjianSuccess extends SoalUjianState {
+  final String message;
+
+  SoalUjianSuccess(this.message);
+
+  @override
+  List<Object> get props => [message];
+}

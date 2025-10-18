@@ -76,59 +76,56 @@ class _AudioPreviewWidgetState extends State<AudioPreviewWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          children: [
-            Row(
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.audiotrack, size: 30),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Audio Soal',
+                  style: TextStyle(fontSize: 14),
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                  size: 30,
+                ),
+                onPressed: _togglePlayPause,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Progress bar
+          Slider(
+            min: 0,
+            max: _duration.inSeconds.toDouble(),
+            value: _position.inSeconds.toDouble(),
+            onChanged: (value) async {
+              final position = Duration(seconds: value.toInt());
+              await _audioPlayer.seek(position);
+            },
+          ),
+          // Time indicators
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Icon(Icons.audiotrack, size: 30),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Audio Soal',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                    size: 30,
-                  ),
-                  onPressed: _togglePlayPause,
-                ),
+                Text(_formatDuration(_position)),
+                Text(_formatDuration(_duration - _position)),
               ],
             ),
-            const SizedBox(height: 8),
-            // Progress bar
-            Slider(
-              min: 0,
-              max: _duration.inSeconds.toDouble(),
-              value: _position.inSeconds.toDouble(),
-              onChanged: (value) async {
-                final position = Duration(seconds: value.toInt());
-                await _audioPlayer.seek(position);
-              },
-            ),
-            // Time indicators
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(_formatDuration(_position)),
-                  Text(_formatDuration(_duration - _position)),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

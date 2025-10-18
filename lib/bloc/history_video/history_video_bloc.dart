@@ -7,16 +7,25 @@ import 'history_video_event.dart';
 import 'history_video_state.dart'; // Pastikan model HistoryVideo sudah dibuat
 
 class HistoryVideoBloc extends Bloc<HistoryVideoEvent, HistoryVideoState> {
+
+  // final baseUrl = 'http://localhost:3000';
+  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+
   HistoryVideoBloc() : super(HistoryVideoInitial()) {
+    on<InitialHistoryVideo>(_onInitialHistoryVideo);
     on<FetchHistoryVideo>(_onFetchHistoryVideo);
     on<CreateHistoryVideo>(_onCreateHistoryVideo);
+  }
+
+  Future<void> _onInitialHistoryVideo(InitialHistoryVideo event, Emitter<HistoryVideoState> emit) async {
+    emit(HistoryVideoInitial());
   }
 
   Future<void> _onFetchHistoryVideo(FetchHistoryVideo event, Emitter<HistoryVideoState> emit) async {
     emit(HistoryVideoLoading());
     try {
       final url = Uri.parse(
-          'https://flounder-moved-rooster.ngrok-free.app/api/history-video/user/${event.userId}');
+          '$baseUrl/api/history-video/user/${event.userId}');
       final response = await http.get(
         url,
         headers: {
@@ -50,7 +59,7 @@ class HistoryVideoBloc extends Bloc<HistoryVideoEvent, HistoryVideoState> {
     emit(HistoryVideoLoading());
     try {
       final url = Uri.parse(
-          'https://flounder-moved-rooster.ngrok-free.app/api/history-video');
+          '$baseUrl/api/history-video');
       final response = await http.post(
         url,
         headers: {

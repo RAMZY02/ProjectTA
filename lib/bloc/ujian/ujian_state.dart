@@ -18,3 +18,9 @@ class UjianError extends UjianState {
 
   UjianError({required this.message});
 }
+
+class UjianBerlangsung extends UjianState {
+  final UjianModel ujian;
+
+  UjianBerlangsung({required this.ujian});
+}

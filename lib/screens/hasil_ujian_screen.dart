@@ -8,6 +8,8 @@ import 'package:project_ta/bloc/auth/auth_state.dart';
 import 'package:project_ta/models/ujian_model.dart';
 import 'package:project_ta/screens/bottom_navbar_siswa_screen.dart';
 
+import '../bloc/history_ujian/history_ujian_bloc.dart';
+import '../bloc/history_ujian/history_ujian_event.dart';
 import '../bloc/ujian/ujian_bloc.dart';
 import '../bloc/ujian/ujian_event.dart';
 import '../constants/color.dart';
@@ -34,6 +36,7 @@ class HasilUjianScreen extends StatelessWidget {
     if(authState is Authenticated){
       final pesan =  'Nilai ${ujian.tipe_ujian} Mata Pelajaran ${ujian.mapel} anak Anda yang bernama ${authState.username} adalah $pilihanGandaScore';
       context.read<WaBloc>().add(SendMessage(pesan: pesan, tujuan: authState.nomor_ortu, token: authState.token));
+      context.read<HistoryUjianBloc>().add(UpdateHistoryUjian(token: authState.token, userId: authState.id, ujianId: ujian.id, kehadiran: 'true', selesai: 'true', nilai: pilihanGandaScore.toInt(), diperiksa: 'true'));
     }
     return Scaffold(
       appBar: AppBar(

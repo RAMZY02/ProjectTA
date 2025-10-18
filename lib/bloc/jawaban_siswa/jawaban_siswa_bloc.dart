@@ -8,6 +8,10 @@ import 'package:http/http.dart' as http;
 import '../../models/jawaban_siswa_model.dart';
 
 class JawabanSiswaBloc extends Bloc<JawabanSiswaEvent, JawabanSiswaState> {
+
+  // final baseUrl = 'http://localhost:3000';
+  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+
   JawabanSiswaBloc() : super(JawabanSiswaInitial()) {
     on<Initial>(onInitial);
     on<FetchJawabanSiswa>(onFetchJawabanSiswa);
@@ -21,7 +25,7 @@ class JawabanSiswaBloc extends Bloc<JawabanSiswaEvent, JawabanSiswaState> {
 
   Future<void> onFetchJawabanSiswa(FetchJawabanSiswa event, Emitter<JawabanSiswaState> emit) async{
     emit(JawabanSiswaLoading());
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/jawaban-siswa/${event.userId}/${event.ujianId}/${event.soalId}');
+    final url = Uri.parse('$baseUrl/api/jawaban-siswa/${event.userId}/${event.ujianId}/${event.soalId}');
     try {
       final response = await http.get(
         url,
@@ -49,7 +53,7 @@ class JawabanSiswaBloc extends Bloc<JawabanSiswaEvent, JawabanSiswaState> {
   }
 
   Future<void> onCreateJawabanSiswa(CreateJawabanSiswa event, Emitter<JawabanSiswaState> emit) async{
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/jawaban-siswa');
+    final url = Uri.parse('$baseUrl/api/jawaban-siswa');
     try {
       final response = await http.post(
           url,
@@ -86,7 +90,7 @@ class JawabanSiswaBloc extends Bloc<JawabanSiswaEvent, JawabanSiswaState> {
   }
 
   Future<void> onUpdateJawabanSiswa(UpdateJawabanSiswa event, Emitter<JawabanSiswaState> emit) async{
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/jawaban-siswa/${event.userId}/${event.ujianId}/${event.soalId}');
+    final url = Uri.parse('$baseUrl/api/jawaban-siswa/${event.userId}/${event.ujianId}/${event.soalId}');
     try {
       final response = await http.put(
           url,

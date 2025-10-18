@@ -6,6 +6,10 @@ import 'package:project_ta/bloc/comments/comments_state.dart';
 import 'package:project_ta/models/comment_model.dart';
 
 class CommentsBloc extends Bloc<CommentsEvent, CommentsState> {
+
+  // final baseUrl = 'http://localhost:3000';
+  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+
   CommentsBloc() : super(CommentsInitial()) {
     on<FetchComments>(_onFetchComments);
     on<FetchAllComments>(_onFetchAllComments);
@@ -20,7 +24,7 @@ class CommentsBloc extends Bloc<CommentsEvent, CommentsState> {
   Future<void> _onFetchComments(FetchComments event, Emitter<CommentsState> emit) async {
     emit(CommentsLoading());
     try {
-      final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/comments/video/${event.videoId}');
+      final url = Uri.parse('$baseUrl/api/comments/video/${event.videoId}');
       final response = await http.get(
         url,
         headers: {
@@ -45,7 +49,7 @@ class CommentsBloc extends Bloc<CommentsEvent, CommentsState> {
   Future<void> _onFetchAllComments(FetchAllComments event, Emitter<CommentsState> emit) async {
     emit(CommentsLoading());
     try {
-      final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/comments');
+      final url = Uri.parse('$baseUrl/api/comments');
       final response = await http.get(
         url,
         headers: {
@@ -70,7 +74,7 @@ class CommentsBloc extends Bloc<CommentsEvent, CommentsState> {
   Future<void> _onAddComment(
       AddComment event, Emitter<CommentsState> emit) async {
     try {
-      final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/comments/admin');
+      final url = Uri.parse('$baseUrl/api/comments/admin');
       final response = await http.post(
         url,
         headers: {
@@ -86,7 +90,7 @@ class CommentsBloc extends Bloc<CommentsEvent, CommentsState> {
 
       if (response.statusCode == 201) {
         // Jika komentar berhasil ditambahkan, muat ulang komentar
-        add(FetchAllComments(token: event.token));
+        add(FetchComments(token: event.token, id_user: event.id_user, videoId: event.videoId));
       } else {
         emit(CommentsError(message: 'Gagal menambahkan komentar'));
       }
@@ -98,7 +102,7 @@ class CommentsBloc extends Bloc<CommentsEvent, CommentsState> {
   Future<void> _onUpdateComment(
       UpdateComment event, Emitter<CommentsState> emit) async {
     try {
-      final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/comments/${event.id_comment}');
+      final url = Uri.parse('$baseUrl/api/comments/${event.id_comment}');
       final response = await http.put(
         url,
         headers: {
@@ -126,7 +130,7 @@ class CommentsBloc extends Bloc<CommentsEvent, CommentsState> {
   Future<void> _onDeleteComment(
       DeleteComment event, Emitter<CommentsState> emit) async {
     try {
-      final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/comments/delete/${event.id_comment}');
+      final url = Uri.parse('$baseUrl/api/comments/delete/${event.id_comment}');
       final response = await http.put(
         url,
         headers: {
@@ -162,7 +166,7 @@ class CommentsBloc extends Bloc<CommentsEvent, CommentsState> {
     try {
 
       final response = await http.post(
-        Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/comments/${event.commentId}/like'),
+        Uri.parse('$baseUrl/api/comments/${event.commentId}/like'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${event.token}',
@@ -190,7 +194,7 @@ class CommentsBloc extends Bloc<CommentsEvent, CommentsState> {
       ) async {
     try {
       final response = await http.put(
-        Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/comments/${event.commentId}/unlike'),
+        Uri.parse('$baseUrl/api/comments/${event.commentId}/unlike'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${event.token}',

@@ -7,6 +7,8 @@ import 'package:project_ta/bloc/user/user_bloc.dart';
 import 'package:project_ta/bloc/user/user_event.dart';
 import 'package:project_ta/constants/color.dart';
 
+import '../services/preferences_manager.dart';
+
 class GantiPasswordScreen extends StatefulWidget {
   const GantiPasswordScreen({super.key});
 
@@ -149,7 +151,7 @@ class _GantiPasswordScreenState extends State<GantiPasswordScreen> {
     );
   }
 
-  void _handleChangePassword() {
+  Future<void> _handleChangePassword() async {
     if (_formKey.currentState!.validate()) {
       final authState = context.read<AuthBloc>().state;
       if (authState is Authenticated) {
@@ -160,6 +162,8 @@ class _GantiPasswordScreenState extends State<GantiPasswordScreen> {
             newPassword: _newPasswordController.text,
           ),
         );
+
+        await PreferencesManager.setString('password', _newPasswordController.text);
 
         // Optional: Show success message
         ScaffoldMessenger.of(context).showSnackBar(

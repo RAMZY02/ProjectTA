@@ -54,6 +54,9 @@ class RiwayatUjianScreen extends StatelessWidget {
                 },
               );
             }
+            else if(historyUjianState is HistoryUjianError){
+              return Center(child: Text(historyUjianState.message));
+            }
             else{
               return Center(child: CircularProgressIndicator());
             }
@@ -71,13 +74,20 @@ class RiwayatUjianScreen extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          context.read<SoalUjianBloc>().add(InitSoalUjian());
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DetailRiwayatUjianScreen(exam: exam),
-            ),
-          );
+          if(exam.diperiksa == 'true'){
+            context.read<SoalUjianBloc>().add(InitSoalUjian());
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DetailRiwayatUjianScreen(exam: exam),
+              ),
+            );
+          }
+          else{
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Ujian Belum Diperiksa')),
+            );
+          }
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -87,11 +97,16 @@ class RiwayatUjianScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    exam.ujian.mapel,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                  Container(
+                    width: MediaQuery.of(context).size.width * 0.7,
+                    child: Text(
+                      exam.ujian.mapel,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
                     ),
                   ),
                   Container(

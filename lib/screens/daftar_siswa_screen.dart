@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/soal_ujian/soal_ujian_bloc.dart';
+import 'package:project_ta/bloc/soal_ujian/soal_ujian_event.dart';
 import 'package:project_ta/bloc/users/users_bloc.dart';
 import 'package:project_ta/bloc/users/users_event.dart';
 import 'package:project_ta/bloc/users/users_state.dart';
@@ -8,6 +10,8 @@ import 'package:project_ta/screens/pemeriksaan_jawaban_screen.dart';
 
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_state.dart';
+import '../bloc/ujian/ujian_bloc.dart';
+import '../bloc/ujian/ujian_event.dart';
 
 class DaftarSiswaScreen extends StatefulWidget {
   final UjianModel ujian;
@@ -19,17 +23,30 @@ class DaftarSiswaScreen extends StatefulWidget {
 }
 
 class _DaftarSiswaScreenState extends State<DaftarSiswaScreen> {
-  String selectedClass = '7D';
-  final List<String> classes = ['7D'];
+
+  String selectedClass = '';
+  List<String> classes = [];
 
   @override
   void initState() {
     super.initState();
+    context.read<UsersBloc>().add(Init());
+    context.read<UjianBloc>().add(InitUjian());
+    if(widget.ujian.tingkatan != '' && widget.ujian.tingkatan != '-'){
+      selectedClass = widget.ujian.tingkatan == '9' ? '9A' : widget.ujian.tingkatan == '8' ? '8A' : '7A' ;
+      classes = widget.ujian.tingkatan == '9' ? ['9A', '9B', '9C', '9D', '9E', '9F', '9G', '9H', '9I', '9J'] : widget.ujian.tingkatan == '8' ? ['8A', '8B', '8C', '8D', '8E', '8F', '8G', '8H', '8I', '8J'] : ['7A', '7B', '7C', '7D', '7E', '7F', '7G', '7H', '7I', '7J'] ;
+    }
+    else if(widget.ujian.kelas != '' && widget.ujian.kelas != '-'){
+      selectedClass = widget.ujian.kelas;
+      classes = [widget.ujian.kelas];
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
+    context.read<SoalUjianBloc>().add(InitSoalUjian());
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Daftar Siswa - ${widget.ujian.nama}'),
@@ -50,6 +67,7 @@ class _DaftarSiswaScreenState extends State<DaftarSiswaScreen> {
                     label: Text(className),
                     selected: selectedClass == className,
                     onSelected: (selected) {
+                      context.read<UsersBloc>().add(Init());
                       setState(() {
                         selectedClass = className;
                       });
@@ -65,7 +83,7 @@ class _DaftarSiswaScreenState extends State<DaftarSiswaScreen> {
             builder: (context, usersState){
               if (authState is Authenticated && usersState is UsersInitial) {
                 Future.microtask(() {
-                  context.read<UsersBloc>().add(FetchUsersByKelas(token: authState.token, kelas: selectedClass));
+                  context.read<UsersBloc>().add(FetchUsersByKelasAndUjian(token: authState.token, kelas: selectedClass, id_ujian: widget.ujian.id));
                 });
               }
 
@@ -80,9 +98,9 @@ class _DaftarSiswaScreenState extends State<DaftarSiswaScreen> {
                         margin: const EdgeInsets.only(bottom: 16),
                         child: ListTile(
                           title: Text(student.nama),
-                          trailing: student.poin != null
+                          trailing: student.diperiksa
                               ? Text(
-                            'Nilai: ${student.poin}',
+                            'Nilai: ${student.nilai}',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.green,

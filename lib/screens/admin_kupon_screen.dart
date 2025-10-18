@@ -110,7 +110,7 @@ class AdminKuponScreen extends StatelessWidget {
               );
             }
             else{
-              return CircularProgressIndicator();
+              return Center(child: CircularProgressIndicator()) ;
             }
           }
       )

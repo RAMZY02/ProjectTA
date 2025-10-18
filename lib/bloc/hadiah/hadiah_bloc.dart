@@ -6,6 +6,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class HadiahBloc extends Bloc<HadiahEvent, HadiahState>{
+
+  // final baseUrl = 'http://localhost:3000';
+  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+
   HadiahBloc() : super(HadiahInitial()) {
     on<Inits>(_onInit);
     on<FetchHadiah>(_onFetch);
@@ -21,7 +25,7 @@ class HadiahBloc extends Bloc<HadiahEvent, HadiahState>{
 
   Future<void> _onFetch(FetchHadiah event, Emitter<HadiahState> emit) async{
     emit(HadiahLoading());
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/hadiah');
+    final url = Uri.parse('$baseUrl/api/hadiah');
     try {
       final response = await http.get(
         url,
@@ -50,7 +54,7 @@ class HadiahBloc extends Bloc<HadiahEvent, HadiahState>{
 
   Future<void> _onTukarHadiah(TukarHadiah event, Emitter<HadiahState> emit) async{
     emit(HadiahLoading());
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/hadiah/tukar-hadiah');
+    final url = Uri.parse('$baseUrl/api/hadiah/tukar-hadiah');
     try {
       final response = await http.post(
         url,
@@ -84,7 +88,7 @@ class HadiahBloc extends Bloc<HadiahEvent, HadiahState>{
 
   Future<void> _onAddHadiah(AddHadiah event, Emitter<HadiahState> emit) async{
     emit(HadiahLoading());
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/hadiah');
+    final url = Uri.parse('$baseUrl/api/hadiah');
     try {
       final response = await http.post(
         url,
@@ -101,7 +105,7 @@ class HadiahBloc extends Bloc<HadiahEvent, HadiahState>{
         })
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         add(FetchHadiah(token: event.token));
       } else {
         emit(HadiahError(message: 'Failed to add hadiah'));
@@ -114,7 +118,7 @@ class HadiahBloc extends Bloc<HadiahEvent, HadiahState>{
 
   Future<void> _onUpdateHadiah(UpdateHadiah event, Emitter<HadiahState> emit) async{
     emit(HadiahLoading());
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/hadiah/${event.hadiahId}');
+    final url = Uri.parse('$baseUrl/api/hadiah/${event.hadiahId}');
     try {
       final response = await http.put(
         url,
@@ -144,7 +148,7 @@ class HadiahBloc extends Bloc<HadiahEvent, HadiahState>{
 
   Future<void> _onDeleteHadiah(DeleteHadiah event, Emitter<HadiahState> emit) async{
     emit(HadiahLoading());
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/hadiah/delete/${event.hadiahId}');
+    final url = Uri.parse('$baseUrl/api/hadiah/delete/${event.hadiahId}');
     try {
       final response = await http.put(
         url,

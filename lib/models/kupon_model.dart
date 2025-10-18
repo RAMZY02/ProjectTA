@@ -6,6 +6,7 @@ class KuponModel {
   final String kode;
   final String tipe;
   final DateTime waktu;
+  final DateTime kadaluarsa;
   final String status;
   final HadiahModel hadiah;
 
@@ -15,6 +16,7 @@ class KuponModel {
     required this.kode,
     required this.tipe,
     required this.waktu,
+    required this.kadaluarsa,
     required this.status,
     required this.hadiah,
   });
@@ -26,6 +28,7 @@ class KuponModel {
       kode: json['kode'],
       tipe: json['tipe'],
       waktu: DateTime.parse(json['waktu']),
+      kadaluarsa: DateTime.parse(json['kadaluarsa']),
       status: json['status'],
       hadiah: HadiahModel.fromJson(json['hadiah']),
     );
@@ -38,6 +41,7 @@ class KuponModel {
       'kode': kode,
       'tipe': tipe,
       'waktu': waktu.toIso8601String(),
+      'kadaluarsa': kadaluarsa.toIso8601String(),
       'status': status,
       'hadiah': hadiah,
     };

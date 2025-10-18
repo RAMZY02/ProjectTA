@@ -6,6 +6,14 @@ import 'package:project_ta/models/comment_model.dart';
 
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_state.dart';
+import '../bloc/users/users_bloc.dart';
+import '../bloc/users/users_event.dart';
+import '../bloc/users/users_state.dart';
+import '../bloc/video_edukasi/video_edukasi_bloc.dart';
+import '../bloc/video_edukasi/video_edukasi_event.dart';
+import '../bloc/video_edukasi/video_edukasi_state.dart';
+import '../models/user_model.dart';
+import '../models/video_edukasi_model.dart';
 
 class InsertCommentScreen extends StatefulWidget {
   final CommentModel? commentData;
@@ -33,6 +41,13 @@ class _InsertCommentScreenState extends State<InsertCommentScreen> {
     _selectedVideoId = widget.commentData?.idVideo;
     _selectedUserId = widget.commentData?.user.id;
     _commentController = TextEditingController(text: widget.commentData?.komentar ?? '');
+
+    // Fetch users and videos data when screen initializes
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      context.read<UsersBloc>().add(FetchUsers(token: authState.token));
+      context.read<VideoEdukasiBloc>().add(FetchVideos(token: authState.token, userId: authState.id));
+    }
   }
 
   @override
@@ -50,30 +65,44 @@ class _InsertCommentScreenState extends State<InsertCommentScreen> {
         return;
       }
 
-      final commentData = {
-        'id_video': _selectedVideoId,
-        'id_user': _selectedUserId,
-        'comment': _commentController.text,
-      };
-
       if (!widget.isEdit) {
         if (state is Authenticated) {
-          print("masuk sini kah");
-          context.read<CommentsBloc>().add(AddComment(token: state.token, id_user: _selectedUserId!, komentar: _commentController.text, videoId: _selectedVideoId!));
+          context.read<CommentsBloc>().add(
+              AddComment(
+                  token: state.token,
+                  id_user: _selectedUserId!,
+                  komentar: _commentController.text,
+                  videoId: _selectedVideoId!
+              )
+          );
         }
       } else {
         if (state is Authenticated) {
-          context.read<CommentsBloc>().add(UpdateComment(token: state.token, id_user: _selectedUserId!, komentar: _commentController.text, videoId: _selectedVideoId!, id_comment: widget.commentData!.id));
+          context.read<CommentsBloc>().add(
+              UpdateComment(
+                  token: state.token,
+                  id_user: _selectedUserId!,
+                  komentar: _commentController.text,
+                  videoId: _selectedVideoId!,
+                  id_comment: widget.commentData!.id
+              )
+          );
         }
       }
 
-      Navigator.pop(context, commentData);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.isEdit ? 'Komentar berhasil diperbarui' : 'Komentar berhasil ditambahkan'),
+        ),
+      );
+      Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEdit ? 'Edit Komentar' : 'Tambah Komentar'),
@@ -85,56 +114,88 @@ class _InsertCommentScreenState extends State<InsertCommentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DropdownButtonFormField<int>(
-                value: _selectedVideoId,
-                decoration: const InputDecoration(
-                  labelText: 'Video',
-                  border: OutlineInputBorder(),
-                ),
-                items: [1, 2, 3, 4, 5, 6]
-                    .map<DropdownMenuItem<int>>((video) => DropdownMenuItem<int>(
-                  value: video,
-                  child: Text(video.toString()),
-                ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedVideoId = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return 'Pilih video terlebih dahulu';
+              // Video Dropdown
+              BlocBuilder<VideoEdukasiBloc, VideoEdukasiState>(
+                builder: (context, state) {
+                  if (state is VideoLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is VideoLoaded) {
+                    final videos = state.videos;
+                    return DropdownButtonFormField<int>(
+                      value: _selectedVideoId,
+                      decoration: const InputDecoration(
+                        labelText: 'Video',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: videos.map<DropdownMenuItem<int>>((VideoEdukasiModel video) {
+                        return DropdownMenuItem<int>(
+                          value: video.id,
+                          child: Text(video.judul),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedVideoId = value;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Pilih video terlebih dahulu';
+                        }
+                        return null;
+                      },
+                    );
+                  } else if (state is VideoError) {
+                    return Text('Error: ${state.message}');
+                  } else {
+                    return const Text('Tidak ada data video');
                   }
-                  return null;
                 },
               ),
+
               const SizedBox(height: 16),
-              DropdownButtonFormField<int>(
-                value: _selectedUserId,
-                decoration: const InputDecoration(
-                  labelText: 'User',
-                  border: OutlineInputBorder(),
-                ),
-                items: [1, 2]
-                    .map<DropdownMenuItem<int>>((user) => DropdownMenuItem<int>(
-                  value: user,
-                  child: Text(user.toString()),
-                ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedUserId = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return 'Pilih user terlebih dahulu';
+
+              // User Dropdown
+              BlocBuilder<UsersBloc, UsersState>(
+                builder: (context, state) {
+                  if (state is UsersLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is UsersLoaded) {
+                    final users = state.users;
+                    return DropdownButtonFormField<int>(
+                      value: _selectedUserId,
+                      decoration: const InputDecoration(
+                        labelText: 'User',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: users.map<DropdownMenuItem<int>>((UserModel user) {
+                        return DropdownMenuItem<int>(
+                          value: user.id,
+                          child: Text('${user.nama} (${user.role})'),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedUserId = value;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Pilih user terlebih dahulu';
+                        }
+                        return null;
+                      },
+                    );
+                  } else if (state is UsersError) {
+                    return Text('Error: ${state.message}');
+                  } else {
+                    return const Text('Tidak ada data user');
                   }
-                  return null;
                 },
               ),
+
               const SizedBox(height: 16),
+
               TextFormField(
                 controller: _commentController,
                 maxLines: 3,
@@ -149,7 +210,9 @@ class _InsertCommentScreenState extends State<InsertCommentScreen> {
                   return null;
                 },
               ),
+
               const SizedBox(height: 24),
+
               ElevatedButton(
                 onPressed: () {
                   _submitForm(authState);

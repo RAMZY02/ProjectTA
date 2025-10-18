@@ -1,5 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_ta/bloc/hadiah/hadiah_bloc.dart';
+import 'package:project_ta/bloc/history_ujian/history_ujian_bloc.dart';
+import 'package:project_ta/bloc/history_video/history_video_bloc.dart';
+import 'package:project_ta/bloc/history_video/history_video_event.dart';
+import 'package:project_ta/bloc/history_video/history_video_state.dart';
+import 'package:project_ta/bloc/mata_pelajaran/mata_pelajaran_bloc.dart';
+import 'package:project_ta/bloc/mata_pelajaran/mata_pelajaran_event.dart';
+import 'package:project_ta/bloc/tugas/tugas_bloc.dart';
+import 'package:project_ta/bloc/tugas/tugas_event.dart';
 import 'package:project_ta/bloc/ujian/ujian_bloc.dart';
 import 'package:project_ta/bloc/ujian/ujian_event.dart';
 import 'package:project_ta/constants/color.dart';
@@ -7,10 +15,12 @@ import 'package:project_ta/screens/hadiah_screen.dart';
 import 'package:project_ta/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:project_ta/screens/profil_screen.dart';
+import 'package:project_ta/screens/tugas_siswa_screen.dart';
 import 'package:project_ta/screens/ujian_screen.dart';
 import 'package:project_ta/screens/video_edukasi_screen.dart';
 
 import '../bloc/hadiah/hadiah_event.dart';
+import '../bloc/history_ujian/history_ujian_event.dart';
 import '../bloc/video_edukasi/video_edukasi_bloc.dart';
 import '../bloc/video_edukasi/video_edukasi_event.dart';
 
@@ -36,7 +46,7 @@ class _BottomNavbarSiswaState extends State<BottomNavbarSiswaScreen> {
     HomeScreen(),
     UjianScreen(),
     VideoEdukasiScreen(),
-    HadiahScreen(),
+    TugasSiswaScreen(),
     ProfilScreen(),
   ];
   @override
@@ -72,9 +82,9 @@ class _BottomNavbarSiswaState extends State<BottomNavbarSiswaScreen> {
             label: "Video Edukasi",
           ),
           BottomNavigationBarItem(
-            activeIcon: Icon(Icons.card_giftcard, color: Colors.blue),
-            icon: Icon(Icons.card_giftcard_outlined, color: Colors.grey),
-            label: "Hadiah",
+            activeIcon: Icon(Icons.assignment, color: Colors.blue),
+            icon: Icon(Icons.assignment_outlined, color: Colors.grey),
+            label: "Tugas",
           ),
           BottomNavigationBarItem(
             activeIcon: Icon(Icons.person, color: Colors.blue),
@@ -85,9 +95,13 @@ class _BottomNavbarSiswaState extends State<BottomNavbarSiswaScreen> {
         currentIndex: _selectedIndex,
         onTap: (int index) {
           setState(() {
-            context.read<VideoEdukasiBloc>().add(Init());
+            context.read<MataPelajaranBloc>().add(InitialMataPelajaran());
+            context.read<VideoEdukasiBloc>().add(InitVideoEdukasi());
             context.read<HadiahBloc>().add(Inits());
             context.read<UjianBloc>().add(InitUjian());
+            context.read<HistoryVideoBloc>().add(InitialHistoryVideo());
+            context.read<TugasBloc>().add(TugasInit());
+            context.read<HistoryUjianBloc>().add(InitialHistoryUjian());
             // context.read<UserBloc>().add(Initial());
             _selectedIndex = index;
           });

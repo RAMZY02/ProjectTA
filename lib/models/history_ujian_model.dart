@@ -4,7 +4,11 @@ class HistoryUjianModel {
   final int id;
   final int idUjian;
   final int idUser;
+  final int idTahunPelajaran;
+  final String kehadiran;
+  final String selesai;
   final int nilai;
+  final String diperiksa;
   final DateTime timestamps;
   final UjianModel ujian;
 
@@ -12,7 +16,11 @@ class HistoryUjianModel {
     required this.id,
     required this.idUjian,
     required this.idUser,
+    required this.idTahunPelajaran,
+    required this.kehadiran,
+    required this.selesai,
     required this.nilai,
+    required this.diperiksa,
     required this.timestamps,
     required this.ujian,
   });
@@ -22,7 +30,11 @@ class HistoryUjianModel {
       id: json['id'],
       idUjian: json['id_ujian'],
       idUser: json['id_user'],
+      idTahunPelajaran: json['id_tahun_pelajaran'],
+      kehadiran: json['kehadiran'],
+      selesai: json['selesai'],
       nilai: json['nilai'],
+      diperiksa: json['diperiksa'],
       timestamps: DateTime.parse(json['timpstamps']),
       ujian: UjianModel.fromJson2(json['ujian']),
     );
@@ -37,24 +49,6 @@ class HistoryUjianModel {
       'timpstamps': timestamps.toIso8601String(),
       'ujian': ujian,
     };
-  }
-
-  HistoryUjianModel copyWith({
-    int? id,
-    int? idUjian,
-    int? idUser,
-    int? nilai,
-    DateTime? timestamps,
-    UjianModel? ujian,
-  }) {
-    return HistoryUjianModel(
-      id: id ?? this.id,
-      idUjian: idUjian ?? this.idUjian,
-      idUser: idUser ?? this.idUser,
-      nilai: nilai ?? this.nilai,
-      timestamps: timestamps ?? this.timestamps,
-      ujian: ujian ?? this.ujian,
-    );
   }
 
   @override

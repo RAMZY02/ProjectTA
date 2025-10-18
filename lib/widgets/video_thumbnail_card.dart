@@ -30,10 +30,20 @@ class VideoThumbnailCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.network(
-                "https://picsum.photos/850/650?random=3",
+                video.thumbnail != '-' && video.thumbnail.isNotEmpty
+                    ? video.thumbnail
+                    : "https://dummy-url.com", // URL dummy untuk memicu error
                 height: 170,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.asset(
+                    "assets/icons/default-course.png",
+                    height: 170,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  );
+                },
               ),
             ),
             const SizedBox(height: 8),
@@ -46,7 +56,7 @@ class VideoThumbnailCard extends StatelessWidget {
               ),
             ),
             IntrinsicHeight(
-              child: Text('${video.mata_pelajaran} • Kelas ${video.kelas}', style: TextStyle(fontSize: 10, color: kPrimaryColor), maxLines: 2)
+              child: Text('${video.mapel} • Kelas ${video.kelas}', style: TextStyle(fontSize: 10, color: kPrimaryColor), maxLines: 2)
             ),
             const SizedBox(height: 4),
             Row(

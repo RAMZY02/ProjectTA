@@ -40,7 +40,7 @@ class RiwayatVideoScreen extends StatelessWidget {
           if(authState is! Authenticated){
             return Text("Login Dulu Boss");
           }
-          else if(historyVideoState is! HistoryVideoLoaded){
+          else if(historyVideoState is HistoryVideoInitial){
             context.read<HistoryVideoBloc>().add(FetchHistoryVideo(token: authState.token, userId: authState.id));
           }
           if(historyVideoState is HistoryVideoLoaded){
@@ -65,9 +65,10 @@ class RiwayatVideoScreen extends StatelessWidget {
               }
             );
           }
-          else{
-            return CircularProgressIndicator();
+          else if(historyVideoState is HistoryVideoError){
+            return Center(child: Text(historyVideoState.message));
           }
+          return Center(child: CircularProgressIndicator());
         }
       ),
     );

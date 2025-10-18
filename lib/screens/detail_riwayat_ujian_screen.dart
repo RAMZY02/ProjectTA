@@ -57,7 +57,7 @@ class DetailRiwayatUjianScreen extends StatelessWidget {
             BlocBuilder<SoalUjianBloc, SoalUjianState>(
                 builder: (context, soalState){
                   if(authState is Authenticated && soalState is SoalUjianInitial){
-                    context.read<SoalUjianBloc>().add(FetchSoalUjian(token: authState.token, ujianId: exam.id, userId: authState.id));
+                    context.read<SoalUjianBloc>().add(FetchSoalUjian(token: authState.token, ujianId: exam.idUjian, userId: authState.id));
                   }
 
                   if(soalState is SoalUjianLoaded){
@@ -78,6 +78,9 @@ class DetailRiwayatUjianScreen extends StatelessWidget {
                   }
                   else if(soalState is SoalUjianLoading){
                     return Center(child: CircularProgressIndicator());
+                  }
+                  else if(soalState is SoalUjianError){
+                    return Center(child: Text('error ${soalState.message}'));
                   }
                   else{
                     return Text("Login dulu bang");

@@ -1,6 +1,8 @@
 // bloc/soal_ujian/soal_ujian_event.dart
 import 'package:equatable/equatable.dart';
 
+import '../../models/soal_model.dart';
+
 abstract class SoalUjianEvent extends Equatable {
   @override
   List<Object> get props => [];
@@ -69,4 +71,41 @@ class DeleteSoal extends SoalUjianEvent {
 
   @override
   List<Object> get props => [token, id];
+}
+
+// Tambahkan event-event AI
+class GenerateAISoal extends SoalUjianEvent {
+  final String token;
+  final String subject;
+  final String topic;
+  final String grade;
+  final String description;
+  final String questionType; // Tambahkan parameter questionType
+
+  GenerateAISoal({
+    required this.token,
+    required this.subject,
+    required this.topic,
+    required this.grade,
+    required this.description,
+    required this.questionType, // Tambahkan parameter
+  });
+
+  @override
+  List<Object> get props => [token, subject, topic, grade, description, questionType];
+}
+
+class SelectAISoal extends SoalUjianEvent {
+  final String token;
+  final SoalModel selectedSoal;
+
+  SelectAISoal({required this.token, required this.selectedSoal});
+
+  @override
+  List<Object> get props => [token, selectedSoal];
+}
+
+class ClearAISoal extends SoalUjianEvent {
+  @override
+  List<Object> get props => [];
 }

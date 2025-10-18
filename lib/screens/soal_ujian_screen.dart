@@ -1,11 +1,9 @@
-import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:project_ta/bloc/history_ujian/history_ujian_bloc.dart';
+import 'package:project_ta/bloc/history_ujian/history_ujian_event.dart';
 import 'package:project_ta/bloc/jawaban_siswa/jawaban_siswa_bloc.dart';
 import 'package:project_ta/bloc/jawaban_siswa/jawaban_siswa_event.dart';
 import 'package:project_ta/bloc/soal_ujian/soal_ujian_event.dart';
@@ -13,15 +11,11 @@ import 'package:project_ta/constants/color.dart';
 import 'package:project_ta/models/ujian_model.dart';
 import 'package:project_ta/screens/hasil_ujian_diperiksa_screen.dart';
 import 'package:project_ta/widgets/audio_player.dart';
-import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'dart:async';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_state.dart';
 import '../bloc/cloudflare/cloudflare_bloc.dart';
-import '../bloc/cloudflare/cloudflare_event.dart';
 import '../bloc/cloudflare/cloudflare_state.dart';
-import '../bloc/mengikuti_ujian/mengikuti_ujian_bloc.dart';
-import '../bloc/mengikuti_ujian/mengikuti_ujian_event.dart';
 import '../bloc/soal_ujian/soal_ujian_bloc.dart';
 import '../bloc/soal_ujian/soal_ujian_state.dart';
 import '../models/soal_model.dart';
@@ -31,12 +25,12 @@ import 'hasil_ujian_screen.dart';
 
 class SoalUjianScreen extends StatefulWidget {
   final UjianModel ujian;
-  final Duration durationMinutes;
+  final bool melanjutkan;
 
   const SoalUjianScreen({
     super.key,
     required this.ujian,
-    required this.durationMinutes,
+    required this.melanjutkan,
   });
 
   @override
@@ -51,7 +45,6 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
   bool _isSubmitting = false;
   bool _examLocked = true;
   final TextEditingController _exitCodeController = TextEditingController();
-  final _exitCode = "654321";
   bool _showingExitDialog = false;
   int _backgroundCount = 0;
   final Map<int, TextEditingController> _textControllers = {};
@@ -66,9 +59,19 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
         overlays: []
     );
 
+    _initializeExam();
+  }
+
+  void _initializeExam() {
     // Initialize timer
     calculateRemainingTime();
     _startTimer();
+
+    if (widget.melanjutkan && !_showingExitDialog) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showContinueExamDialog();
+      });
+    }
   }
 
   @override
@@ -189,7 +192,7 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
     if (state is! SoalUjianLoaded) return;
 
     if(authState is Authenticated){
-      context.read<MengikutiUjianBloc>().add(UpdateMengikutiUjian(token: authState.token, userId: authState.id, ujianId: widget.ujian.id));
+      context.read<HistoryUjianBloc>().add(UpdateHistoryUjian(token: authState.token, userId: authState.id, ujianId: widget.ujian.id, kehadiran: 'true', selesai: 'true', nilai: 0, diperiksa: 'false'));
     }
 
     int pilihanGandaCorrect = 0;
@@ -280,6 +283,7 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
             onWillPop: _onWillPop,
             child: Scaffold(
               appBar: AppBar(
+                automaticallyImplyLeading: false,
                 title: Column(
                   children: [
                     Text(
@@ -358,14 +362,7 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
                                       const SizedBox(height: 4),
 
                                       // Preview Media
-                                      if (currentSoal.linkVideo != '-' && currentSoal.linkVideo.isNotEmpty)
-                                        _buildVideoPreview(currentSoal.linkVideo),
-
-                                      if (currentSoal.linkGambar != '-' && currentSoal.linkGambar.isNotEmpty)
-                                        _buildImagePreview(currentSoal.linkGambar),
-
-                                      if (currentSoal.linkAudio != '-' && currentSoal.linkAudio.isNotEmpty)
-                                        AudioPreviewWidget(audioUrl: currentSoal.linkAudio),
+                                      _buildMediaGrid(currentSoal),
 
                                       const SizedBox(height: 8),
                                       Text(
@@ -577,97 +574,6 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
             },
           ),
         );
-      case 'Upload File':
-        return Padding(
-            padding: EdgeInsets.only(left: 16, right: 16, bottom: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ElevatedButton(
-                  onPressed: () => showCustomFilePicker(context, questionIndex, soal),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 40),
-                    maximumSize: const Size(double.infinity, 40),
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    backgroundColor: Colors.grey[200],
-                    foregroundColor: Colors.black87,
-                    elevation: 0,
-                    side: BorderSide(color: Colors.grey[400]!),
-                  ),
-                  child: const Text(
-                    'Pilih File dari Aplikasi',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                BlocListener<CloudflareBloc, CloudflareState>(
-                  listener: (context, state) {
-                    if (state is CloudFlareLoaded) {
-                      // Only update the state when the upload is successful
-                      setState(() {
-                        isloading = false;
-                        jawabanSiswa[questionIndex] = 'https://edukasiin.animein.net/${state.fileName}';
-                      });
-                    }
-                    else if (state is CloudFlareLoading){
-                      setState(() {
-                        isloading = true;
-                        jawabanSiswa[questionIndex] = '';
-                      });
-                    }
-                    else if (state is CloudFlareError) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Upload failed: ${state.message}')),
-                      );
-                      setState(() {
-                        jawabanSiswa[questionIndex] = '';
-                      });
-                    }
-                  },
-                  child: Column(
-                    children: [
-                      if(isloading)...[
-                        Center(child: CircularProgressIndicator()),
-                        SizedBox(height: 4),
-                        Center(child: Text('Uploading...')),
-                        SizedBox(height: 8)
-                      ],
-                      if (jawabanSiswa[questionIndex] != '')...[
-                        Text(
-                          'File terpilih:',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        SizedBox(height: 8),
-                        if(jawabanSiswa[questionIndex].contains('.mp4'))
-                          _buildVideoPreview(jawabanSiswa[questionIndex]),
-
-                        if (jawabanSiswa[questionIndex].contains('.jpg') || jawabanSiswa[questionIndex].contains('.png'))
-                          _buildImagePreview(jawabanSiswa[questionIndex]),
-
-                        if (jawabanSiswa[questionIndex].contains('.mp3'))
-                          AudioPreviewWidget(audioUrl: jawabanSiswa[questionIndex]),
-
-                        if (jawabanSiswa[questionIndex].contains('.pdf'))
-                          SizedBox(
-                            height: 450, // Atur tinggi sesuai kebutuhan
-                            child: _buildFilePreview(jawabanSiswa[questionIndex]),
-                          ),
-                        SizedBox(height: 8)
-                      ],
-                      Text(
-                        'Format file: PDF, JPG, PNG, MP3, MP4',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            )
-        );
       case 'Upload Foto':
         return Padding(
           padding: EdgeInsets.only(left: 16, right: 16, bottom: 8),
@@ -697,12 +603,6 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
                         ),
                       ),
                     );
-
-                    if (imagePath != null) {
-                      setState(() {
-                        jawabanSiswa[questionIndex] = imagePath;
-                      });
-                    }
                   },
                   child: Text('Buka Kamera'),
                 ),
@@ -788,14 +688,12 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
                 controller: _exitCodeController,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
-                  hintText: '6 digit kode',
+                  hintText: 'kode',
                 ),
                 obscureText: true,
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 18),
                 maxLength: 6,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
             ],
           ),
@@ -808,7 +706,7 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
             ),
             TextButton(
               onPressed: () {
-                if (_exitCodeController.text == _exitCode) {
+                if (_exitCodeController.text == widget.ujian.kode) {
                   _examLocked = false;
                   Navigator.pop(context, true); // Keluar
                 } else {
@@ -925,21 +823,19 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
                 controller: _exitCodeController,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
-                  hintText: '6 digit kode',
+                  hintText: 'kode',
                 ),
                 obscureText: true,
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 18),
                 maxLength: 6,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                if (_exitCodeController.text == _exitCode) {
+                if (_exitCodeController.text == widget.ujian.kode) {
                   Navigator.pop(context);
                   _showingExitDialog = false;
                 } else {
@@ -988,181 +884,14 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
     );
   }
 
-  Future<void> _handleFileSelection(File file, int questionIndex, SoalModel soal, BuildContext context) async {
-    final authState = context.read<AuthBloc>().state;
-    if (authState is! Authenticated) return;
-
-    try {
-      // Tentukan content type
-      final contentType = _getContentType(file.path);
-
-      // Generate unique filename
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = 'Jawaban/${questionIndex + 1}-$timestamp${_extension(file.path)}';
-
-      // Upload file
-      context.read<CloudflareBloc>().add(
-        UploadFile(
-          fileName: fileName,
-          fileContent: file,
-          contentType: contentType,
-          token: authState.token,
-        ),
-      );
-
-      // Update jawaban
-      context.read<JawabanSiswaBloc>().add(
-        UpdateJawabanSiswa(
-          token: authState.token,
-          ujianId: widget.ujian.id,
-          soalId: soal.id,
-          jawaban: 'https://edukasiin.animein.net/$fileName',
-          nilai: 0,
-          userId: authState.id,
-        ),
-      );
-
-      Navigator.pop(context); // Tutup file picker
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
-    }
-  }
-
-  String _getContentType(String fileName) {
-    if (fileName.toLowerCase().endsWith('.png')) return 'image/png';
-    if (fileName.toLowerCase().endsWith('.jpg') || fileName.toLowerCase().endsWith('.jpeg')) return 'image/jpeg';
-    if (fileName.toLowerCase().endsWith('.mov')) return 'video/quicktime';
-    if (fileName.toLowerCase().endsWith('.mp3')) return 'audio/mpeg';
-    if (fileName.toLowerCase().endsWith('.pdf')) return 'application/pdf';
-    if (fileName.toLowerCase().endsWith('.mp4')) return 'video/mp4';
-    return 'application/octet-stream';
-  }
-
-  String _extension(String path) {
+  String extension(String path) {
     return path.substring(path.lastIndexOf('.'));
-  }
-
-  Future<List<File>> _getFilesWithExtensions(List<String> extensions) async {
-    final List<File> files = [];
-    final List<Directory> directoriesToSearch = [
-      Directory('/storage/emulated/0/Download'),
-      Directory('/storage/emulated/0/Documents'),
-      Directory('/storage/emulated/0/Pictures'),
-      Directory('/storage/emulated/0/DCIM'),
-    ];
-
-    for (var dir in directoriesToSearch) {
-      if (await dir.exists()) {
-        try {
-          final list = await dir.list(recursive: true).toList();
-          for (var entity in list) {
-            if (entity is File) {
-              final path = entity.path.toLowerCase();
-              if (extensions.any((ext) => path.endsWith(ext))) {
-                files.add(entity);
-              }
-            }
-          }
-        } catch (e) {
-          print('Error accessing ${dir.path}: $e');
-        }
-      }
-    }
-
-    return files;
-  }
-
-  void showCustomFilePicker(BuildContext context, int questionIndex, SoalModel soal) async {
-    // Tampilkan loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Center(child: CircularProgressIndicator()),
-    );
-
-    final allowedExtensions = ['pdf', 'mp3', 'mp4', 'jpg', 'jpeg', 'png'];
-    final files = await _getFilesWithExtensions(allowedExtensions);
-
-    // Tutup loading indicator
-    Navigator.of(context).pop();
-
-    if (files.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tidak ditemukan file yang sesuai')));
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          height: MediaQuery.of(context).size.height * 0.8,
-          child: Column(
-            children: [
-              Text(
-                'Pilih File',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              SizedBox(height: 10),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: files.length,
-                  itemBuilder: (context, index) {
-                    final file = files[index];
-                    return ListTile(
-                      leading: _getFileIcon(file.path),
-                      title: Text(file.path.split('/').last),
-                      subtitle: Text(file.parent.path),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _handleFileSelection(file, questionIndex, soal, context);
-                      },
-                    );
-                  },
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Tutup'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _getFileIcon(String path) {
-    final ext = path.split('.').last.toLowerCase();
-    final iconSize = 40.0;
-
-    switch (ext) {
-      case 'pdf':
-        return Icon(Icons.picture_as_pdf, size: iconSize, color: Colors.red);
-      case 'mp3':
-      case 'wav':
-        return Icon(Icons.audio_file, size: iconSize, color: Colors.blue);
-      case 'mp4':
-      case 'mov':
-        return Icon(Icons.video_file, size: iconSize, color: Colors.purple);
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-        return Icon(Icons.image, size: iconSize, color: Colors.green);
-      default:
-        return Icon(Icons.insert_drive_file, size: iconSize);
-    }
   }
 
   Color _getTypeColor(String type) {
     switch (type) {
       case 'Pilihan Ganda': return Colors.blue;
       case 'Isian': return Colors.green;
-      case 'Upload File': return Colors.orange;
       case 'Upload Foto': return Colors.brown;
       default: return Colors.grey;
     }
@@ -1172,21 +901,91 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
     switch (type) {
       case 'Pilihan Ganda': return 'PILIHAN GANDA';
       case 'Isian': return 'ISIAN';
-      case 'Upload File': return 'UPLOAD FILE';
       case 'Upload Foto': return 'UPLOAD FOTO';
       default: return 'UNKNOWN';
     }
   }
 
   //preview disini
+  Widget _buildMediaGrid(SoalModel question) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Tentukan jumlah kolom berdasarkan lebar layar
+        int crossAxisCount;
+        if (constraints.maxWidth > 1200) {
+          crossAxisCount = 3; // Layar besar (desktop)
+        } else if (constraints.maxWidth > 600) {
+          crossAxisCount = 2; // Layar sedang (tablet)
+        } else {
+          crossAxisCount = 1; // Layar kecil (mobile)
+        }
+
+        // Kumpulkan semua media yang ada
+        List<Widget> mediaWidgets = [];
+
+        if (question.linkGambar != '-') {
+          mediaWidgets.add(_buildImagePreview(question.linkGambar));
+        }
+
+        if (question.linkVideo != '-') {
+          mediaWidgets.add(_buildVideoPreview(question.linkVideo));
+        }
+
+        if (question.linkAudio != '-') {
+          mediaWidgets.add(_buildAudioPreview(question.linkAudio));
+        }
+
+
+        // Tampilkan dalam grid
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: _getAspectRatio(crossAxisCount),
+          ),
+          itemCount: mediaWidgets.length,
+          itemBuilder: (context, index) {
+            return mediaWidgets[index];
+          },
+        );
+      },
+    );
+  }
+
+// Fungsi untuk menentukan aspect ratio berdasarkan jumlah kolom
+  double _getAspectRatio(int crossAxisCount) {
+    switch (crossAxisCount) {
+      case 1:
+        return 16 / 9; // Lebar landscape untuk 1 kolom
+      case 2:
+        return 16 / 9;  // Sedikit lebih persegi untuk 2 kolom
+      case 3:
+        return 16 / 9;      // Persegi untuk 3 kolom
+      default:
+        return 16 / 9;
+    }
+  }
+
+// Modifikasi widget preview agar lebih responsive
   Widget _buildImagePreview(String imageUrl) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Image.network(
           imageUrl,
-          width: double.infinity,
           fit: BoxFit.contain,
           frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
             if (wasSynchronouslyLoaded) return child;
@@ -1200,7 +999,6 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
             return Container(
-              height: 200,
               color: Colors.grey[200],
               child: Center(
                 child: CircularProgressIndicator(
@@ -1214,10 +1012,19 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
           },
           errorBuilder: (context, error, stackTrace) {
             return Container(
-              height: 200,
               color: Colors.grey[200],
               child: const Center(
-                child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                    SizedBox(height: 8),
+                    Text(
+                      'Gagal memuat gambar',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -1227,33 +1034,40 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
   }
 
   Widget _buildVideoPreview(String videoUrl) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(top: 8),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: VideoPlayerWidget(videoUrl: videoUrl),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: VideoPlayerWidget(videoUrl: videoUrl),
       ),
     );
   }
 
-  Widget _buildFilePreview(String pdfUrl) {
-    if (pdfUrl.isEmpty || pdfUrl == '-') {
-      return const SizedBox.shrink();
-    }
-
-    return ConstrainedBox(
-      constraints: const BoxConstraints(
-        minHeight: 200,
-        maxHeight: 600,
+  Widget _buildAudioPreview(String audioUrl) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
-      child: SfPdfViewer.network(
-        pdfUrl,
-        initialZoomLevel: 1.0,
-      ),
+      child: AudioPreviewWidget(audioUrl: audioUrl),
     );
   }
 }

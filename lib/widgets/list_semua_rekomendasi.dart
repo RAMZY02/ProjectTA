@@ -21,11 +21,22 @@ class ListSemuaRekomendasi extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             ClipRRect(
+              borderRadius: BorderRadius.circular(12),
               child: Image.network(
-                "https://picsum.photos/850/650?random=2",
-                width: 110,
+                video.thumbnail != '-' && video.thumbnail.isNotEmpty
+                    ? video.thumbnail
+                    : "https://dummy-url.com", // URL dummy untuk memicu error
                 height: 140,
+                width: 110,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.asset(
+                    "assets/icons/default-course.png",
+                    height: 140,
+                    width: 110,
+                    fit: BoxFit.cover,
+                  );
+                },
               ),
             ),
             SizedBox(width: 10),
@@ -50,7 +61,7 @@ class ListSemuaRekomendasi extends StatelessWidget {
                       maxWidth: 220
                   ),
                   child: IntrinsicHeight(
-                      child: Text('${video.mata_pelajaran} • Kelas ${video.kelas}', style: TextStyle(fontSize: 10, color: kPrimaryColor), maxLines: 2)
+                      child: Text('${video.mapel} • Kelas ${video.kelas}', style: TextStyle(fontSize: 10, color: kPrimaryColor), maxLines: 2)
                   ),
                 ),
                 const SizedBox(height: 4),

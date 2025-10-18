@@ -6,16 +6,17 @@ class LoadUser extends UserEvent{
   final int id;
   final String username;
   final String kelas;
+  final String agama;
   final String role;
   final String nomor_ortu;
+  final int id_mapel;
   final String mapel;
   final String token;
   final int poin;
   final String profpic;
   final String email;
-  final DateTime timestamps;
 
-  LoadUser({required this.id, required this.username, required this.kelas, required this.role, required this.nomor_ortu, required this.mapel, required this.token, required this.poin, required this.profpic, required this.email, required this.timestamps});
+  LoadUser({required this.id, required this.username, required this.kelas, required this.agama, required this.role, required this.nomor_ortu, required this.id_mapel, required this.mapel, required this.token, required this.poin, required this.profpic, required this.email});
 }
 
 class UpdatePoin extends UserEvent {

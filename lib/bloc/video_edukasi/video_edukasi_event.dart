@@ -6,7 +6,7 @@ abstract class VideoEdukasiEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class Init extends VideoEdukasiEvent {}
+class InitVideoEdukasi extends VideoEdukasiEvent {}
 
 class FetchVideos extends VideoEdukasiEvent {
   final String token;

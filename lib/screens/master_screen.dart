@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_ta/bloc/comments/comments_bloc.dart';
+import 'package:project_ta/bloc/hadiah/hadiah_bloc.dart';
+import 'package:project_ta/bloc/ujian/ujian_event.dart';
+import 'package:project_ta/bloc/users/users_bloc.dart';
+import 'package:project_ta/bloc/video_edukasi/video_edukasi_bloc.dart';
 import 'package:project_ta/screens/master_comments_screen.dart';
 import 'package:project_ta/screens/master_hadiah_screen.dart';
+import 'package:project_ta/screens/master_mata_pelajaran_screen.dart';
 import 'package:project_ta/screens/master_ujian_screen.dart';
 import 'package:project_ta/screens/master_video_edukasi_screen.dart';
 
+import '../bloc/comments/comments_event.dart';
+import '../bloc/hadiah/hadiah_event.dart';
+import '../bloc/ujian/ujian_bloc.dart';
+import '../bloc/users/users_event.dart';
+import '../bloc/video_edukasi/video_edukasi_event.dart';
 import 'master_user_screen.dart';
 
 class MasterScreen extends StatefulWidget {
@@ -19,10 +31,11 @@ class _MasterScreenState extends State<MasterScreen> {
 
   final List<MasterMenuItem> _menuItems = [
     MasterMenuItem(title: 'User', screen: const MasterUserScreen()),
-    MasterMenuItem(title: 'Soal & Jawaban', screen: const MasterUJianScreen()),
+    MasterMenuItem(title: 'Ujian', screen: const MasterUJianScreen()),
     MasterMenuItem(title: 'Hadiah', screen: const MasterHadiahScreen()),
     MasterMenuItem(title: 'Video Edukasi', screen: const MasterVideoEdukasiScreen()),
     MasterMenuItem(title: 'Comments', screen: const MasterCommentsScreen()),
+    MasterMenuItem(title: 'Mata Pelajaran', screen: const MasterMataPelajaranScreen()),
   ];
 
   @override
@@ -64,6 +77,23 @@ class _MasterScreenState extends State<MasterScreen> {
   }
 
   void _onNavItemTapped(int index) {
+    switch (index) {
+      case 0:
+        context.read<UsersBloc>().add(Init());
+        break;
+      case 1:
+        context.read<UjianBloc>().add(InitUjian());
+        break;
+      case 2:
+        context.read<HadiahBloc>().add(Inits());
+        break;
+      case 3:
+        context.read<VideoEdukasiBloc>().add(InitVideoEdukasi());
+        break;
+      case 4:
+        context.read<CommentsBloc>().add(InitComment());
+        break;
+    }
     setState(() {
       _selectedIndex = index;
       _pageController.animateToPage(

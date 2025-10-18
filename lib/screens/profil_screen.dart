@@ -18,6 +18,8 @@ import '../bloc/auth/auth_state.dart';
 import '../bloc/history_ujian/history_ujian_event.dart';
 import '../bloc/kupon/kupon_bloc.dart';
 import '../bloc/kupon/kupon_event.dart';
+import '../services/preferences_manager.dart';
+import 'hadiah_screen.dart';
 import 'siswa_kupon_screen.dart';
 
 class ProfilScreen extends StatelessWidget {
@@ -28,22 +30,18 @@ class ProfilScreen extends StatelessWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        body: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              expandedHeight: 240,
-              pinned: true,
-              automaticallyImplyLeading: false, // <-- Ini menghilangkan tombol back
-              flexibleSpace: FlexibleSpaceBar(
-                background: _ProfileAppBar(),
-              ),
-            ),
-            SliverToBoxAdapter(
+        body: Column(
+          children: [
+            // App Bar yang tetap (tidak ikut scroll)
+            _ProfileAppBar(),
+
+            // Bagian menu yang dapat di-scroll dengan LayoutBuilder
+            Expanded(
               child: _ProfileMenu(),
             ),
           ],
         ),
-      )
+      ),
     );
   }
 }
@@ -55,6 +53,7 @@ class _ProfileAppBar extends StatelessWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Container(
+        height: 300, // Tinggi tetap untuk app bar
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -66,9 +65,16 @@ class _ProfileAppBar extends StatelessWidget {
           ),
         ),
         child: BlocBuilder<UserBloc, UserState>(
-          builder: (context, userState){
-            if(authState is! Authenticated) return Text("Login Dulu");
-            if(userState is UserLoaded){
+          builder: (context, userState) {
+            if (authState is! Authenticated) {
+              return const Center(
+                child: Text(
+                  "Login Dulu",
+                  style: TextStyle(color: Colors.white),
+                ),
+              );
+            }
+            if (userState is UserLoaded) {
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -76,7 +82,10 @@ class _ProfileAppBar extends StatelessWidget {
                   // Foto Profil
                   CircleAvatar(
                     radius: 50,
-                    backgroundImage: NetworkImage(userState.profpic),
+                    backgroundImage: userState.profpic != '-'
+                        ? NetworkImage(userState.profpic)
+                        : const AssetImage('assets/icons/avatar-default-icon.png')
+                    as ImageProvider,
                     backgroundColor: Colors.grey[200],
                   ),
                   const SizedBox(height: 16),
@@ -94,7 +103,8 @@ class _ProfileAppBar extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
@@ -109,14 +119,16 @@ class _ProfileAppBar extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.star, color: Colors.yellow[300], size: 16),
+                            Icon(Icons.star,
+                                color: Colors.yellow[300], size: 16),
                             const SizedBox(width: 4),
                             Text(
                               '${userState.poin} Poin',
@@ -132,13 +144,17 @@ class _ProfileAppBar extends StatelessWidget {
                   ),
                 ],
               );
+            } else {
+              return const Center(
+                child: Text(
+                  "GG",
+                  style: TextStyle(color: Colors.white),
+                ),
+              );
             }
-            else{
-              return Text("GG");
-            }
-          }
-        )
-      )
+          },
+        ),
+      ),
     );
   }
 }
@@ -176,6 +192,12 @@ class _ProfileMenu extends StatelessWidget {
       'route': '/rapot',
     },
     {
+      'icon': Icons.card_giftcard,
+      'title': 'Hadiah',
+      'color': Colors.pink,
+      'route': '/hadiah',
+    },
+    {
       'icon': Icons.logout,
       'title': 'Keluar',
       'color': Colors.red,
@@ -183,25 +205,49 @@ class _ProfileMenu extends StatelessWidget {
     },
   ];
 
+  // Fungsi untuk logout
+  Future<void> logout(BuildContext context) async {
+    await PreferencesManager.setBool('isLoggedIn', false);
+    await PreferencesManager.remove('email');
+    await PreferencesManager.remove('password');
+
+    // Navigate to login screen
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+          (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16.0, top: 0.0, right: 16.0, bottom: 8.0),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.5,
-        ),
-        itemCount: menuItems.length,
-        itemBuilder: (context, index) {
-          final menu = menuItems[index];
-          return _buildMenuCard(context, menu);
-        },
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Menghitung jumlah kolom berdasarkan lebar layar
+        final screenWidth = constraints.maxWidth;
+        int crossAxisCount;
+
+        // Menggunakan logika yang sama seperti di TopVideoScreen
+        crossAxisCount = (screenWidth / 300).round();
+
+        // Untuk memastikan minimal 2 kolom dan maksimal 4 kolom
+        crossAxisCount = crossAxisCount.clamp(2, 4);
+
+        return GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: 1.5, // Sesuaikan aspect ratio untuk menu
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+          ),
+          padding: const EdgeInsets.all(16),
+          itemCount: menuItems.length,
+          itemBuilder: (context, index) {
+            final menu = menuItems[index];
+            return _buildMenuCard(context, menu);
+          },
+        );
+      },
     );
   }
 
@@ -267,7 +313,15 @@ class _ProfileMenu extends StatelessWidget {
                     builder: (context) => const RiwayatVideoScreen(),
                   ),
                 );
+              } else if (menu['route'] == '/hadiah') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HadiahScreen(),
+                  ),
+                );
               } else {
+                logout(context);
                 context.read<NotifikasiBloc>().add(InitNotif());
                 context.read<AuthBloc>().add(LogoutEvent());
               }
@@ -294,7 +348,7 @@ class _ProfileMenu extends StatelessWidget {
                     menu['title'],
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14
+                      fontSize: 14,
                     ),
                     textAlign: TextAlign.center,
                   ),

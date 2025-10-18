@@ -8,6 +8,10 @@ import 'package:http/http.dart' as http;
 import '../../models/WA_model.dart';
 
 class WaBloc extends Bloc<WaEvent, WaState> {
+
+  // final baseUrl = 'http://localhost:3000';
+  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+
   WaBloc() : super(WaInitial()) {
     on<InitWa>(_onInit);
     on<SendMessage>(_onSendMessage);
@@ -18,7 +22,7 @@ class WaBloc extends Bloc<WaEvent, WaState> {
   }
 
   Future<void> _onSendMessage(SendMessage event, Emitter<WaState> emit) async {
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/WA');
+    final url = Uri.parse('$baseUrl/api/WA');
     try {
       final response = await http.post(
         url,

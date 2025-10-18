@@ -7,6 +7,8 @@ abstract class HistoryVideoEvent extends Equatable {
   List<Object> get props => [];
 }
 
+class InitialHistoryVideo extends HistoryVideoEvent{}
+
 class FetchHistoryVideo extends HistoryVideoEvent {
   final String token;
   final int userId;

@@ -6,6 +6,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class NotifikasiBloc extends Bloc<NotifikasiEvent, NotifikasiState> {
+
+  // final baseUrl = 'http://localhost:3000';
+  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+
   NotifikasiBloc() : super(NotifikasiInitial()) {
     on<InitNotif>(_onInit);
     on<FetchNotifikasi>(_onFetchNotifikasi);
@@ -19,7 +23,7 @@ class NotifikasiBloc extends Bloc<NotifikasiEvent, NotifikasiState> {
 
   Future<void> _onFetchNotifikasi(FetchNotifikasi event, Emitter<NotifikasiState> emit) async {
     emit(NotifikasiLoading());
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/notifikasi');
+    final url = Uri.parse('$baseUrl/api/notifikasi');
 
     try {
       print("masuk 2");
@@ -51,7 +55,7 @@ class NotifikasiBloc extends Bloc<NotifikasiEvent, NotifikasiState> {
   }
 
   Future<void> _onMarkAsRead(MarkAsRead event, Emitter<NotifikasiState> emit) async {
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/notifikasi/markasread/${event.id}');
+    final url = Uri.parse('$baseUrl/api/notifikasi/markasread/${event.id}');
     try{
       final response = await http.post(
         url,
@@ -77,7 +81,7 @@ class NotifikasiBloc extends Bloc<NotifikasiEvent, NotifikasiState> {
   }
 
   Future<void> _onMarkAllAsRead(MarkAllAsRead event, Emitter<NotifikasiState> emit) async {
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/notifikasi/markallasread');
+    final url = Uri.parse('$baseUrl/api/notifikasi/markallasread');
     try{
       final response = await http.post(
         url,

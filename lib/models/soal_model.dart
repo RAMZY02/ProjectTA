@@ -76,4 +76,42 @@ class SoalModel {
       'nilaiSiswa': nilaiSiswa,
     };
   }
+
+  SoalModel copyWith({
+    int? id,
+    int? idUjian,
+    String? tipe,
+    String? soal,
+    String? opsiA,
+    String? opsiB,
+    String? opsiC,
+    String? opsiD,
+    String? opsiE,
+    String? jawaban,
+    String? pembahasan,
+    String? linkVideo,
+    String? linkGambar,
+    String? linkAudio,
+    String? jawabanSiswa,
+    int? nilaiSiswa
+  }) {
+    return SoalModel(
+      id: id ?? this.id,
+      idUjian: idUjian ?? this.idUjian,
+      tipe: tipe ?? this.tipe,
+      soal: soal ?? this.soal,
+      opsiA: opsiA ?? this.opsiA,
+      opsiB: opsiB ?? this.opsiB,
+      opsiC: opsiC ?? this.opsiC,
+      opsiD: opsiD ?? this.opsiD,
+      opsiE: opsiE ?? this.opsiE,
+      jawaban: jawaban ?? this.jawaban,
+      pembahasan: pembahasan ?? this.pembahasan,
+      linkVideo: linkVideo ?? this.linkVideo,
+      linkGambar: linkGambar ?? this.linkGambar,
+      linkAudio: linkAudio ?? this.linkAudio,
+      jawabanSiswa: jawabanSiswa ?? this.jawabanSiswa,
+      nilaiSiswa: nilaiSiswa ?? this.nilaiSiswa
+    );
+  }
 }

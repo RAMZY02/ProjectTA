@@ -78,6 +78,22 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
     return claimed;
   }
 
+  Future<bool> _isExpired(int idKupon, AuthState state) async {
+    print("ini id kupon $idKupon");
+    bool expired = false;
+    final kuponState = context.read<KuponBloc>().state;
+
+    print("kupon state $kuponState");
+    if(kuponState is KuponLoaded){
+      print("ini status kupon ${kuponState.kupons[idKupon-1].status}");
+      if(kuponState.kupons[idKupon-1].kadaluarsa.isBefore(DateTime.now())){
+        expired = true;
+      }
+    }
+
+    return expired;
+  }
+
   // Function to show invalid barcode dialog
   void _showInvalidBarcodeDialog() {
     showDialog(
@@ -107,6 +123,28 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Barcode Sudah Diclaim'),
         content: const Text('Barcode yang discan sudah diclaim sebelumnya.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _isScanning = true;
+                _isProcessing = false;
+              });
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showExpiredDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Barcode Sudah Kadaluarsa'),
+        content: const Text('Barcode yang discan sudah melewati batas tanggal pemakaiannya.'),
         actions: [
           TextButton(
             onPressed: () {
@@ -211,7 +249,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
                 _cameraFacing = _cameraFacing == CameraFacing.front
                     ? CameraFacing.back
                     : CameraFacing.front;
-                _torchEnabled = !_torchEnabled;
+                _torchEnabled = false;
               });
               cameraController.switchCamera();
             },
@@ -220,6 +258,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
       ),
       body: Stack(
         children: [
+          // Scanner camera
           MobileScanner(
             controller: cameraController,
             onDetect: (capture) async {
@@ -245,6 +284,9 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
                 if(await _isClaimed(selectedKupon, authState)){
                   _showClaimedDialog();
                 }
+                else if(await _isExpired(selectedKupon, authState)){
+                  _showExpiredDialog();
+                }
                 else if(authState is Authenticated){
                   _showConfirmationDialog(barcode, authState.token, selectedKupon, namaHadiah);
                 }
@@ -254,11 +296,29 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
             },
           ),
 
-          // Processing indicator
+          // Processing indicator dengan backdrop semi-transparan
           if (_isProcessing)
-            const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+            Container(
+              color: Colors.black54, // Backdrop semi-transparan
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: 4,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Memproses barcode...',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
         ],

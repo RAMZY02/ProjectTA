@@ -5,6 +5,9 @@ import 'package:project_ta/bloc/auth/auth_bloc.dart';
 import 'package:project_ta/bloc/history_ujian/history_ujian_bloc.dart';
 import 'package:project_ta/bloc/history_ujian/history_ujian_event.dart';
 import 'package:project_ta/bloc/history_ujian/history_ujian_state.dart';
+import 'package:project_ta/bloc/mata_pelajaran/mata_pelajaran_bloc.dart';
+import 'package:project_ta/bloc/mata_pelajaran/mata_pelajaran_event.dart';
+import 'package:project_ta/bloc/mata_pelajaran/mata_pelajaran_state.dart';
 
 import '../bloc/auth/auth_state.dart';
 import '../constants/color.dart';
@@ -14,32 +17,8 @@ class RapotSiswaScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-    // Hitung lebar layar
     final screenWidth = MediaQuery.of(context).size.width;
     final authState = context.read<AuthBloc>().state;
-    List<Map<String, dynamic>> rapot = [
-      {
-        "mata_pelajaran": "Bahasa Indonesia",
-        "uts": "-",
-        "uas": "-"
-      },
-      {
-        "mata_pelajaran": "IPA",
-        "uts": "-",
-        "uas": "-"
-      },
-      {
-        "mata_pelajaran": "Matematika",
-        "uts": "-",
-        "uas": "-"
-      },
-      {
-        "mata_pelajaran": "TIK",
-        "uts": "-",
-        "uas": "-"
-      },
-    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -74,155 +53,232 @@ class RapotSiswaScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Tabel
-            BlocBuilder<HistoryUjianBloc, HistoryUjianState>(
-              builder: (context, historyState){
-                if(authState is! Authenticated){
-                  return Text("Login Dulu min");
-                }
-                if(historyState is HistoryUjianInitial){
-                  Future.microtask(() {
-                    context.read<HistoryUjianBloc>().add(FetchHistoryUjianSiswa(
-                        token: authState.token, userId: authState.id));
-                  });
-                }
-                if(historyState is HistoryUjianLoading){
-                  return Center(child: CircularProgressIndicator());
-                }
-                else if(historyState is HistoryUjianLoaded){
-                  if(historyState.histories.isEmpty){
-                    return Center(child: Text("Belum ada data tersedia"));
-                  }
-                  for (var history in historyState.histories) {
-                    for(var temp in rapot){
-                      if(history.ujian.mapel == temp["mata_pelajaran"]){
-                        if(history.ujian.tipe_ujian == "UTS"){
-                          temp["uts"] = history.nilai.toString();
-                        }
-                        else if(history.ujian.tipe_ujian == "UAS"){
-                          temp["uas"] = history.nilai.toString();
-                        }
-                      }
+            // MultiBlocProvider untuk handle kedua bloc
+            MultiBlocListener(
+              listeners: [
+                BlocListener<MataPelajaranBloc, MataPelajaranState>(
+                  listener: (context, mapelState) {
+                    // Jika mata pelajaran sudah loaded, fetch history ujian
+                    if (mapelState is MataPelajaranLoaded && authState is Authenticated) {
+                      context.read<HistoryUjianBloc>().add(FetchHistoryUjianSiswa(
+                          token: authState.token,
+                          userId: authState.id
+                      ));
                     }
-                  }
-                  return Expanded(
-                    child: SingleChildScrollView(
-                      child: Container(
-                        width: screenWidth - 32, // Sesuaikan dengan padding
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey, width: 1),
-                        ),
-                        child: DataTable(
-                          headingRowHeight: 60,
-                          dataRowHeight: 50,
-                          columnSpacing: 0, // Atur spasi kolom menjadi 0
-                          horizontalMargin: 0, // Hilangkan margin horizontal
-                          border: TableBorder(
-                            horizontalInside: BorderSide(
-                              color: Colors.grey,
-                              width: 1,
+                  },
+                ),
+              ],
+              child: BlocBuilder<MataPelajaranBloc, MataPelajaranState>(
+                builder: (context, mapelState) {
+                  return BlocBuilder<HistoryUjianBloc, HistoryUjianState>(
+                    builder: (context, historyState) {
+                      // Cek authentication
+                      if (authState is! Authenticated) {
+                        return const Expanded(
+                          child: Center(
+                            child: Text("Silakan login terlebih dahulu"),
+                          ),
+                        );
+                      }
+
+                      // Handle loading state untuk mata pelajaran
+                      if (mapelState is MataPelajaranInitial) {
+                        context.read<MataPelajaranBloc>().add(FetchMataPelajaranSiswa(
+                            id_user: authState.id,
+                            token: authState.token
+                        ));
+                        return const Expanded(
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+
+                      if (mapelState is MataPelajaranLoading) {
+                        return const Expanded(
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+
+                      if (mapelState is MataPelajaranError) {
+                        return Expanded(
+                          child: Center(
+                            child: Text('Error: ${mapelState.message}'),
+                          ),
+                        );
+                      }
+
+                      // Jika mata pelajaran sudah loaded
+                      if (mapelState is MataPelajaranLoaded) {
+                        // Generate list rapor dari data mata pelajaran
+                        List<Map<String, dynamic>> rapot = _generateRapotFromMapel(mapelState.mataPelajaranList);
+
+                        // Handle loading state untuk history ujian
+                        if (historyState is HistoryUjianLoading) {
+                          return const Expanded(
+                            child: Center(
+                              child: CircularProgressIndicator(),
                             ),
-                            verticalInside: BorderSide(
-                              color: Colors.grey,
-                              width: 1,
+                          );
+                        }
+
+                        // Jika history ujian sudah loaded, update nilai
+                        if (historyState is HistoryUjianLoaded) {
+                          _updateNilaiRapot(rapot, historyState.histories);
+                        }
+
+                        // Tampilkan tabel rapor
+                        return Expanded(
+                          child: SingleChildScrollView(
+                            child: Container(
+                              width: screenWidth - 32,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey, width: 1),
+                              ),
+                              child: _buildRapotTable(rapot),
                             ),
                           ),
-                          columns: [
-                            DataColumn(
-                              label: Container(
-                                width: (screenWidth - 32) * 0.6, // 60% lebar untuk mata pelajaran
-                                padding: const EdgeInsets.all(8),
-                                child: const Text(
-                                  'Mata Pelajaran',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Container(
-                                width: (screenWidth - 32) * 0.2, // 20% lebar untuk UTS
-                                padding: const EdgeInsets.all(8),
-                                alignment: Alignment.center,
-                                child: const Text(
-                                  'UTS',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              numeric: true,
-                            ),
-                            DataColumn(
-                              label: Container(
-                                width: (screenWidth - 32) * 0.2, // 20% lebar untuk UAS
-                                padding: const EdgeInsets.all(8),
-                                alignment: Alignment.center,
-                                child: const Text(
-                                  'UAS',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              numeric: true,
-                            ),
-                          ],
-                          rows: rapot.map((data) {
-                            return DataRow(
-                              cells: [
-                                DataCell(
-                                  Container(
-                                    width: (screenWidth - 32) * 0.6,
-                                    padding: const EdgeInsets.all(8),
-                                    child: Text(
-                                      data["mata_pelajaran"],
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  Container(
-                                    width: (screenWidth - 32) * 0.2,
-                                    padding: const EdgeInsets.all(8),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      data["uts"],
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  Container(
-                                    width: (screenWidth - 32) * 0.2,
-                                    padding: const EdgeInsets.all(8),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      data["uas"],
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
+                        );
+                      }
+
+                      // Fallback
+                      return const Expanded(
+                        child: Center(
+                          child: Text("Terjadi kesalahan"),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   );
-                }
-                else{
-                  return Text("Error");
-                }
-              }
-            )
+                },
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  // Fungsi untuk generate rapor dari data mata pelajaran
+  List<Map<String, dynamic>> _generateRapotFromMapel(List<dynamic> mataPelajaranList) {
+    return mataPelajaranList.map((mapel) {
+      return {
+        "mata_pelajaran": mapel.mapel,
+        "uts": "-",
+        "uas": "-"
+      };
+    }).toList();
+  }
+
+  // Fungsi untuk update nilai UTS dan UAS berdasarkan history
+  void _updateNilaiRapot(List<Map<String, dynamic>> rapot, List<dynamic> histories) {
+    for (var history in histories) {
+      for (var mapel in rapot) {
+        if (history.ujian.mapel == mapel["mata_pelajaran"]) {
+          if (history.ujian.tipe_ujian == "UTS") {
+            mapel["uts"] = history.nilai.toString();
+          } else if (history.ujian.tipe_ujian == "UAS") {
+            mapel["uas"] = history.nilai.toString();
+          }
+        }
+      }
+    }
+  }
+
+  // Fungsi untuk membangun tabel rapor
+  Widget _buildRapotTable(List<Map<String, dynamic>> rapot) {
+    return Table(
+      border: TableBorder(
+        horizontalInside: BorderSide(color: Colors.grey, width: 1),
+        verticalInside: BorderSide(color: Colors.grey, width: 1),
+        top: BorderSide(color: Colors.grey, width: 1),
+        bottom: BorderSide(color: Colors.grey, width: 1),
+        left: BorderSide(color: Colors.grey, width: 1),
+        right: BorderSide(color: Colors.grey, width: 1),
+      ),
+      columnWidths: {
+        0: FlexColumnWidth(0.6),
+        1: FlexColumnWidth(0.2),
+        2: FlexColumnWidth(0.2),
+      },
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      children: [
+        // Header Row
+        TableRow(
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+          ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'Mata Pelajaran',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'UTS',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'UAS',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+        // Data Rows
+        ...rapot.map((data) {
+          return TableRow(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  data["mata_pelajaran"],
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.left,
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  data["uts"],
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  data["uas"],
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          );
+        }),
+      ],
     );
   }
 }

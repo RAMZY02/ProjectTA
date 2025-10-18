@@ -16,19 +16,34 @@ class UjianScreen extends StatelessWidget {
 
   // Fungsi untuk mendapatkan icon berdasarkan mata pelajaran
   IconData _getSubjectIcon(String title) {
+    if (title.contains('Islam')) return Icons.mosque;
+    if (title.contains('Hindu')) return Icons.temple_hindu;
+    if (title.contains('Kristen')) return Icons.church;
+    if (title.contains('Katolik')) return Icons.church;
+    if (title.contains('Pancasila') || title.contains('Kewarganegaraan')) return Icons.flag;
     if (title.contains('Bahasa Indonesia')) return Icons.language;
-    if (title.contains('IPA')) return Icons.science;
+    if (title.contains('Bahasa Inggris')) return Icons.translate;
     if (title.contains('Matematika')) return Icons.calculate;
-    if (title.contains('TIK')) return Icons.computer;
+    if (title.contains('IPA')) return Icons.science;
+    if (title.contains('IPS')) return Icons.public;
+    if (title.contains('PJOK')) return Icons.sports;
+    if (title.contains('Seni') || title.contains('Budaya')) return Icons.palette;
+    if (title.contains('Informatika') || title.contains('TIK')) return Icons.computer;
     return Icons.menu_book; // Default
   }
 
   // Fungsi untuk mendapatkan warna icon
   Color _getSubjectColor(String title) {
-    if (title.contains('Bahasa Indonesia')) return Colors.red;
+    if (title.contains('Agama')) return Colors.green;
+    if (title.contains('Pancasila') || title.contains('Kewarganegaraan')) return Colors.red;
+    if (title.contains('Bahasa Indonesia')) return Colors.orange;
+    if (title.contains('Bahasa Inggris')) return Colors.blue;
+    if (title.contains('Matematika')) return Colors.indigo;
     if (title.contains('IPA')) return Colors.purple;
-    if (title.contains('Matematika')) return Colors.blue;
-    if (title.contains('TIK')) return Colors.brown;
+    if (title.contains('IPS')) return Colors.brown;
+    if (title.contains('PJOK')) return Colors.teal;
+    if (title.contains('Seni') || title.contains('Budaya')) return Colors.pink;
+    if (title.contains('Informatika') || title.contains('TIK')) return Colors.cyan;
     return Colors.grey; // Default
   }
 
@@ -58,7 +73,7 @@ class UjianScreen extends StatelessWidget {
         builder: (context, ujianState) {
           if (authState is Authenticated && ujianState is UjianInitial) {
             Future.microtask(() {
-              context.read<UjianBloc>().add(FetchUjian(token: authState.token, userId: authState.id));
+              context.read<UjianBloc>().add(FetchUjian(token: authState.token, userId: authState.id, kelas: authState.kelas));
             });
           }
           // Handle loading state

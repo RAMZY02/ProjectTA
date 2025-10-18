@@ -6,6 +6,10 @@ import 'package:project_ta/bloc/user/user_state.dart';
 import 'package:http/http.dart' as http;
 
 class UserBloc extends Bloc<UserEvent, UserState> {
+
+  // final baseUrl = 'http://localhost:3000';
+  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+
   UserBloc() : super(UserInitial()) {
     on<Initial>(onInitial);
     on<LoadUser>(onLoadUser);
@@ -19,13 +23,13 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   }
 
   Future<void> onLoadUser(LoadUser event, Emitter<UserState> emit) async{
-    emit(UserLoaded(id: event.id, username: event.username, kelas: event.kelas.toString(), role: event.role, nomor_ortu: event.nomor_ortu, mapel: event.mapel, token: event.token, poin: event.poin, profpic: event.profpic, email: event.email, timestamps: event.timestamps));
+    emit(UserLoaded(id: event.id, username: event.username, kelas: event.kelas.toString(), agama: event.agama, role: event.role, nomor_ortu: event.nomor_ortu, id_mapel: event.id_mapel, mapel: event.mapel, token: event.token, poin: event.poin, profpic: event.profpic, email: event.email));
   }
   
   Future<void> onUpdatePoin (UpdatePoin event, Emitter<UserState> emit) async{
     print("ini poin");
     print(event.poin);
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/users/poin');
+    final url = Uri.parse('$baseUrl/api/users/poin');
     try {
       final response = await http.put(
         url, // Ganti dengan URL backend Anda
@@ -48,14 +52,15 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           id: data['id'],
           username: data['nama'],
           kelas : data['kelas'].toString().substring(0, 1),
+          agama: data['agama'],
           role: data['role'],
+          id_mapel: data['id_mapel'],
           mapel: data['mapel'],
-          nomor_ortu: data['nomor'],
+          nomor_ortu: data['nomor_ortu'],
           token: event.token,
           poin: data['poin'],
           profpic: data['profpic'],
           email: data['email'],
-          timestamps: DateTime.parse(data['timestamps']),
         ));
       } else {
         emit(UserError(message: 'Gagal update poin'));
@@ -68,7 +73,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   }
 
   Future<void> onUpdateProfpic (UpdateProfpic event, Emitter<UserState> emit) async {
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/users/profpic');
+    final url = Uri.parse('$baseUrl/api/users/profpic');
     try {
       final response = await http.put(
         url, // Ganti dengan URL backend Anda
@@ -91,14 +96,15 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           id: data['id'],
           username: data['nama'],
           kelas : data['kelas'].toString().substring(0, 1),
+          agama: data['agama'],
           role: data['role'],
+          id_mapel: data['id_mapel'],
           mapel: data['mapel'],
           nomor_ortu: data['nomor_ortu'],
           token: event.token,
           poin: data['poin'],
           profpic: data['profpic'],
           email: data['email'],
-          timestamps: DateTime.parse(data['timestamps']),
         ));
       } else {
         emit(UserError(message: 'Gagal update profpic'));
@@ -111,7 +117,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   }
 
   Future<void> onChangePassword (ChangePassword event, Emitter<UserState> emit) async {
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/users/change-password');
+    final url = Uri.parse('$baseUrl/api/users/change-password');
     try {
       final response = await http.put(
         url, // Ganti dengan URL backend Anda
@@ -135,14 +141,15 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           id: data['id'],
           username: data['nama'],
           kelas : data['kelas'].toString().substring(0, 1),
+          agama: data['agama'],
           role: data['role'],
+          id_mapel: data['id_mapel'],
           mapel: data['mapel'],
           nomor_ortu: data['nomor_ortu'],
           token: event.token,
           poin: data['poin'],
           profpic: data['profpic'],
           email: data['email'],
-          timestamps: DateTime.parse(data['timestamps']),
         ));
       } else {
         emit(UserError(message: 'Gagal ganti password'));

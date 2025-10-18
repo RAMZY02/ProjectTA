@@ -35,29 +35,31 @@ class SiswaKuponScreen extends StatelessWidget {
           statusBarIconBrightness: Brightness.light,
         ),
       ),
-      body: BlocBuilder<KuponBloc, KuponState>(
-        builder: (context, kuponState){
-          if(authState is Authenticated && kuponState is KuponInitial){
-            context.read<KuponBloc>().add(FetchKupon(token: authState.token, userId: authState.id));
-          }
-          if(kuponState is KuponLoaded){
-            if(kuponState.kupons.isEmpty){
-              return Center(child:Text("Belum Memiliki Kupon"));
+      body: SafeArea(
+        child: BlocBuilder<KuponBloc, KuponState>(
+            builder: (context, kuponState){
+              if(authState is Authenticated && kuponState is KuponInitial){
+                context.read<KuponBloc>().add(FetchKupon(token: authState.token, userId: authState.id));
+              }
+              if(kuponState is KuponLoaded){
+                if(kuponState.kupons.isEmpty){
+                  return Center(child:Text("Belum Memiliki Kupon"));
+                }
+                return ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: kuponState.kupons.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final coupon = kuponState.kupons[index];
+                    return _buildCouponCard(context, coupon);
+                  },
+                );
+              }
+              else{
+                return Center(child: CircularProgressIndicator());
+              }
             }
-            return ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: kuponState.kupons.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final coupon = kuponState.kupons[index];
-                return _buildCouponCard(context, coupon);
-              },
-            );
-          }
-          else{
-            return Center(child: CircularProgressIndicator());
-          }
-        }
+        )
       )
     );
   }
@@ -113,6 +115,13 @@ class SiswaKuponScreen extends StatelessWidget {
                       'Didapatkan: ${_formatDate(coupon.waktu)}',
                       style: TextStyle(
                         color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                    Text(
+                      'Kadaluarsa: ${_formatDate(coupon.kadaluarsa)}',
+                      style: TextStyle(
+                        color: Colors.red[600],
                         fontSize: 12,
                       ),
                     ),

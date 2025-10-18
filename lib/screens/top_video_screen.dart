@@ -5,7 +5,6 @@ import 'package:project_ta/models/video_edukasi_model.dart';
 import 'package:project_ta/screens/detail_video_screen.dart';
 import 'package:project_ta/widgets/video_thumbnail_grid_card.dart';
 
-
 class TopVideoScreen extends StatelessWidget {
   final List<VideoEdukasiModel> videos;
 
@@ -26,47 +25,46 @@ class TopVideoScreen extends StatelessWidget {
         iconTheme: const IconThemeData(color: Colors.white, size: 20),
         centerTitle: true,
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.grey, // Warna status bar abu-abu
-          statusBarIconBrightness: Brightness.light, // Icon status bar putih
-          statusBarBrightness: Brightness.dark, // Untuk Android
+          statusBarColor: Colors.grey,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
         ),
       ),
-      body: Container(
-        margin: EdgeInsets.zero,
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            childAspectRatio: 0.45,
-          ),
-          itemCount: sortedVideos.length,
-          itemBuilder: (context, index) {
-            return VideoThumbnailGridCard(
-              video: sortedVideos[index],
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DetailVideoScreen(
-                      video: sortedVideos[index],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Menghitung jumlah kolom berdasarkan lebar layar
+          final screenWidth = constraints.maxWidth;
+          int crossAxisCount;
+
+          crossAxisCount =  (screenWidth / 150).round();
+
+          return GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: 0.45,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+            ),
+            padding: const EdgeInsets.all(8),
+            itemCount: sortedVideos.length,
+            itemBuilder: (context, index) {
+              return VideoThumbnailGridCard(
+                video: sortedVideos[index],
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailVideoScreen(
+                        video: sortedVideos[index],
+                      ),
                     ),
-                  ),
-                );
-              },
-            );
-          },
-        ),
+                  );
+                },
+              );
+            },
+          );
+        },
       ),
     );
-  }
-
-  Map<String, dynamic> videoToMap(VideoEdukasiModel video) {
-    return {
-      'judul': video.judul,
-      'kelas': video.kelas,
-      'url': 'asset://assets/videos/BELAJAR_INTEGRAL_DARI_DASAR_DALAM_12_MENIT.mp4',
-      'views': video.views,
-      'likes': video.likes,
-      'subject': video.mata_pelajaran,
-    };
   }
 }

@@ -8,6 +8,8 @@ import 'package:project_ta/models/ujian_model.dart';
 
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_state.dart';
+import '../bloc/history_ujian/history_ujian_bloc.dart';
+import '../bloc/history_ujian/history_ujian_event.dart';
 import '../bloc/soal_ujian/soal_ujian_bloc.dart';
 import '../bloc/soal_ujian/soal_ujian_event.dart';
 
@@ -79,7 +81,7 @@ class DetailUjianScreen extends StatelessWidget {
                             const Divider(height: 24, thickness: 1),
                             _buildDetailRow(Icons.calendar_today, 'Tanggal', _formatDate(ujian.tanggal)),
                             _buildDetailRow(Icons.access_time, 'Waktu', '${formatTimeOfDay(ujian.mulai)} - ${formatTimeOfDay(ujian.selesai)}'),
-                            _buildDetailRow(Icons.timer, 'Durasi', ujian.durasi.toString().substring(0, 7)),
+                            _buildDetailRow(Icons.timer, 'Durasi', _calculateDuration(ujian.mulai, ujian.selesai)),
                             _buildDetailRow(Icons.person, 'Pengajar', ujian.guru),
                             _buildDetailRow(Icons.format_list_numbered, 'Jumlah Soal', '${ujian.jumlahSoal} soal'),
                             const SizedBox(height: 16),
@@ -148,7 +150,7 @@ class DetailUjianScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: () {
+              onPressed: () async{
                 // 1. Cek apakah user sudah terautentikasi
                 if (authState is! Authenticated) {
                   return; // atau tampilkan snackbar error
@@ -183,19 +185,15 @@ class DetailUjianScreen extends StatelessWidget {
                   );
                 } else {
 
-                    // Jika semua kondisi terpenuhi, lanjutkan ke halaman soal
-                    // context.read<MengikutiUjianBloc>().add(
-                    //   CreateMengikutiUjian(
-                    //     token: authState.token,
-                    //     userId: authState.id,
-                    //     ujianId: ujian.id,
-                    //   ),
-                    // );
+                    context.read<HistoryUjianBloc>().add(CreateHistoryUjian(token: authState.token, userId: authState.id, ujianId: ujian.id, nilai: 0));
                     context.read<SoalUjianBloc>().add(InitSoalUjian());
                     Navigator.pushNamed(
                       context,
                       '/soal-ujian',
-                      arguments: ujian,
+                      arguments: {
+                        'ujian': ujian,
+                        'melanjutkan': false,
+                      },
                     );
 
                 }
@@ -245,6 +243,24 @@ class DetailUjianScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // Tambahkan method untuk menghitung durasi
+  String _calculateDuration(TimeOfDay start, TimeOfDay end) {
+    final startMinutes = start.hour * 60 + start.minute;
+    final endMinutes = end.hour * 60 + end.minute;
+    final totalMinutes = endMinutes - startMinutes;
+
+    final hours = totalMinutes ~/ 60;
+    final minutes = totalMinutes % 60;
+
+    if (hours > 0 && minutes > 0) {
+      return '$hours jam $minutes menit';
+    } else if (hours > 0) {
+      return '$hours jam';
+    } else {
+      return '$minutes menit';
+    }
   }
 
   String _formatDate(DateTime date) {

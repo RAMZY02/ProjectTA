@@ -6,8 +6,12 @@ import 'package:project_ta/bloc/video_edukasi/video_edukasi_state.dart';
 import 'package:project_ta/models/video_edukasi_model.dart';
 
 class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
+
+  // final baseUrl = 'http://localhost:3000';
+  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+
   VideoEdukasiBloc() : super(VideoInitial()) {
-    on<Init>(_onInit);
+    on<InitVideoEdukasi>(_onInit);
     on<FetchVideos>(_onFetchVideos);
     on<LastId>(_onLastId);
     on<LikeVideo>(_onLikeVideo);
@@ -17,14 +21,13 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
     on<DeleteVideo>(_onDeleteVideo);
   }
 
-
-  Future<void> _onInit(Init event, Emitter<VideoEdukasiState> emit) async {
+  Future<void> _onInit(InitVideoEdukasi event, Emitter<VideoEdukasiState> emit) async {
     emit(VideoInitial());
   }
 
   Future<void> _onFetchVideos(FetchVideos event, Emitter<VideoEdukasiState> emit) async {
     emit(VideoLoading());
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/video-edukasi');
+    final url = Uri.parse('$baseUrl/api/video-edukasi');
     try {
       final response = await http.get(
         url,
@@ -52,7 +55,7 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
   }
 
   Future<void> _onLastId(LastId event, Emitter<VideoEdukasiState> emit) async{
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/video-edukasi/lastId');
+    final url = Uri.parse('$baseUrl/api/video-edukasi/lastId');
     try{
       final response = await http.get(
         url,
@@ -76,7 +79,7 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
   }
 
   Future<void> _onLikeVideo(LikeVideo event, Emitter<VideoEdukasiState> emit) async {
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/video-edukasi/${event.videoId}/like');
+    final url = Uri.parse('$baseUrl/api/video-edukasi/${event.videoId}/like');
     try {
       final response = await http.post(
         url,
@@ -105,7 +108,7 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
   }
 
   Future<void> _onUnlikeVideo(UnlikeVideo event, Emitter<VideoEdukasiState> emit) async {
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/video-edukasi/${event.videoId}/unlike');
+    final url = Uri.parse('$baseUrl/api/video-edukasi/${event.videoId}/unlike');
     try {
       final response = await http.put(
         url,
@@ -134,7 +137,7 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
   }
 
   Future<void> _onAddVideo(AddVideo event, Emitter<VideoEdukasiState> emit) async {
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/video-edukasi');
+    final url = Uri.parse('$baseUrl/api/video-edukasi');
     try {
       final response = await http.post(
         url,
@@ -146,8 +149,9 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
           'id_user' : event.idUser,
           'judul': event.videoEdukasi['judul'],
           'link_video': event.videoEdukasi['link_video'],
+          'thumbnail': event.videoEdukasi['thumbnail'],
           'deskripsi': event.videoEdukasi['deskripsi'],
-          'mata_pelajaran': event.videoEdukasi['mata_pelajaran'],
+          'id_mapel': event.videoEdukasi['id_mapel'],
           'views': event.videoEdukasi['views'],
           'likes': event.videoEdukasi['likes'],
           'kelas': event.videoEdukasi['kelas'],
@@ -156,9 +160,9 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
       );
 
       if (response.statusCode == 201) {
-        add(Init());
+        add(FetchVideos(token: event.token, userId: event.idUser));
       } else {
-        emit(VideoError(message: 'Failed to unlike video'));
+        emit(VideoError(message: 'Failed to add video'));
       }
     } catch (e) {
       print(e);
@@ -167,7 +171,7 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
   }
 
   Future<void> _onUpdateVideo(UpdateVideo event, Emitter<VideoEdukasiState> emit) async {
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/video-edukasi/${event.idVideo}');
+    final url = Uri.parse('$baseUrl/api/video-edukasi/${event.idVideo}');
     try {
       final response = await http.put(
         url,
@@ -178,8 +182,9 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
         body: json.encode({
           'judul': event.videoEdukasi['judul'],
           'link_video': event.videoEdukasi['link_video'],
+          'thumbnail': event.videoEdukasi['thumbnail'],
           'deskripsi': event.videoEdukasi['deskripsi'],
-          'mata_pelajaran': event.videoEdukasi['mata_pelajaran'],
+          'id_mapel': event.videoEdukasi['id_mapel'],
           'views': event.videoEdukasi['views'],
           'likes': event.videoEdukasi['likes'],
           'kelas': event.videoEdukasi['kelas'],
@@ -199,7 +204,7 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
   }
 
   Future<void> _onDeleteVideo(DeleteVideo event, Emitter<VideoEdukasiState> emit) async {
-    final url = Uri.parse('https://flounder-moved-rooster.ngrok-free.app/api/video-edukasi/delete/${event.idVideo}');
+    final url = Uri.parse('$baseUrl/api/video-edukasi/delete/${event.idVideo}');
     try {
       final response = await http.put(
         url,
