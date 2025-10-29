@@ -138,6 +138,9 @@ class _InsertVideoEdukasiScreenState extends State<InsertVideoEdukasiScreen> {
           _setUploadErrorState(fileType, 'Tidak dapat mendapatkan ID video');
         }
       }
+      else{
+        context.read<VideoEdukasiBloc>().add(InitVideoEdukasi());
+      }
     } catch (e) {
       _setUploadErrorState(fileType, 'Gagal memilih file: ${e.toString()}');
     }
@@ -374,8 +377,8 @@ class _InsertVideoEdukasiScreenState extends State<InsertVideoEdukasiScreen> {
         'deskripsi': _deskripsiController.text,
         'id_mapel': state is Authenticated ? state.id_mapel : 0,
         'kelas': _selectedKelas,
-        'views': 0,
-        'likes': 0,
+        'views': widget.videoData?.views ?? 0,
+        'likes': widget.videoData?.likes ?? 0,
       };
 
       if (state is Authenticated) {
@@ -419,9 +422,11 @@ class _InsertVideoEdukasiScreenState extends State<InsertVideoEdukasiScreen> {
               if (state.fileName.contains('Thumbnail')) fileType = 'gambar';
 
               _setUploadSuccessState(fileType, 'https://edukasiin.animein.net/${state.fileName}');
+              context.read<VideoEdukasiBloc>().add(InitVideoEdukasi());
             } else if (state is CloudFlareError) {
               // Handle error (you might need to track which file was being uploaded)
               _setUploadErrorState('file', state.message);
+              context.read<VideoEdukasiBloc>().add(InitVideoEdukasi());
             }
           },
           child: SingleChildScrollView(

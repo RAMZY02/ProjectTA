@@ -103,8 +103,18 @@ class _BottomNavbarAdminState extends State<BottomNavbarAdminScreen> {
           ],
           currentIndex: _selectedIndex,
           onTap: (int index) {
-            context.read<UsersBloc>().add(Init());
-            context.read<KuponBloc>().add(InitialKupon());
+            if(index == 0){
+              context.read<UsersBloc>().add(Init());
+            }
+            else if(index == 1){
+              context.read<UsersBloc>().add(Init());
+            }
+            else if(index == 3){
+              context.read<KuponBloc>().add(InitialKupon());
+            }
+            else{
+              context.read<KuponBloc>().add(InitialKupon());
+            }
             setState(() {
               _selectedIndex = index;
             });

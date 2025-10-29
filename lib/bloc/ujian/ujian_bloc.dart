@@ -9,7 +9,8 @@ import 'package:project_ta/models/ujian_model.dart';
 class UjianBloc extends Bloc<UjianEvent, UjianState> {
 
   // final baseUrl = 'http://localhost:3000';
-  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   UjianBloc() : super(UjianInitial()) {
     on<InitUjian>(_onInitUjian);
@@ -258,7 +259,7 @@ class UjianBloc extends Bloc<UjianEvent, UjianState> {
       print("ini update ujian");
 
       if (response.statusCode == 200) {
-        add(FetchUjian2(token: event.token));
+        emit(UjianInitial());
       } else {
         print('ini errornya 2');
         emit(UjianError(message: 'Failed to update ujian data'));
@@ -285,7 +286,7 @@ class UjianBloc extends Bloc<UjianEvent, UjianState> {
       print("ini delete ujian");
 
       if (response.statusCode == 200) {
-        add(FetchUjian2(token: event.token));
+        emit(UjianInitial());
       } else {
         print('ini errornya 2');
         emit(UjianError(message: 'Failed to update ujian data'));

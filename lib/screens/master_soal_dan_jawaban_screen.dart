@@ -105,6 +105,9 @@ class _MasterSoalDanJawabanScreenState extends State<MasterSoalDanJawabanScreen>
                                   DataColumn(label: Text('Link Video')),
                                   DataColumn(label: Text('Link Gambar')),
                                   DataColumn(label: Text('Link Audio')),
+                                  DataColumn(label: Text('Link Video Pembahasan')),
+                                  DataColumn(label: Text('Link Gambar Pembahasan')),
+                                  DataColumn(label: Text('Link Audio Pembahasan')),
                                   DataColumn(
                                     label: SizedBox(
                                       width: 100,
@@ -171,6 +174,36 @@ class _MasterSoalDanJawabanScreenState extends State<MasterSoalDanJawabanScreen>
                                           constraints: const BoxConstraints(maxWidth: 150),
                                           child: Text(
                                             soal.linkAudio != '-' ? soal.linkAudio : '-',
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        ConstrainedBox(
+                                          constraints: const BoxConstraints(maxWidth: 150),
+                                          child: Text(
+                                            soal.linkVideoPembahasan != '-' ? soal.linkVideoPembahasan : '-',
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        ConstrainedBox(
+                                          constraints: const BoxConstraints(maxWidth: 150),
+                                          child: Text(
+                                            soal.linkGambarPembahasan != '-' ? soal.linkGambarPembahasan : '-',
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        ConstrainedBox(
+                                          constraints: const BoxConstraints(maxWidth: 150),
+                                          child: Text(
+                                            soal.linkAudioPembahasan != '-' ? soal.linkAudioPembahasan : '-',
                                             overflow: TextOverflow.ellipsis,
                                             maxLines: 2,
                                           ),

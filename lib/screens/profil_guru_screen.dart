@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:project_ta/bloc/notifikasi/notifikasi_bloc.dart';
-import 'package:project_ta/bloc/notifikasi/notifikasi_event.dart';
+import 'package:project_ta/bloc/nilai_akhir_siswa/nilai_akhir_siswa_bloc.dart';
+import 'package:project_ta/bloc/nilai_akhir_siswa/nilai_akhir_siswa_event.dart';
+import 'package:project_ta/bloc/nilai_akhir_siswa/nilai_akhir_siswa_state.dart';
 import 'package:project_ta/bloc/user/user_bloc.dart';
 import 'package:project_ta/bloc/user/user_state.dart';
 import 'package:project_ta/screens/info_pengguna_screen.dart';
@@ -228,6 +229,7 @@ class _ProfileMenu extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: () {
+              context.read<NilaiAkhirSiswaBloc>().add(InitNilaiAkhirSiswa());
               if (menu['route'] == '/info-pengguna') {
                 Navigator.push(
                   context,
@@ -251,7 +253,6 @@ class _ProfileMenu extends StatelessWidget {
                 );
               } else {
                 logout(context);
-                context.read<NotifikasiBloc>().add(InitNotif());
                 context.read<AuthBloc>().add(LogoutEvent());
               }
             },

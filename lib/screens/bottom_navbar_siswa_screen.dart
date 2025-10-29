@@ -4,6 +4,8 @@ import 'package:project_ta/bloc/history_ujian/history_ujian_bloc.dart';
 import 'package:project_ta/bloc/history_video/history_video_bloc.dart';
 import 'package:project_ta/bloc/history_video/history_video_event.dart';
 import 'package:project_ta/bloc/history_video/history_video_state.dart';
+import 'package:project_ta/bloc/kupon/kupon_bloc.dart';
+import 'package:project_ta/bloc/kupon/kupon_event.dart';
 import 'package:project_ta/bloc/mata_pelajaran/mata_pelajaran_bloc.dart';
 import 'package:project_ta/bloc/mata_pelajaran/mata_pelajaran_event.dart';
 import 'package:project_ta/bloc/tugas/tugas_bloc.dart';
@@ -95,14 +97,26 @@ class _BottomNavbarSiswaState extends State<BottomNavbarSiswaScreen> {
         currentIndex: _selectedIndex,
         onTap: (int index) {
           setState(() {
-            context.read<MataPelajaranBloc>().add(InitialMataPelajaran());
-            context.read<VideoEdukasiBloc>().add(InitVideoEdukasi());
-            context.read<HadiahBloc>().add(Inits());
-            context.read<UjianBloc>().add(InitUjian());
-            context.read<HistoryVideoBloc>().add(InitialHistoryVideo());
-            context.read<TugasBloc>().add(TugasInit());
-            context.read<HistoryUjianBloc>().add(InitialHistoryUjian());
-            // context.read<UserBloc>().add(Initial());
+            if(index == 0){
+              context.read<VideoEdukasiBloc>().add(InitVideoEdukasi());
+            }
+            else if(index == 1){
+              context.read<UjianBloc>().add(InitUjian());
+            }
+            else if(index == 2){
+              context.read<VideoEdukasiBloc>().add(InitVideoEdukasi());
+              context.read<MataPelajaranBloc>().add(InitialMataPelajaran());
+            }
+            else if(index == 3){
+              context.read<TugasBloc>().add(TugasInit());
+            }
+            else if(index == 4){
+              context.read<KuponBloc>().add(InitialKupon());
+              context.read<MataPelajaranBloc>().add(InitialMataPelajaran());
+              context.read<HistoryUjianBloc>().add(InitialHistoryUjian());
+              context.read<HistoryVideoBloc>().add(InitialHistoryVideo());
+              context.read<HadiahBloc>().add(Inits());
+            }
             _selectedIndex = index;
           });
         }),

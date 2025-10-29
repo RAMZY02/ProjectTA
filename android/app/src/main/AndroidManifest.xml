@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" package="com.example.project_ta">
+    xmlns:tools="http://schemas.android.com/tools" package="com.ramz.project_ta">
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -15,8 +15,12 @@
         tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.LOCK_TASK" />
     <uses-permission android:name="android.permission.DEVICE_ADMIN" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="project_ta"
+        android:label="Edukasiin"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

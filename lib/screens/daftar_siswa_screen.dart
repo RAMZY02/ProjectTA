@@ -82,9 +82,7 @@ class _DaftarSiswaScreenState extends State<DaftarSiswaScreen> {
           BlocBuilder<UsersBloc, UsersState>(
             builder: (context, usersState){
               if (authState is Authenticated && usersState is UsersInitial) {
-                Future.microtask(() {
-                  context.read<UsersBloc>().add(FetchUsersByKelasAndUjian(token: authState.token, kelas: selectedClass, id_ujian: widget.ujian.id));
-                });
+                context.read<UsersBloc>().add(FetchUsersByKelasAndUjian(token: authState.token, kelas: selectedClass, id_ujian: widget.ujian.id));
               }
 
               if(usersState is UsersLoaded){
@@ -98,7 +96,7 @@ class _DaftarSiswaScreenState extends State<DaftarSiswaScreen> {
                         margin: const EdgeInsets.only(bottom: 16),
                         child: ListTile(
                           title: Text(student.nama),
-                          trailing: student.diperiksa
+                          trailing: student.diperiksa == 'true'
                               ? Text(
                             'Nilai: ${student.nilai}',
                             style: const TextStyle(
@@ -114,6 +112,7 @@ class _DaftarSiswaScreenState extends State<DaftarSiswaScreen> {
                             ),
                           ),
                           onTap: () {
+                            context.read<SoalUjianBloc>().add(InitSoalUjian());
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -124,7 +123,7 @@ class _DaftarSiswaScreenState extends State<DaftarSiswaScreen> {
                               if (value != null) {
                                 setState(() {
                                   // Update the student's score
-                                  // studentsByClass[selectedClass]![index]['score'] = value;
+                                  student.nilai = value;
                                 });
                               }
                             });

@@ -8,7 +8,8 @@ import 'package:project_ta/models/video_edukasi_model.dart';
 class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
 
   // final baseUrl = 'http://localhost:3000';
-  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   VideoEdukasiBloc() : super(VideoInitial()) {
     on<InitVideoEdukasi>(_onInit);
@@ -160,7 +161,7 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
       );
 
       if (response.statusCode == 201) {
-        add(FetchVideos(token: event.token, userId: event.idUser));
+        emit(VideoInitial());
       } else {
         emit(VideoError(message: 'Failed to add video'));
       }
@@ -193,7 +194,7 @@ class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
       );
 
       if (response.statusCode == 200) {
-        add(FetchVideos(token: event.token, userId: event.idUser));
+        emit(VideoInitial());
       } else {
         emit(VideoError(message: 'Failed to unlike video'));
       }

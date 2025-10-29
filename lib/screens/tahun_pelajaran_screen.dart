@@ -409,10 +409,6 @@ class _TahunPelajaranScreenState extends State<TahunPelajaranScreen> {
                 duration: Duration(seconds: 3),
               ),
             );
-          } else if (state is TahunPelajaranCreated) {
-            // Snackbar untuk create success sudah ditangani di button
-          } else if (state is TahunPelajaranUpdated) {
-            // Snackbar untuk update success sudah ditangani di button
           }
         },
         builder: (context, state) {

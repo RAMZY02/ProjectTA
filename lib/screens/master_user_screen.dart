@@ -17,6 +17,7 @@ import '../bloc/mata_pelajaran/mata_pelajaran_event.dart';
 import '../bloc/mata_pelajaran/mata_pelajaran_state.dart';
 import '../bloc/users/users_state.dart';
 import '../models/mata_pelajaran_model.dart';
+import '../services/notification_service.dart';
 import 'insert_user_screen.dart';
 
 class MasterUserScreen extends StatefulWidget {
@@ -380,24 +381,55 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
       String baseFileName = 'template_import_user';
       String fileExtension = '.xlsx';
       String message = '';
+      String notificationTitle = '';
+      String notificationBody = '';
 
-      if (isWeb) {
-        await _downloadForWeb(excel);
-        message = 'Template sedang didownload...';
-      } else {
+      try {
+        if (isWeb) {
+          await _downloadForWeb(excel);
+          message = 'Template sedang didownload...';
+          notificationTitle = 'Download Berhasil';
+          notificationBody = 'Template berhasil didownload untuk web';
+        } else {
+          // Untuk non-web, generate nama file yang unik
+          String filePath = await _getUniqueFilePath(basePath, baseFileName, fileExtension);
 
-        // Untuk non-web, generate nama file yang unik
-        String filePath = await _getUniqueFilePath(basePath, baseFileName, fileExtension);
+          File(filePath)
+            ..createSync(recursive: true)
+            ..writeAsBytesSync(excel.save()!);
 
-        File(filePath)
-          ..createSync(recursive: true)
-          ..writeAsBytesSync(excel.save()!);
-        message = 'Template sedang didownload...';
+          message = 'Template Berhasil Didownload ke Folder Download';
+          notificationTitle = 'Download Selesai';
+          notificationBody = 'File disimpan di: Download';
+        }
+
+        // Tampilkan Snackbar
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(message)),
+          );
+        }
+
+        // Tampilkan Notifikasi
+        await NotificationService.showDownloadNotification(
+          title: notificationTitle,
+          body: notificationBody,
+        );
+
+      } catch (e) {
+        // Handle error
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e')),
+          );
+        }
+
+        // Notifikasi error
+        await NotificationService.showDownloadNotification(
+          title: 'Download Gagal',
+          body: 'Terjadi kesalahan saat mendownload template',
+        );
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),

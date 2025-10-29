@@ -10,6 +10,9 @@ import 'package:project_ta/bloc/auth/auth_bloc.dart';
 import 'package:project_ta/bloc/auth/auth_state.dart';
 import 'package:project_ta/models/soal_model.dart';
 
+import '../widgets/audio_player.dart';
+import '../widgets/video_player.dart';
+
 class DetailRiwayatUjianScreen extends StatelessWidget {
   final HistoryUjianModel exam;
 
@@ -173,32 +176,14 @@ class DetailRiwayatUjianScreen extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: question.nilaiSiswa == 0 ? Colors.red : Colors.green,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    questionNumber.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
+                Text(
+                  'Soal ${questionNumber.toString()}',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    question.soal,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+                Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -210,11 +195,15 @@ class DetailRiwayatUjianScreen extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: 12
                     ),
                   ),
                 )
               ],
             ),
+            _buildMediaGrid(question),
+            const SizedBox(height: 8),
+            Text(question.soal),
             if(question.tipe == "Pilihan Ganda")...[
               const SizedBox(height: 12),
               // Opsi jawaban
@@ -257,6 +246,10 @@ class DetailRiwayatUjianScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
+                  if(question.linkGambarPembahasan != '-' || question.linkVideoPembahasan != '-' || question.linkAudioPembahasan != '-')
+                    const SizedBox(height: 8),
+                  _buildMediaGridPembahasanSoal(question),
+                  const SizedBox(height: 8),
                   Text(
                     question.pembahasan,
                     style: TextStyle(color: Colors.grey[700]),
@@ -267,6 +260,201 @@ class DetailRiwayatUjianScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildMediaGridPembahasanSoal(SoalModel question) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Tentukan jumlah kolom berdasarkan lebar layar
+        int crossAxisCount;
+        if (constraints.maxWidth > 1200) {
+          crossAxisCount = 3; // Layar besar (desktop)
+        } else if (constraints.maxWidth > 600) {
+          crossAxisCount = 2; // Layar sedang (tablet)
+        } else {
+          crossAxisCount = 1; // Layar kecil (mobile)
+        }
+
+        // Kumpulkan semua media yang ada
+        List<Widget> mediaWidgets = [];
+
+        if (question.linkGambarPembahasan != '-') {
+          mediaWidgets.add(_buildImagePreview(question.linkGambarPembahasan));
+        }
+
+        if (question.linkVideoPembahasan != '-') {
+          mediaWidgets.add(_buildVideoPreview(question.linkVideoPembahasan));
+        }
+
+        if (question.linkAudioPembahasan != '-') {
+          mediaWidgets.add(_buildAudioPreview(question.linkAudioPembahasan));
+        }
+
+
+        // Tampilkan dalam grid
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: _getAspectRatio(crossAxisCount),
+          ),
+          itemCount: mediaWidgets.length,
+          itemBuilder: (context, index) {
+            return mediaWidgets[index];
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildMediaGrid(SoalModel question) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Tentukan jumlah kolom berdasarkan lebar layar
+        int crossAxisCount;
+        if (constraints.maxWidth > 1200) {
+          crossAxisCount = 3; // Layar besar (desktop)
+        } else if (constraints.maxWidth > 600) {
+          crossAxisCount = 2; // Layar sedang (tablet)
+        } else {
+          crossAxisCount = 1; // Layar kecil (mobile)
+        }
+
+        // Kumpulkan semua media yang ada
+        List<Widget> mediaWidgets = [];
+
+        if (question.linkGambar != '-') {
+          mediaWidgets.add(_buildImagePreview(question.linkGambar));
+        }
+
+        if (question.linkVideo != '-') {
+          mediaWidgets.add(_buildVideoPreview(question.linkVideo));
+        }
+
+        if (question.linkAudio != '-') {
+          mediaWidgets.add(_buildAudioPreview(question.linkAudio));
+        }
+
+
+        // Tampilkan dalam grid
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: _getAspectRatio(crossAxisCount),
+          ),
+          itemCount: mediaWidgets.length,
+          itemBuilder: (context, index) {
+            return mediaWidgets[index];
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildImagePreview(String imageUrl) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.contain,
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            if (wasSynchronouslyLoaded) return child;
+            return AnimatedOpacity(
+              opacity: frame == null ? 0 : 1,
+              duration: const Duration(seconds: 1),
+              curve: Curves.easeOut,
+              child: child,
+            );
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              color: Colors.grey[200],
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: Colors.grey[200],
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                    SizedBox(height: 8),
+                    Text(
+                      'Gagal memuat gambar',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVideoPreview(String videoUrl) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: VideoPlayerWidget(videoUrl: videoUrl),
+      ),
+    );
+  }
+
+  Widget _buildAudioPreview(String audioUrl) {
+    return AudioPreviewWidget(audioUrl: audioUrl);
+  }
+
+  double _getAspectRatio(int crossAxisCount) {
+    switch (crossAxisCount) {
+      case 1:
+        return 16 / 9; // Lebar landscape untuk 1 kolom
+      case 2:
+        return 16 / 9; // Sedikit lebih persegi untuk 2 kolom
+      case 3:
+        return 16 / 9; // Persegi untuk 3 kolom
+      default:
+        return 16 / 9;
+    }
   }
 
   Widget _buildOption(String optionText, String optionValue, String correctAnswer, String studentAnswer) {

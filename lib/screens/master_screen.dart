@@ -7,7 +7,9 @@ import 'package:project_ta/bloc/users/users_bloc.dart';
 import 'package:project_ta/bloc/video_edukasi/video_edukasi_bloc.dart';
 import 'package:project_ta/screens/master_comments_screen.dart';
 import 'package:project_ta/screens/master_hadiah_screen.dart';
+import 'package:project_ta/screens/master_kelas_mengajar.dart';
 import 'package:project_ta/screens/master_mata_pelajaran_screen.dart';
+import 'package:project_ta/screens/master_tugas_screen.dart';
 import 'package:project_ta/screens/master_ujian_screen.dart';
 import 'package:project_ta/screens/master_video_edukasi_screen.dart';
 
@@ -36,6 +38,8 @@ class _MasterScreenState extends State<MasterScreen> {
     MasterMenuItem(title: 'Video Edukasi', screen: const MasterVideoEdukasiScreen()),
     MasterMenuItem(title: 'Comments', screen: const MasterCommentsScreen()),
     MasterMenuItem(title: 'Mata Pelajaran', screen: const MasterMataPelajaranScreen()),
+    MasterMenuItem(title: 'Kelas Mengajar', screen: const MasterKelasMengajarScreen()),
+    MasterMenuItem(title: 'Tugas', screen: const MasterTugasScreen()),
   ];
 
   @override

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_ta/bloc/history_ujian/history_ujian_bloc.dart';
-import 'package:project_ta/bloc/notifikasi/notifikasi_bloc.dart';
-import 'package:project_ta/bloc/notifikasi/notifikasi_event.dart';
 import 'package:project_ta/bloc/user/user_bloc.dart';
 import 'package:project_ta/bloc/user/user_state.dart';
 import 'package:project_ta/screens/info_pengguna_screen.dart';
@@ -322,7 +320,6 @@ class _ProfileMenu extends StatelessWidget {
                 );
               } else {
                 logout(context);
-                context.read<NotifikasiBloc>().add(InitNotif());
                 context.read<AuthBloc>().add(LogoutEvent());
               }
             },

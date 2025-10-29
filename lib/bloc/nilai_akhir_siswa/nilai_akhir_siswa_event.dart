@@ -7,6 +7,8 @@ abstract class NilaiAkhirSiswaEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class InitNilaiAkhirSiswa extends NilaiAkhirSiswaEvent {}
+
 // Event untuk mengambil semua nilai akhir siswa
 class FetchAllNilaiAkhirSiswa extends NilaiAkhirSiswaEvent {
   final String token;

@@ -24,7 +24,7 @@ class UserModel {
   final String uas;
   bool tidakNaik;
   int nilai;
-  bool diperiksa;
+  String diperiksa;
   bool pengumpul;
   PengumpulanTugasModel? tugas;
   final List<UjianHarianModel>? ujianHarian; // Perhatikan tipe data ini
@@ -51,7 +51,7 @@ class UserModel {
     this.uas= '-',
     this.tidakNaik = false,
     this.nilai = 0,
-    this.diperiksa = false,
+    this.diperiksa = 'false',
     this.pengumpul = false,
     this.tugas,
     this.ujianHarian,
@@ -79,7 +79,7 @@ class UserModel {
       uts: json['uts'] ?? '-',
       uas: json['uas'] ?? '-',
       nilai: json['nilai'] ?? 0,
-      diperiksa: json['diperiksa'] ?? false,
+      diperiksa: json['diperiksa'] ?? 'false',
       pengumpul: json['pengumpul'] ?? false,
       tugas: json['tugas'] != null ? PengumpulanTugasModel.fromJson(json['tugas']) : null,
       ujianHarian: json['ujian_harian'] != null

@@ -11,7 +11,6 @@ import 'package:project_ta/bloc/user/user_bloc.dart';
 import 'package:project_ta/bloc/user/user_state.dart';
 import 'package:project_ta/constants/color.dart';
 import 'package:project_ta/models/video_edukasi_model.dart';
-import 'package:project_ta/screens/notifikasi_screen.dart';
 import 'package:project_ta/screens/rekomendasi_video_screen.dart';
 import 'package:project_ta/screens/top_video_screen.dart';
 import 'package:project_ta/widgets/list_rekomendasi.dart';
@@ -93,13 +92,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: kPrimaryLight,
                         ),
                         child: IconButton(
-                          icon: const Icon(Icons.notifications, color: Colors.white),
+                          icon: const Icon(Icons.emoji_emotions, color: Colors.white),
                           onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const NotifikasiScreen(),
-                              ),
-                            );
                           },
                         ),
                       ),

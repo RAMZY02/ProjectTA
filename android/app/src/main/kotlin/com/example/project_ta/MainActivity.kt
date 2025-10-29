@@ -1,4 +1,4 @@
-package com.example.project_ta  // Sesuaikan dengan package name Anda
+package com.ramz.project_ta
 
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName

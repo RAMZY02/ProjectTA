@@ -48,6 +48,9 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
   String? _gambarPath;
   String? _videoPath;
   String? _audioPath;
+  String? _imagePathPembahasan;
+  String? _audioPathPembahasan;
+  String? _videoPathPembahasan;
   String? _docPath;
 
   final List<String> _tipeSoalOptions = ['Pilihan Ganda', 'Isian', 'Upload Foto'];
@@ -67,16 +70,20 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
 
     _selectedTipe = widget.soalData?.tipe ?? 'Pilihan Ganda';
     _selectedJawaban = widget.soalData?.jawaban != null
-        ? widget.soalData!.jawaban
+        ? widget.soalData!.jawaban.toUpperCase()
         : null;
 
     // Initialize file paths from existing data
     _gambarPath = widget.soalData?.linkGambar ?? '-';
     _videoPath = widget.soalData?.linkVideo ?? '-';
     _audioPath = widget.soalData?.linkAudio ?? '-';
+    _imagePathPembahasan = widget.soalData?.linkGambarPembahasan ?? '-';
+    _videoPathPembahasan = widget.soalData?.linkVideoPembahasan ?? '-';
+    _audioPathPembahasan = widget.soalData?.linkAudioPembahasan ?? '-';
   }
 
   String _getJawabanText(String option) {
+    option = option.toUpperCase();
     switch (option) {
       case 'A': return _opsi1Controller.text;
       case 'B': return _opsi2Controller.text;
@@ -120,6 +127,29 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
         );
         contentType = 'audio/mpeg';
         filePrefix = 'Soal/Audio';
+      }
+
+      if (type == 'pembahasan_gambar') {
+        result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+          allowMultiple: false,
+        );
+        contentType = 'image/jpeg';
+        filePrefix = 'Pembahasan/Gambar';
+      } else if (type == 'pembahasan_video') {
+        result = await FilePicker.platform.pickFiles(
+          type: FileType.video,
+          allowMultiple: false,
+        );
+        contentType = 'video/mp4';
+        filePrefix = 'Pembahasan/Video';
+      } else if (type == 'pembahasan_audio') {
+        result = await FilePicker.platform.pickFiles(
+          type: FileType.audio,
+          allowMultiple: false,
+        );
+        contentType = 'audio/mpeg';
+        filePrefix = 'Pembahasan/Audio';
       }
 
       // Jika user membatalkan pemilihan file (result null)
@@ -294,6 +324,9 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
       if (type == 'gambar') _gambarPath = isUploading ? 'Uploading...' : _gambarPath;
       if (type == 'video') _videoPath = isUploading ? 'Uploading...' : _videoPath;
       if (type == 'audio') _audioPath = isUploading ? 'Uploading...' : _audioPath;
+      if (type == 'pembahasan_gambar') _imagePathPembahasan = isUploading ? 'Uploading...' : _imagePathPembahasan;
+      if (type == 'pembahasan_video') _videoPathPembahasan = isUploading ? 'Uploading...' : _videoPathPembahasan;
+      if (type == 'pembahasan_audio') _audioPathPembahasan = isUploading ? 'Uploading...' : _audioPathPembahasan;
     });
   }
 
@@ -303,6 +336,9 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
       if (type == 'gambar') _gambarPath = '-';
       if (type == 'video') _videoPath = '-';
       if (type == 'audio') _audioPath = '-';
+      if (type == 'pembahasan_gambar') _imagePathPembahasan = '-';
+      if (type == 'pembahasan_video') _videoPathPembahasan = '-';
+      if (type == 'pembahasan_audio') _audioPathPembahasan = '-';
     });
   }
 
@@ -342,6 +378,20 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
           } else if (state.fileName.contains('Soal/Dokumen')) {
             setState(() {
               _docPath = state.fileName;
+            });
+          }
+
+          if (state.fileName.contains('Pembahasan/Gambar')) {
+            setState(() {
+              _imagePathPembahasan = state.fileName;
+            });
+          } else if (state.fileName.contains('Pembahasan/Audio')) {
+            setState(() {
+              _audioPathPembahasan = state.fileName;
+            });
+          } else if (state.fileName.contains('Pembahasan/Video')) {
+            setState(() {
+              _videoPathPembahasan = state.fileName;
             });
           }
 
@@ -452,7 +502,16 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
                       items: _jawabanOptions.map((option) {
                         return DropdownMenuItem(
                           value: option,
-                          child: Text('Opsi $option: ${_getJawabanText(option)}'),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: MediaQuery.of(context).size.width * 0.8, // 80% dari lebar layar
+                            ),
+                            child: Text(
+                              'Opsi $option: ${_getJawabanText(option)}',
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
                         );
                       }).toList(),
                       onChanged: (value) {
@@ -485,7 +544,7 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
                   const Text('Tambahkan Media:', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildMediaButton('Gambar', Icons.image, () => _pickFile('gambar', context)),
                       _buildMediaButton('Video', Icons.videocam, () => _pickFile('video', context)),
@@ -494,6 +553,19 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
                   ),
                   const SizedBox(height: 16),
                   _buildMediaPreview(),
+                  const SizedBox(height: 16),
+                  const Text('Tambahkan Media Pembahasan:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildMediaButton('Gambar', Icons.image, () => _pickFile('pembahasan_gambar', context)),
+                      _buildMediaButton('Video', Icons.videocam, () => _pickFile('pembahasan_video', context)),
+                      _buildMediaButton('Audio', Icons.audiotrack, () => _pickFile('pembahasan_audio', context)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildMediaPreviewPembahasan(),
                   const SizedBox(height: 24),
 
                   // Submit Button
@@ -606,9 +678,18 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
               _audioPath = '-';
             }),
           ),
-        if (_docPath != null && _docPath != '-')
+      ],
+    );
+  }
+
+  Widget _buildMediaPreviewPembahasan() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        if (_imagePathPembahasan != null && _imagePathPembahasan != '-')
           Chip(
-            label: _docPath == 'Uploading...'
+            label: _imagePathPembahasan == 'Uploading...'
                 ? const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -617,10 +698,44 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
                 Text('Uploading...'),
               ],
             )
-                : Text(_docPath!.split('/').last),
-            avatar: const Icon(Icons.insert_drive_file, size: 20),
+                : Text(_imagePathPembahasan!.split('/').last),
+            avatar: const Icon(Icons.image, size: 20),
             onDeleted: () => setState(() {
-              _docPath = '-';
+              _imagePathPembahasan = '-';
+            }),
+          ),
+        if (_videoPathPembahasan != null && _videoPathPembahasan != '-')
+          Chip(
+            label: _videoPathPembahasan == 'Uploading...'
+                ? const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                SizedBox(width: 8),
+                Text('Uploading...'),
+              ],
+            )
+                : Text(_videoPathPembahasan!.split('/').last),
+            avatar: const Icon(Icons.videocam, size: 20),
+            onDeleted: () => setState(() {
+              _videoPathPembahasan = '-';
+            }),
+          ),
+        if (_audioPathPembahasan != null && _audioPathPembahasan != '-')
+          Chip(
+            label: _audioPathPembahasan == 'Uploading...'
+                ? const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                SizedBox(width: 8),
+                Text('Uploading...'),
+              ],
+            )
+                : Text(_audioPathPembahasan!.split('/').last),
+            avatar: const Icon(Icons.audiotrack, size: 20),
+            onDeleted: () => setState(() {
+              _audioPathPembahasan = '-';
             }),
           ),
       ],
@@ -652,6 +767,9 @@ class _InsertSoalDanJawabanScreenState extends State<InsertSoalDanJawabanScreen>
         'link_video': _videoPath != '-' && _videoPath!.contains('https') ? _videoPath : _videoPath != '-' ? 'https://edukasiin.animein.net/$_videoPath' : '-',
         'link_gambar': _gambarPath != '-' && _gambarPath!.contains('https') ? _gambarPath : _gambarPath != '-' ? 'https://edukasiin.animein.net/$_gambarPath' : '-',
         'link_audio': _audioPath != '-' && _audioPath!.contains('https') ? _audioPath : _audioPath != '-' ? 'https://edukasiin.animein.net/$_audioPath' : '-',
+        'link_video_pembahasan': _videoPathPembahasan != '-' && _videoPathPembahasan!.contains('https') ? _videoPathPembahasan : _videoPathPembahasan != '-' ? 'https://edukasiin.animein.net/$_videoPathPembahasan' : '-',
+        'link_gambar_pembahasan': _imagePathPembahasan != '-' && _imagePathPembahasan!.contains('https') ? _imagePathPembahasan : _imagePathPembahasan != '-' ? 'https://edukasiin.animein.net/$_imagePathPembahasan' : '-',
+        'link_audio_pembahasan': _audioPathPembahasan != '-' && _audioPathPembahasan!.contains('https') ? _audioPathPembahasan : _audioPathPembahasan != '-' ? 'https://edukasiin.animein.net/$_audioPathPembahasan' : '-',
       };
 
       if (!widget.isEdit) {

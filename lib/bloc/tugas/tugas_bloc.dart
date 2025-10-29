@@ -8,7 +8,8 @@ import 'tugas_state.dart';
 class TugasBloc extends Bloc<TugasEvent, TugasState> {
 
   // final baseUrl = 'http://localhost:3000';
-  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   TugasBloc() : super(TugasInitial()) {
     on<TugasInit>(_onInit);
@@ -146,8 +147,7 @@ class TugasBloc extends Bloc<TugasEvent, TugasState> {
       );
 
       if (response.statusCode == 201) {
-        emit(TugasOperationSuccess(message: 'Tugas created successfully'));
-        add(FetchTugas(token: event.token));
+        emit(TugasInitial());
       } else {
         final errorData = json.decode(response.body);
         emit(TugasError(message: 'Failed to create tugas: ${errorData['message']}'));
@@ -184,8 +184,7 @@ class TugasBloc extends Bloc<TugasEvent, TugasState> {
       );
 
       if (response.statusCode == 200) {
-        emit(TugasOperationSuccess(message: 'Tugas updated successfully'));
-        add(FetchTugas(token: event.token));
+        emit(TugasInitial());
       } else {
         final errorData = json.decode(response.body);
         emit(TugasError(message: 'Failed to update tugas: ${errorData['message']}'));
@@ -210,8 +209,7 @@ class TugasBloc extends Bloc<TugasEvent, TugasState> {
       );
 
       if (response.statusCode == 200) {
-        emit(TugasOperationSuccess(message: 'Tugas deleted successfully'));
-        add(FetchTugas(token: event.token));
+        emit(TugasInitial());
       } else {
         final errorData = json.decode(response.body);
         emit(TugasError(message: 'Failed to delete tugas: ${errorData['message']}'));

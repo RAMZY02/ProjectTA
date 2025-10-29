@@ -8,7 +8,8 @@ import 'tahun_pelajaran_state.dart';
 class TahunPelajaranBloc extends Bloc<TahunPelajaranEvent, TahunPelajaranState> {
 
   // final String baseUrl = 'http://localhost:3000/api/tahun-pelajaran';
-  final String baseUrl = 'https://flounder-moved-rooster.ngrok-free.app/api/tahun-pelajaran';
+  // final String baseUrl = 'https://flounder-moved-rooster.ngrok-free.app/api/tahun-pelajaran';
+  final baseUrl = 'https://backend.srv1071909.hstgr.cloud/api/tahun-pelajaran';
 
   TahunPelajaranBloc() : super(TahunPelajaranInitial()) {
     on<FetchAllTahunPelajaran>(_onFetchAllTahunPelajaran);

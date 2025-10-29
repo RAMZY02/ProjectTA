@@ -86,7 +86,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.height * 0.35;
+    final screenWidth = MediaQuery.of(context).size.height;
     final calculatedHeight = screenWidth / _aspectRatio;
 
     return GestureDetector(

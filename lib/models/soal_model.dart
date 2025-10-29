@@ -13,6 +13,9 @@ class SoalModel {
   final String linkVideo;
   final String linkGambar;
   final String linkAudio;
+  final String linkVideoPembahasan;
+  final String linkGambarPembahasan;
+  final String linkAudioPembahasan;
   final String jawabanSiswa;
   final int nilaiSiswa;
 
@@ -31,6 +34,9 @@ class SoalModel {
     required this.linkVideo,
     required this.linkGambar,
     required this.linkAudio,
+    required this.linkVideoPembahasan,
+    required this.linkGambarPembahasan,
+    required this.linkAudioPembahasan,
     required this.jawabanSiswa,
     required this.nilaiSiswa,
   });
@@ -51,6 +57,9 @@ class SoalModel {
       linkVideo: json['link_video'] ?? '-',
       linkGambar: json['link_gambar'] ?? '-',
       linkAudio: json['link_audio'] ?? '-',
+      linkVideoPembahasan: json['link_video_pembahasan'] ?? '-',
+      linkGambarPembahasan: json['link_gambar_pembahasan'] ?? '-',
+      linkAudioPembahasan: json['link_audio_pembahasan'] ?? '-',
       jawabanSiswa: json['jawabanSiswa'] ?? '-',
       nilaiSiswa: json['nilaiSiswa'] ?? 0,
     );
@@ -92,6 +101,9 @@ class SoalModel {
     String? linkVideo,
     String? linkGambar,
     String? linkAudio,
+    String? linkVideoPembahasan,
+    String? linkGambarPembahasan,
+    String? linkAudioPembahasan,
     String? jawabanSiswa,
     int? nilaiSiswa
   }) {
@@ -110,6 +122,9 @@ class SoalModel {
       linkVideo: linkVideo ?? this.linkVideo,
       linkGambar: linkGambar ?? this.linkGambar,
       linkAudio: linkAudio ?? this.linkAudio,
+      linkVideoPembahasan: linkVideoPembahasan ?? this.linkVideoPembahasan,
+      linkGambarPembahasan: linkGambarPembahasan ?? this.linkGambarPembahasan,
+      linkAudioPembahasan: linkAudioPembahasan ?? this.linkAudioPembahasan,
       jawabanSiswa: jawabanSiswa ?? this.jawabanSiswa,
       nilaiSiswa: nilaiSiswa ?? this.nilaiSiswa
     );

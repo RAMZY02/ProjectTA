@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:project_ta/bloc/notifikasi/notifikasi_bloc.dart';
-import 'package:project_ta/bloc/notifikasi/notifikasi_event.dart';
 import 'package:project_ta/bloc/user/user_bloc.dart';
 import 'package:project_ta/bloc/user/user_state.dart';
 import 'package:project_ta/screens/admin_kupon_screen.dart';
-import 'package:project_ta/screens/info_pengguna_screen.dart';
-import 'package:project_ta/screens/laporan_nilai_screen.dart';
 import 'package:project_ta/screens/login_screen.dart';
-import 'package:project_ta/screens/rapot_wali_kelas_screen.dart';
 
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
@@ -209,7 +204,6 @@ class _ProfileMenu extends StatelessWidget {
                 );
               } else {
                 logout(context);
-                context.read<NotifikasiBloc>().add(InitNotif());
                 context.read<AuthBloc>().add(LogoutEvent());
               }
             },

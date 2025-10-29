@@ -10,9 +10,11 @@ import 'nilai_akhir_siswa_state.dart';
 class NilaiAkhirSiswaBloc extends Bloc<NilaiAkhirSiswaEvent, NilaiAkhirSiswaState> {
 
   // final baseUrl = 'http://localhost:3000';
-  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   NilaiAkhirSiswaBloc() : super(NilaiAkhirSiswaInitial()) {
+    on<InitNilaiAkhirSiswa>(_onInit);
     on<FetchAllNilaiAkhirSiswa>(_onFetchAllNilaiAkhirSiswa);
     on<FetchNilaiAkhirSiswaById>(_onFetchNilaiAkhirSiswaById);
     on<FetchNilaiAkhirSiswaByMapelAndKelas>(_onFetchNilaiAkhirSiswaByMapelAndKelas);
@@ -22,6 +24,10 @@ class NilaiAkhirSiswaBloc extends Bloc<NilaiAkhirSiswaEvent, NilaiAkhirSiswaStat
     on<CreateOrUpdateNilaiAkhirSiswa>(_onCreateOrUpdateNilaiAkhirSiswa);
     on<UpdateNilaiAkhirSiswa>(_onUpdateNilaiAkhirSiswa);
     on<DeleteNilaiAkhirSiswa>(_onDeleteNilaiAkhirSiswa);
+  }
+
+  Future<void> _onInit(InitNilaiAkhirSiswa event, Emitter<NilaiAkhirSiswaState> emit) async {
+    emit(NilaiAkhirSiswaInitial());
   }
 
   Future<void> _onFetchAllNilaiAkhirSiswa(
@@ -120,8 +126,6 @@ class NilaiAkhirSiswaBloc extends Bloc<NilaiAkhirSiswaEvent, NilaiAkhirSiswaStat
           emit(NilaiAkhirSiswaError(data['message'] ?? 'Nilai akhir not found'));
         }
       } else {
-        emit(NilaiAkhirSiswaError(
-            'Failed to fetch nilai akhir: belum ada data '));
       }
     } catch (e) {
       emit(NilaiAkhirSiswaError('Error fetching nilai akhir: $e'));

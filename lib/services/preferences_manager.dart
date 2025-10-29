@@ -10,6 +10,11 @@ class PreferencesManager {
     return _prefsInstance!;
   }
 
+  // Tambahkan method getInstance ini
+  static Future<SharedPreferences> getInstance() async {
+    return await _instance;
+  }
+
   static Future<bool> setBool(String key, bool value) async {
     var prefs = await _instance;
     return prefs.setBool(key, value);

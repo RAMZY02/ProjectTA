@@ -415,7 +415,7 @@ class _DetailRapotScreenState extends State<DetailRapotScreen> {
                                 width: MediaQuery.of(context).size.width * 0.6,
                                 child: Text(
                                   nilai.capaian_kompetensi,
-                                  maxLines: 5,
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),

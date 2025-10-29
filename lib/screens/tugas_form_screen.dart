@@ -433,6 +433,7 @@ class _TugasFormScreenState extends State<TugasFormScreen> {
           deadline: _selectedDeadline,
         ));
       }
+      Navigator.pop(context);
     }
   }
 

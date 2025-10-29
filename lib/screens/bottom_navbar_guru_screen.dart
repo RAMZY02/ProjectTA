@@ -1,4 +1,9 @@
 import 'package:project_ta/bloc/history_ujian/history_ujian_bloc.dart';
+import 'package:project_ta/bloc/nilai_akhir_siswa/nilai_akhir_siswa_bloc.dart';
+import 'package:project_ta/bloc/nilai_akhir_siswa/nilai_akhir_siswa_event.dart';
+import 'package:project_ta/bloc/nilai_akhir_siswa/nilai_akhir_siswa_state.dart';
+import 'package:project_ta/bloc/video_edukasi/video_edukasi_bloc.dart';
+import 'package:project_ta/bloc/video_edukasi/video_edukasi_event.dart';
 import 'package:project_ta/constants/color.dart';
 import 'package:flutter/material.dart';
 import 'package:project_ta/screens/daftar_video_edukasi_guru_screen.dart';
@@ -65,9 +70,7 @@ class _BottomNavbarGuruScreenState extends State<BottomNavbarGuruScreen> {
       },
       child: Scaffold(
         body: Center(
-          child: _selectedIndex == 6
-              ? Container() // Kosongkan karena logout akan diproses
-              : _widgetOptions.elementAt(_selectedIndex),
+          child: _widgetOptions.elementAt(_selectedIndex),
         ),
         bottomNavigationBar: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
@@ -109,9 +112,23 @@ class _BottomNavbarGuruScreenState extends State<BottomNavbarGuruScreen> {
           currentIndex: _selectedIndex,
           onTap: (int index) {
             setState(() {
-              context.read<UjianBloc>().add(InitUjian());
-              context.read<HistoryUjianBloc>().add(InitialHistoryUjian());
-              context.read<TugasBloc>().add(TugasInit());
+              if(index == 0){
+                context.read<UjianBloc>().add(InitUjian());
+              }
+              else if(index == 1){
+                context.read<VideoEdukasiBloc>().add(InitVideoEdukasi());
+              }
+              else if(index == 2){
+                context.read<TugasBloc>().add(TugasInit());
+              }
+              else if(index == 3){
+                context.read<UjianBloc>().add(InitUjian());
+                context.read<HistoryUjianBloc>().add(InitialHistoryUjian());
+              }
+              else{
+                context.read<NilaiAkhirSiswaBloc>().add(InitNilaiAkhirSiswa());
+                context.read<HistoryUjianBloc>().add(InitialHistoryUjian());
+              }
               _selectedIndex = index;
             });
           },

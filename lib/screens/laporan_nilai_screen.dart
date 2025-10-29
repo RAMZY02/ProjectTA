@@ -32,6 +32,7 @@ import '../bloc/penilaian_tugas/penilaian_tugas_state.dart';
 import '../bloc/users/users_bloc.dart';
 import '../bloc/users/users_event.dart';
 import '../models/ujian_harian_model.dart';
+import '../services/notification_service.dart';
 import '../widgets/editable_student_grade_data_source.dart';
 
 class LaporanNilaiScreen extends StatefulWidget {
@@ -535,7 +536,19 @@ class _LaporanNilaiScreenState extends State<LaporanNilaiScreen> {
   }
 
   Future<void> _exportForMobile(List<int> bytes, String mapel, String selectedClass, BuildContext context) async {
+    // Generate unique notification ID
+    final int notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
+
     try {
+      // Tampilkan notifikasi progress awal
+      await NotificationService.showDownloadNotification(
+        title: 'Mengekspor Data',
+        body: 'Menyiapkan laporan nilai...',
+        progress: 0,
+        isProgress: true,
+        notificationId: notificationId,
+      );
+
       final String path;
       final directory = await getDownloadsDirectory();
       if (directory != null) {
@@ -544,9 +557,35 @@ class _LaporanNilaiScreenState extends State<LaporanNilaiScreen> {
         path = '/storage/emulated/0/Download/Laporan Nilai_${mapel}_Kelas_$selectedClass.xlsx';
       }
 
+      // Update notifikasi - menulis file
+      await NotificationService.showDownloadNotification(
+        title: 'Mengekspor Data',
+        body: 'Menulis file Excel...',
+        progress: 50,
+        isProgress: true,
+        notificationId: notificationId,
+      );
+
       final File file = File(path);
       await file.writeAsBytes(bytes);
+
+      // Update notifikasi - membuka file
+      await NotificationService.showDownloadNotification(
+        title: 'Mengekspor Data',
+        body: 'Membuka file...',
+        progress: 80,
+        isProgress: true,
+        notificationId: notificationId,
+      );
+
       await OpenFile.open(path);
+
+      // Hapus notifikasi progress dan tampilkan notifikasi sukses
+      await NotificationService.cancelProgressNotification(notificationId);
+      await NotificationService.showDownloadNotification(
+        title: 'Export Berhasil ✅',
+        body: 'Laporan Nilai $mapel Kelas $selectedClass berhasil disimpan',
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -555,12 +594,24 @@ class _LaporanNilaiScreenState extends State<LaporanNilaiScreen> {
           ),
         );
       }
+
+      print("File exported successfully to: $path");
+
     } catch (e) {
+      // Handle error dengan notifikasi
+      await NotificationService.cancelProgressNotification(notificationId);
+      await NotificationService.showDownloadNotification(
+        title: 'Export Gagal ❌',
+        body: 'Gagal mengekspor laporan: ${e.toString()}',
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal export di mobile: $e')),
         );
       }
+
+      print("Export failed: $e");
     }
   }
 
@@ -623,9 +674,6 @@ class _LaporanNilaiScreenState extends State<LaporanNilaiScreen> {
                 isLoadingClasses = false;
                 classes = [];
               });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Gagal memuat kelas: ${state.message}')),
-              );
             }
           },
         ),

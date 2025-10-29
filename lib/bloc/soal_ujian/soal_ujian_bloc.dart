@@ -12,7 +12,8 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
 
   final OpenAIService openAIService; // Tambahkan OpenAIService
   // final baseUrl = 'http://localhost:3000';
-  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   SoalUjianBloc({required this.openAIService}) : super(SoalUjianInitial()) {
     on<InitSoalUjian>(_onInit);
@@ -151,8 +152,10 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
           'pembahasan': event.soalData['pembahasan'],
           'link_video': event.soalData['link_video'],
           'link_gambar': event.soalData['link_gambar'],
-          'link_file': event.soalData['link_file'],
           'link_audio': event.soalData['link_audio'],
+          'link_video_pembahasan': event.soalData['link_video_pembahasan'],
+          'link_gambar_pembahasan': event.soalData['link_gambar_pembahasan'],
+          'link_audio_pembahasan': event.soalData['link_audio_pembahasan'],
         })
       );
 
@@ -194,6 +197,9 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
           'link_video': event.soalData['link_video'],
           'link_gambar': event.soalData['link_gambar'],
           'link_audio': event.soalData['link_audio'],
+          'link_video_pembahasan': event.soalData['link_video_pembahasan'],
+          'link_gambar_pembahasan': event.soalData['link_gambar_pembahasan'],
+          'link_audio_pembahasan': event.soalData['link_audio_pembahasan'],
         })
       );
 
@@ -226,7 +232,8 @@ class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
       );
 
       if (response.statusCode == 200) {
-        add(FetchSoalUjian2(token: event.token, ujianId: event.id));
+        emit(SoalUjianInitial());
+        // add(FetchSoalUjian2(token: event.token, ujianId: event.id));
       } else {
         emit(SoalUjianError(message: 'Gagal add soal ujian'));
       }
@@ -296,11 +303,14 @@ Format setiap soal harus dalam bentuk JSON dengan struktur berikut:
           opsiC: event.questionType == 'Pilihan Ganda' ? data['opsi_c'] ?? '-' : '-',
           opsiD: event.questionType == 'Pilihan Ganda' ? data['opsi_d'] ?? '-' : '-',
           opsiE: event.questionType == 'Pilihan Ganda' ? data['opsi_e'] ?? '-' : '-',
-          jawaban: event.questionType == 'Pilihan Ganda' ? data['jawaban'] ?? '-' : '-',
+          jawaban: event.questionType == 'Pilihan Ganda' ? data['jawaban'].toString().toUpperCase() ?? '-' : '-',
           pembahasan: data['pembahasan'] ?? '',
           linkVideo: '-',
           linkGambar: '-',
           linkAudio: '-',
+          linkVideoPembahasan: '-',
+          linkGambarPembahasan: '-',
+          linkAudioPembahasan: '-',
           jawabanSiswa: '-',
           nilaiSiswa: 0,
         );
@@ -339,6 +349,9 @@ Format setiap soal harus dalam bentuk JSON dengan struktur berikut:
             'link_video': event.selectedSoal.linkVideo,
             'link_gambar': event.selectedSoal.linkGambar,
             'link_audio': event.selectedSoal.linkAudio,
+            'link_video_pembahasan': event.selectedSoal.linkVideoPembahasan,
+            'link_gambar_pembahasan': event.selectedSoal.linkGambarPembahasan,
+            'link_audio_pembahasan': event.selectedSoal.linkAudioPembahasan,
           })
       );
 

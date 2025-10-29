@@ -25,6 +25,9 @@ import '../bloc/pengumpulan_tugas/pengumpulan_tugas_state.dart';
 import '../bloc/cloudflare/cloudflare_bloc.dart';
 import '../bloc/cloudflare/cloudflare_event.dart';
 import '../bloc/cloudflare/cloudflare_state.dart';
+import '../services/notification_service.dart';
+import '../widgets/audio_player.dart';
+import '../widgets/video_player.dart';
 
 class DetailTugasSiswaScreen extends StatefulWidget {
   final TugasModel tugas;
@@ -216,6 +219,9 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
 
   // Fungsi untuk download file
   Future<void> _downloadFile(String url, String fileName, BuildContext context) async {
+    // Generate unique notification ID untuk setiap download
+    final int notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
+
     try {
       setState(() {
         _isDownloading = true;
@@ -224,13 +230,23 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
         _currentDownloadUrl = url;
       });
 
-      // Untuk platform web
+      // Tampilkan notifikasi progress awal
+      await NotificationService.showDownloadNotification(
+        title: 'Memulai Download',
+        body: 'Mempersiapkan $fileName...',
+        progress: 0,
+        isProgress: true,
+        notificationId: notificationId,
+      );
+
+      print("Downloading from: $url");
+
       if (kIsWeb) {
         await _downloadFileForWebWithProgress(url, fileName, context);
         return;
       }
 
-      // Untuk platform mobile (kode asli)
+      // Untuk platform mobile
       String extension = getFileExtensionFromUrl(url);
 
       // Request permission untuk mobile
@@ -244,21 +260,50 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
           _downloadStatus = 'Sedang mengunduh...';
         });
 
+        // Update notifikasi progress
+        await NotificationService.showDownloadNotification(
+          title: 'Mengunduh $fileName',
+          body: '0% - Memulai download...',
+          progress: 0,
+          isProgress: true,
+          notificationId: notificationId,
+        );
+
         await dio.download(
           url,
           savePath,
           onReceiveProgress: (received, total) {
             if (total != -1) {
-              final progress = (received / total * 100);
+              final progress = (received / total * 100).toInt();
+              final receivedMB = (received / 1024 / 1024).toStringAsFixed(1);
+              final totalMB = (total / 1024 / 1024).toStringAsFixed(1);
+
               setState(() {
-                _downloadProgress = progress;
-                _downloadStatus = '${(received / 1024 / 1024).toStringAsFixed(1)} MB / ${(total / 1024 / 1024).toStringAsFixed(1)} MB';
+                _downloadProgress = progress.toDouble();
+                _downloadStatus = '$receivedMB MB / $totalMB MB';
               });
+
+              // Update notifikasi progress
+              NotificationService.showDownloadNotification(
+                title: 'Mengunduh $fileName',
+                body: '$progress% - $receivedMB MB / $totalMB MB',
+                progress: progress,
+                isProgress: true,
+                notificationId: notificationId,
+              );
             }
           },
         );
 
+        // Hapus notifikasi progress dan tampilkan notifikasi sukses
+        await NotificationService.cancelProgressNotification(notificationId);
+        await NotificationService.showDownloadNotification(
+          title: 'Download Berhasil ✅',
+          body: '$fileName$extension berhasil disimpan di Folder Download',
+        );
+
         _showDownloadSuccess(context, 'File berhasil didownload ke Folder Download');
+        print("File downloaded successfully to: $savePath");
 
       } else {
         setState(() {
@@ -266,10 +311,30 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
           _downloadStatus = 'Izin ditolak';
           _currentDownloadUrl = null;
         });
+
+        // Notifikasi error permission
+        await NotificationService.cancelProgressNotification(notificationId);
+        await NotificationService.showDownloadNotification(
+          title: 'Download Gagal ❌',
+          body: 'Izin penyimpanan ditolak untuk $fileName',
+        );
+
         _showDownloadError(context, 'Izin penyimpanan ditolak');
+        print("Storage permission denied");
       }
     } catch (e) {
+      // Handle error dengan notifikasi
+      await NotificationService.cancelProgressNotification(notificationId);
+      await NotificationService.showDownloadNotification(
+        title: 'Download Gagal ❌',
+        body: 'Gagal mendownload $fileName: ${e.toString()}',
+      );
+
       _handleDownloadError(context, e);
+    } finally {
+      setState(() {
+        _isDownloading = false;
+      });
     }
   }
 
@@ -380,108 +445,377 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
     return path.extension(pathWithoutQuery);
   }
 
-  // Widget untuk menampilkan file dengan preview dan download button
-  Widget _buildFileCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required String url,
-  }) {
-    final isDownloadingThisFile = _isDownloading && _currentDownloadUrl == url;
-    String extension = getFileExtensionFromUrl(url);
-    String fileName = url.split('/').last;
+  // Widget untuk menampilkan media dalam grid responsive
+  Widget _buildMediaGrid(TugasModel tugas) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Tentukan jumlah kolom berdasarkan lebar layar
+        final crossAxisCount = _getCrossAxisCount(constraints.maxWidth);
 
+        // Kumpulkan semua media yang ada
+        final mediaWidgets = _buildMediaWidgets(tugas);
+
+        // Tampilkan dalam grid
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: _getAspectRatio(crossAxisCount),
+          ),
+          itemCount: mediaWidgets.length,
+          itemBuilder: (context, index) => mediaWidgets[index],
+        );
+      },
+    );
+  }
+
+  // Helper function untuk menentukan jumlah kolom
+  int _getCrossAxisCount(double maxWidth) {
+    if (maxWidth > 1200) return 3; // Layar besar (desktop)
+    if (maxWidth > 600) return 2;  // Layar sedang (tablet)
+    return 1; // Layar kecil (mobile)
+  }
+
+  // Fungsi untuk menentukan aspect ratio berdasarkan jumlah kolom
+  double _getAspectRatio(int crossAxisCount) {
+    switch (crossAxisCount) {
+      case 1: return 9 / 9;  // Lebar landscape untuk 1 kolom
+      case 2: return 11 / 9; // Sedikit lebih persegi untuk 2 kolom
+      case 3: return 11 / 9; // Persegi untuk 3 kolom
+      default: return 11 / 9;
+    }
+  }
+
+  // Kumpulkan semua widget media
+  List<Widget> _buildMediaWidgets(TugasModel tugas) {
+    final mediaWidgets = <Widget>[];
+
+    if (tugas.linkGambar != '-') {
+      mediaWidgets.add(_buildImagePreview(tugas.linkGambar));
+    }
+
+    if (tugas.linkVideo != '-') {
+      mediaWidgets.add(_buildVideoPreview(tugas.linkVideo));
+    }
+
+    if (tugas.linkAudio != '-') {
+      mediaWidgets.add(_buildAudioPreview(tugas.linkAudio));
+    }
+
+    if (tugas.linkFile != '-') {
+      mediaWidgets.add(_buildFilePreview(tugas.linkFile));
+    }
+
+    return mediaWidgets;
+  }
+
+  // Widget untuk preview gambar
+  Widget _buildImagePreview(String imageUrl) {
+    final isDownloadingThisFile = _isDownloading && _currentDownloadUrl == imageUrl;
+
+    return _buildMediaContainer(
+      child: Column(
+        children: [
+          _buildMediaListTile(
+            icon: Icons.image,
+            iconColor: Colors.orange.shade700,
+            title: "Gambar",
+            subtitle: "File gambar terlampir",
+            isDownloading: isDownloadingThisFile,
+            onDownload: () => _downloadFile(imageUrl, widget.tugas.nama, context),
+          ),
+          _buildImageContent(imageUrl),
+        ],
+      ),
+    );
+  }
+
+  // Widget untuk preview video
+  Widget _buildVideoPreview(String videoUrl) {
+    final isDownloadingThisFile = _isDownloading && _currentDownloadUrl == videoUrl;
+
+    return _buildMediaContainer(
+      child: Column(
+        children: [
+          _buildMediaListTile(
+            icon: Icons.videocam,
+            iconColor: Colors.red.shade700,
+            title: "Video",
+            subtitle: "File video terlampir",
+            isDownloading: isDownloadingThisFile,
+            onDownload: () => _downloadFile(videoUrl, widget.tugas.nama, context),
+          ),
+          _buildVideoContent(videoUrl),
+        ],
+      ),
+    );
+  }
+
+  // Widget untuk preview audio
+  Widget _buildAudioPreview(String audioUrl) {
+    final isDownloadingThisFile = _isDownloading && _currentDownloadUrl == audioUrl;
+
+    return _buildMediaContainer(
+      child: Column(
+        children: [
+          _buildMediaListTile(
+            icon: Icons.audiotrack,
+            iconColor: Colors.purple.shade700,
+            title: "Audio",
+            subtitle: "File audio terlampir",
+            isDownloading: isDownloadingThisFile,
+            onDownload: () => _downloadFile(audioUrl, widget.tugas.nama, context),
+          ),
+          _buildAudioContent(audioUrl),
+        ],
+      ),
+    );
+  }
+
+  // Widget untuk preview file
+  Widget _buildFilePreview(String fileUrl) {
+    final isDownloadingThisFile = _isDownloading && _currentDownloadUrl == fileUrl;
+
+    if (kIsWeb) {
+      return Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              'PDF Preview tidak tersedia di browser',
+              style: TextStyle(fontSize: 16),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Buka PDF di tab baru
+              html.window.open(fileUrl, '_blank');
+            },
+            child: Text('Buka PDF di Tab Baru'),
+          ),
+        ],
+      );
+    } else {
+      return _buildMediaContainer(
+        child: Column(
+          children: [
+            _buildMediaListTile(
+              icon: Icons.insert_drive_file,
+              iconColor: Colors.blue.shade700,
+              title: "Dokumen",
+              subtitle: "File dokumen terlampir",
+              isDownloading: isDownloadingThisFile,
+              onDownload: () =>
+                  _downloadFile(fileUrl, widget.tugas.nama, context),
+            ),
+            _buildFileContent(fileUrl),
+          ],
+        ),
+      );
+    }
+  }
+
+  // Reusable container untuk media
+  Widget _buildMediaContainer({required Widget child}) {
     return Container(
-      margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 2),
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      child: child,
+    );
+  }
+
+  // Reusable ListTile untuk media
+  Widget _buildMediaListTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required bool isDownloading,
+    required VoidCallback onDownload,
+  }) {
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: iconColor.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: iconColor, size: 20),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: Colors.grey.shade800,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.grey.shade600,
+        ),
+      ),
+      trailing: isDownloading
+          ? _buildDownloadProgress()
+          : _buildDownloadButton(onDownload),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    );
+  }
+
+  // Widget untuk progress download
+  Widget _buildDownloadProgress() {
+    return SizedBox(
+      width: 24,
+      height: 24,
+      child: CircularProgressIndicator(
+        value: _downloadProgress / 100,
+        strokeWidth: 3,
+        valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+      ),
+    );
+  }
+
+  // Widget untuk download button
+  Widget _buildDownloadButton(VoidCallback onDownload) {
+    return IconButton(
+      icon: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.blue.shade100,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          Icons.download,
+          color: Colors.blue.shade700,
+          size: 18,
+        ),
+      ),
+      onPressed: onDownload,
+    );
+  }
+
+  // Konten untuk gambar
+  Widget _buildImageContent(String imageUrl) {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 280),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.contain,
+          width: double.infinity,
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            if (wasSynchronouslyLoaded) return child;
+            return AnimatedOpacity(
+              opacity: frame == null ? 0 : 1,
+              duration: const Duration(seconds: 1),
+              curve: Curves.easeOut,
+              child: child,
+            );
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return _buildLoadingPlaceholder();
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return _buildErrorPlaceholder(
+              icon: Icons.broken_image,
+              message: 'Gagal memuat gambar',
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // Konten untuk video
+  Widget _buildVideoContent(String videoUrl) {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 280),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-          color: Colors.white,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: 20,
-                  ),
-                ),
-                title: Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
-                subtitle: Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                trailing: isDownloadingThisFile
-                    ? SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    value: _downloadProgress / 100,
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                  ),
-                )
-                    : IconButton(
-                  icon: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade100,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.download,
-                      color: Colors.blue.shade700,
-                      size: 18,
-                    ),
-                  ),
-                  onPressed: () => _downloadFile(url, fileName, context),
-                ),
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-              if(title == 'Video')
-                _buildVideoPreview(url),
-              if(title == 'Gambar')
-                _buildImagePreview(url),
-              if(title == 'Audio')
-                AudioPreviewTugas(audioUrl: url),
-              if(title == 'Dokumen' && extension == '.pdf')
-                SizedBox(
-                  width: double.infinity,
-                  child: _buildFilePreview(url),
-                ),
-            ],
-          )
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: VideoPlayerWidget(videoUrl: videoUrl),
+      ),
+    );
+  }
+
+  // Konten untuk audio
+  Widget _buildAudioContent(String audioUrl) {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 160),
+      child: AudioPreviewWidget(audioUrl: audioUrl),
+    );
+  }
+
+  // Konten untuk file
+  Widget _buildFileContent(String fileUrl) {
+    return Container(
+      constraints: const BoxConstraints(
+        minHeight: 200,
+        maxHeight: 280,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SfPdfViewer.network(
+          fileUrl,
+          initialZoomLevel: 1.0,
+        ),
+      ),
+    );
+  }
+
+  // Placeholder untuk loading
+  Widget _buildLoadingPlaceholder() {
+    return Container(
+      height: 150,
+      color: Colors.grey[200],
+      child: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+
+  // Placeholder untuk error
+  Widget _buildErrorPlaceholder({required IconData icon, required String message}) {
+    return Container(
+      height: 150,
+      color: Colors.grey[200],
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 40, color: Colors.grey),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -726,134 +1060,52 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
                             ),
                           ),
 
-                          // Section untuk file terlampir dari tugas
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              // Cek apakah ada file terlampir
-                              final hasAttachedFiles = widget.tugas.linkGambar != '-' ||
-                                  widget.tugas.linkVideo != '-' ||
-                                  widget.tugas.linkAudio != '-' ||
-                                  widget.tugas.linkFile != '-';
-
-                              if (!hasAttachedFiles) return SizedBox.shrink();
-
-                              // Menghitung jumlah kolom berdasarkan lebar layar
-                              final screenWidth = constraints.maxWidth;
-                              int crossAxisCount;
-
-                              // Menggunakan logika yang sama seperti di code kedua
-                              crossAxisCount = (screenWidth / 390).round();
-
-                              // Untuk memastikan minimal 1 kolom dan maksimal 4 kolom
-                              crossAxisCount = crossAxisCount.clamp(1, 4);
-
-                              // List untuk menampung semua file yang tersedia
-                              final List<Map<String, dynamic>> fileItems = [];
-
-                              // Tambahkan file yang tersedia ke dalam list
-                              if (widget.tugas.linkGambar != '-') {
-                                fileItems.add({
-                                  'icon': Icons.image,
-                                  'title': "Gambar",
-                                  'subtitle': "File gambar terlampir",
-                                  'color': Colors.orange.shade700,
-                                  'url': widget.tugas.linkGambar,
-                                });
-                              }
-
-                              if (widget.tugas.linkVideo != '-') {
-                                fileItems.add({
-                                  'icon': Icons.videocam,
-                                  'title': "Video",
-                                  'subtitle': "File video terlampir",
-                                  'color': Colors.red.shade700,
-                                  'url': widget.tugas.linkVideo,
-                                });
-                              }
-
-                              if (widget.tugas.linkAudio != '-') {
-                                fileItems.add({
-                                  'icon': Icons.audiotrack,
-                                  'title': "Audio",
-                                  'subtitle': "File audio terlampir",
-                                  'color': Colors.purple.shade700,
-                                  'url': widget.tugas.linkAudio,
-                                });
-                              }
-
-                              if (widget.tugas.linkFile != '-') {
-                                fileItems.add({
-                                  'icon': Icons.insert_drive_file,
-                                  'title': "Dokumen",
-                                  'subtitle': "File dokumen terlampir",
-                                  'color': Colors.blue.shade700,
-                                  'url': widget.tugas.linkFile,
-                                });
-                              }
-
-                              return Container(
-                                margin: EdgeInsets.only(bottom: 20),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black12,
-                                      blurRadius: 8,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
+                          // File Attachments Section
+                          Center(
+                              child: Text(
+                                "File Terlampir dari Tugas",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: Colors.blue.shade800,
                                 ),
-                                child: Card(
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  color: Colors.white,
-                                  child: Padding(
-                                    padding: EdgeInsets.all(20),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "File Terlampir dari Tugas",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 18,
-                                            color: Colors.blue.shade800,
-                                          ),
-                                        ),
-                                        SizedBox(height: 12),
-
-                                        // GridView untuk file terlampir
-                                        GridView.builder(
-                                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                            crossAxisCount: crossAxisCount,
-                                            childAspectRatio: 1, // Sesuaikan aspect ratio untuk file card
-                                            crossAxisSpacing: 16,
-                                            mainAxisSpacing: 16,
-                                          ),
-                                          padding: EdgeInsets.zero,
-                                          physics: NeverScrollableScrollPhysics(), // Non-scrollable grid
-                                          shrinkWrap: true,
-                                          itemCount: fileItems.length,
-                                          itemBuilder: (context, index) {
-                                            final file = fileItems[index];
-                                            return _buildFileCard(
-                                              icon: file['icon'] as IconData,
-                                              title: file['title'] as String,
-                                              subtitle: file['subtitle'] as String,
-                                              color: file['color'] as Color,
-                                              url: file['url'] as String,
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
+                              )
                           ),
+                          SizedBox(height: 12),
+
+                          // Gambar Card
+                          _buildMediaGrid(widget.tugas),
+
+                          // Jika tidak ada file yang dilampirkan
+                          if (widget.tugas.linkGambar == '-' &&
+                              widget.tugas.linkVideo == '-' &&
+                              widget.tugas.linkAudio == '-' &&
+                              widget.tugas.linkFile == '-')
+                            Container(
+                              margin: EdgeInsets.only(top: 20),
+                              padding: EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      "Tidak ada file yang dilampirkan",
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
 
                           // Button history tugas
                           if(isTerkumpul)...[
@@ -1275,99 +1527,6 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildImagePreview(String imageUrl) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: ClipRRect(
-        child: Image.network(
-          imageUrl,
-          width: double.infinity,
-          fit: BoxFit.contain,
-          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-            if (wasSynchronouslyLoaded) return child;
-            return AnimatedOpacity(
-              opacity: frame == null ? 0 : 1,
-              duration: const Duration(seconds: 1),
-              curve: Curves.easeOut,
-              child: child,
-            );
-          },
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(
-              height: 200,
-              color: Colors.grey[200],
-              child: Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                      : null,
-                ),
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              height: 200,
-              color: Colors.grey[200],
-              child: const Center(
-                child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVideoPreview(String videoUrl) {
-    return Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(top: 8),
-        child: ClipRRect(
-          child: VideoPlayerTugas(videoUrl: videoUrl),
-        ),
-    );
-  }
-
-  Widget _buildFilePreview(String pdfUrl) {
-    if (pdfUrl.isEmpty || pdfUrl == '-') {
-      return const SizedBox.shrink();
-    }
-
-    // Untuk platform web, buka di tab baru
-    if (kIsWeb) {
-      return Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'PDF Preview tidak tersedia di browser',
-              style: TextStyle(fontSize: 16),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // Buka PDF di tab baru
-              html.window.open(pdfUrl, '_blank');
-            },
-            child: Text('Buka PDF di Tab Baru'),
-          ),
-        ],
-      );
-    } else {
-      if (pdfUrl.isEmpty || pdfUrl == '-') {
-        return const SizedBox.shrink();
-      }
-
-      return SfPdfViewer.network(
-        pdfUrl,
-        initialZoomLevel: 1.0,
-      );
-    }
   }
 
   String _formatDate(DateTime date) {

@@ -137,7 +137,7 @@ class _PemeriksaanJawabanScreenState extends State<PemeriksaanJawabanScreen> {
                             context.read<HistoryUjianBloc>().add(UpdateHistoryUjian(token: authState.token, userId: widget.student.id, ujianId: widget.examData.id, nilai: totalScore, kehadiran: 'true', selesai: 'true', diperiksa: 'true'));
                           }
                           // Kembali ke layar sebelumnya dengan total nilai
-                          Navigator.pop(context);
+                          Navigator.pop(context, totalScore);
                         },
                         child: const Text('Selesai Koreksi'),
                       ),
@@ -212,7 +212,7 @@ class _PemeriksaanJawabanScreenState extends State<PemeriksaanJawabanScreen> {
                         onChanged: (value) {
                           scores[index] = int.tryParse(value);
                         },
-                        onTapOutside: (event) {
+                        onSubmitted: (event) {
                           // FocusScope digunakan untuk unfocus keyboard
                           FocusScope.of(context).unfocus();
 
@@ -232,6 +232,26 @@ class _PemeriksaanJawabanScreenState extends State<PemeriksaanJawabanScreen> {
                             }
                           });
                         },
+                        onTapOutside: (event) {
+                          // FocusScope digunakan untuk unfocus keyboard
+                          FocusScope.of(context).unfocus();
+
+                          // Panggil event Bloc setelah keyboard ditutup
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if(authState is Authenticated){
+                              context.read<JawabanSiswaBloc>().add(
+                                UpdateJawabanSiswa(
+                                  token: authState.token,
+                                  ujianId: soal.idUjian,
+                                  soalId: soal.id,
+                                  jawaban: soal.jawabanSiswa,
+                                  nilai: scores[index] ?? 0, // Gunakan nilai yang sudah diinput
+                                  userId: widget.student.id
+                                )
+                              );
+                            }
+                          });
+                        },
                       ),
                     ),
                   ],
@@ -247,45 +267,53 @@ class _PemeriksaanJawabanScreenState extends State<PemeriksaanJawabanScreen> {
   Widget _buildImagePreview(String imageUrl) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          imageUrl,
-          width: double.infinity,
-          fit: BoxFit.contain,
-          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-            if (wasSynchronouslyLoaded) return child;
-            return AnimatedOpacity(
-              opacity: frame == null ? 0 : 1,
-              duration: const Duration(seconds: 1),
-              curve: Curves.easeOut,
-              child: child,
-            );
-          },
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(
-              height: 200,
-              color: Colors.grey[200],
-              child: Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                      : null,
-                ),
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              height: 200,
-              color: Colors.grey[200],
-              child: const Center(
-                child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
-              ),
-            );
-          },
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: 300,
+            maxHeight: 400
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              imageUrl,
+              width: double.infinity,
+              fit: BoxFit.contain,
+              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                if (wasSynchronouslyLoaded) return child;
+                return AnimatedOpacity(
+                  opacity: frame == null ? 0 : 1,
+                  duration: const Duration(seconds: 1),
+                  curve: Curves.easeOut,
+                  child: child,
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  height: 200,
+                  color: Colors.grey[200],
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 200,
+                  color: Colors.grey[200],
+                  child: const Center(
+                    child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                  ),
+                );
+              },
+            ),
+          ),
         ),
       ),
     );

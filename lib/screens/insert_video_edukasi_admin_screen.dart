@@ -429,8 +429,8 @@ class _InsertVideoEdukasiAdminScreenState extends State<InsertVideoEdukasiAdminS
         'deskripsi': _deskripsiController.text,
         'id_mapel': _selectedMapelId!,
         'kelas': _selectedKelas,
-        'views': 0,
-        'likes': 0,
+        'views': widget.videoData?.views ?? 0,
+        'likes': widget.videoData?.likes ?? 0,
       };
 
       if (state is Authenticated) {
