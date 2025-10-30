@@ -51,6 +51,7 @@ class _InsertUserScreenState extends State<InsertUserScreen> {
   int? _selectedMapelId;
 
   final List<String> _kelasOptions = [
+    '-',
     '7A', '7B', '7C', '7D', '7E', '7F', '7G', '7H', '7I', '7J',
     '8A', '8B', '8C', '8D', '8E', '8F', '8G', '8H', '8I', '8J',
     '9A', '9B', '9C', '9D', '9E', '9F', '9G', '9H', '9I', '9J'
@@ -660,7 +661,7 @@ class _InsertUserScreenState extends State<InsertUserScreen> {
                       DropdownButtonFormField<String>(
                         value: _waliKelasController.text.isNotEmpty ? _waliKelasController.text : null,
                         decoration: InputDecoration(
-                          labelText: 'Wali Kelas',
+                          labelText: 'Wali Kelas (opsional)',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -680,14 +681,8 @@ class _InsertUserScreenState extends State<InsertUserScreen> {
                         }).toList(),
                         onChanged: (String? newValue) {
                           setState(() {
-                            _waliKelasController.text = newValue ?? '';
+                            _waliKelasController.text = newValue ?? '-';
                           });
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Harap pilih kelas';
-                          }
-                          return null;
                         },
                       ),
                     ],
