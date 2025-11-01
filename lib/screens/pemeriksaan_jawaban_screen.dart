@@ -132,7 +132,7 @@ class _PemeriksaanJawabanScreenState extends State<PemeriksaanJawabanScreen> {
                           final totalScore = scores.fold<int>(0, (sum, score) => sum + (score ?? 0)) ~/ (scores.length/10);
                           context.read<UsersBloc>().add(Init());
                           if(authState is Authenticated){
-                            final pesan =  'Nilai ${widget.examData.tipe_ujian} Mata Pelajaran ${widget.examData.mapel} anak Anda yang bernama ${widget.student.nama} adalah $totalScore';
+                            final pesan =  'Berikut adalah nilai ananda $totalScore pada ${widget.examData.tipe_ujian} mata pelajaran ${widget.examData.mapel}';
                             context.read<WaBloc>().add(SendMessage(pesan: pesan, tujuan: widget.student.nomor_ortu, token: authState.token));
                             context.read<HistoryUjianBloc>().add(UpdateHistoryUjian(token: authState.token, userId: widget.student.id, ujianId: widget.examData.id, nilai: totalScore, kehadiran: 'true', selesai: 'true', diperiksa: 'true'));
                           }
