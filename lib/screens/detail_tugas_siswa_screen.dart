@@ -449,13 +449,9 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
   Widget _buildMediaGrid(TugasModel tugas) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Tentukan jumlah kolom berdasarkan lebar layar
         final crossAxisCount = _getCrossAxisCount(constraints.maxWidth);
-
-        // Kumpulkan semua media yang ada
         final mediaWidgets = _buildMediaWidgets(tugas);
 
-        // Tampilkan dalam grid
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -466,7 +462,16 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
             childAspectRatio: _getAspectRatio(crossAxisCount),
           ),
           itemCount: mediaWidgets.length,
-          itemBuilder: (context, index) => mediaWidgets[index],
+          itemBuilder: (context, index) => LayoutBuilder(
+            // Tambahkan LayoutBuilder di setiap item grid
+            builder: (context, itemConstraints) {
+              return _buildMediaItemWithConstraints(
+                mediaWidgets[index],
+                tugas,
+                itemConstraints,
+              );
+            },
+          ),
         );
       },
     );
@@ -482,38 +487,56 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
   // Fungsi untuk menentukan aspect ratio berdasarkan jumlah kolom
   double _getAspectRatio(int crossAxisCount) {
     switch (crossAxisCount) {
-      case 1: return 9 / 9;  // Lebar landscape untuk 1 kolom
-      case 2: return 11 / 9; // Sedikit lebih persegi untuk 2 kolom
-      case 3: return 11 / 9; // Persegi untuk 3 kolom
-      default: return 11 / 9;
+      case 1: return 12 / 9;  // Lebar landscape untuk 1 kolom
+      case 2: return 12 / 9; // Sedikit lebih persegi untuk 2 kolom
+      case 3: return 12 / 9; // Persegi untuk 3 kolom
+      default: return 12 / 9;
     }
   }
 
+  Widget _buildMediaItemWithConstraints(int wigets, TugasModel tugas, BoxConstraints constraints) {
+    if (wigets == 1) {
+      return _buildImagePreview(tugas.linkGambar, constraints);
+    }
+    else if(wigets == 2){
+      return _buildVideoPreview(tugas.linkVideo, constraints);
+    }
+    else if(wigets == 3){
+      return _buildAudioPreview(tugas.linkAudio, constraints);
+    }
+    else if(wigets == 4){
+      return _buildFilePreview(tugas.linkFile, constraints);
+    }
+
+
+    return Text('kosong');
+  }
+
   // Kumpulkan semua widget media
-  List<Widget> _buildMediaWidgets(TugasModel tugas) {
-    final mediaWidgets = <Widget>[];
+  List<int> _buildMediaWidgets(TugasModel tugas) {
+    final mediaWidgets = <int>[];
 
     if (tugas.linkGambar != '-') {
-      mediaWidgets.add(_buildImagePreview(tugas.linkGambar));
+      mediaWidgets.add(1);
     }
 
     if (tugas.linkVideo != '-') {
-      mediaWidgets.add(_buildVideoPreview(tugas.linkVideo));
+      mediaWidgets.add(2);
     }
 
     if (tugas.linkAudio != '-') {
-      mediaWidgets.add(_buildAudioPreview(tugas.linkAudio));
+      mediaWidgets.add(3);
     }
 
     if (tugas.linkFile != '-') {
-      mediaWidgets.add(_buildFilePreview(tugas.linkFile));
+      mediaWidgets.add(4);
     }
 
     return mediaWidgets;
   }
 
   // Widget untuk preview gambar
-  Widget _buildImagePreview(String imageUrl) {
+  Widget _buildImagePreview(String imageUrl, BoxConstraints constraints) {
     final isDownloadingThisFile = _isDownloading && _currentDownloadUrl == imageUrl;
 
     return _buildMediaContainer(
@@ -525,16 +548,16 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
             title: "Gambar",
             subtitle: "File gambar terlampir",
             isDownloading: isDownloadingThisFile,
-            onDownload: () => _downloadFile(imageUrl, widget.tugas.nama, context),
+            onDownload: () => _downloadFile(imageUrl, widget.tugas.linkGambar, context),
           ),
-          _buildImageContent(imageUrl),
+          _buildImageContent(imageUrl, constraints), // Pass constraints ke image content
         ],
       ),
     );
   }
 
   // Widget untuk preview video
-  Widget _buildVideoPreview(String videoUrl) {
+  Widget _buildVideoPreview(String videoUrl, BoxConstraints constraints) {
     final isDownloadingThisFile = _isDownloading && _currentDownloadUrl == videoUrl;
 
     return _buildMediaContainer(
@@ -546,16 +569,16 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
             title: "Video",
             subtitle: "File video terlampir",
             isDownloading: isDownloadingThisFile,
-            onDownload: () => _downloadFile(videoUrl, widget.tugas.nama, context),
+            onDownload: () => _downloadFile(videoUrl, widget.tugas.linkVideo, context),
           ),
-          _buildVideoContent(videoUrl),
+          _buildVideoContent(videoUrl, constraints),
         ],
       ),
     );
   }
 
   // Widget untuk preview audio
-  Widget _buildAudioPreview(String audioUrl) {
+  Widget _buildAudioPreview(String audioUrl, BoxConstraints constraints) {
     final isDownloadingThisFile = _isDownloading && _currentDownloadUrl == audioUrl;
 
     return _buildMediaContainer(
@@ -567,36 +590,58 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
             title: "Audio",
             subtitle: "File audio terlampir",
             isDownloading: isDownloadingThisFile,
-            onDownload: () => _downloadFile(audioUrl, widget.tugas.nama, context),
+            onDownload: () => _downloadFile(audioUrl, widget.tugas.linkAudio, context),
           ),
-          _buildAudioContent(audioUrl),
+          _buildAudioContent(audioUrl, constraints),
         ],
       ),
     );
   }
 
   // Widget untuk preview file
-  Widget _buildFilePreview(String fileUrl) {
+  Widget _buildFilePreview(String fileUrl, BoxConstraints constraints) {
     final isDownloadingThisFile = _isDownloading && _currentDownloadUrl == fileUrl;
+    final extension = _extension(fileUrl);
 
     if (kIsWeb) {
-      return Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'PDF Preview tidak tersedia di browser',
-              style: TextStyle(fontSize: 16),
+      return _buildMediaContainer(
+        child: Column(
+          children: [
+            _buildMediaListTile(
+              icon: Icons.insert_drive_file,
+              iconColor: Colors.blue.shade700,
+              title: "Dokumen",
+              subtitle: "File dokumen terlampir",
+              isDownloading: isDownloadingThisFile,
+              onDownload: () => _downloadFile(fileUrl, widget.tugas.linkFile, context),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // Buka PDF di tab baru
-              html.window.open(fileUrl, '_blank');
-            },
-            child: Text('Buka PDF di Tab Baru'),
-          ),
-        ],
+            if(extension != '.pdf')...[
+              Container(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Untuk File selain PDF silahkan didownload',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            ]
+            else...[
+              Container(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'PDF Preview tidak tersedia di browser',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  // Buka PDF di tab baru
+                  html.window.open(fileUrl, '_blank');
+                },
+                child: Text('Buka PDF di Tab Baru'),
+              ),
+            ]
+          ],
+        ),
       );
     } else {
       return _buildMediaContainer(
@@ -608,10 +653,18 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
               title: "Dokumen",
               subtitle: "File dokumen terlampir",
               isDownloading: isDownloadingThisFile,
-              onDownload: () =>
-                  _downloadFile(fileUrl, widget.tugas.nama, context),
+              onDownload: () => _downloadFile(fileUrl, widget.tugas.linkFile, context),
             ),
-            _buildFileContent(fileUrl),
+            if(extension != '.pdf')...[
+              Container(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Untuk File selain PDF silahkan didownload',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            ]
+            else _buildFileContent(fileUrl, constraints),
           ],
         ),
       );
@@ -709,9 +762,13 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
   }
 
   // Konten untuk gambar
-  Widget _buildImageContent(String imageUrl) {
+  Widget _buildImageContent(String imageUrl, BoxConstraints constraints) {
+    // Hitung maxHeight berdasarkan constraints parent
+    // constraints.maxHeight adalah tinggi dari container grid item
+    final maxHeight = constraints.maxHeight * 0.6; // 60% dari tinggi parent
+
     return Container(
-      constraints: const BoxConstraints(maxHeight: 280),
+      constraints: BoxConstraints(maxHeight: maxHeight),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Image.network(
@@ -743,9 +800,10 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
   }
 
   // Konten untuk video
-  Widget _buildVideoContent(String videoUrl) {
+  Widget _buildVideoContent(String videoUrl, BoxConstraints constraints) {
+    final maxHeight = constraints.maxHeight * 0.6;
     return Container(
-      constraints: const BoxConstraints(maxHeight: 280),
+      constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
@@ -764,19 +822,21 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
   }
 
   // Konten untuk audio
-  Widget _buildAudioContent(String audioUrl) {
+  Widget _buildAudioContent(String audioUrl, BoxConstraints constraints) {
+    final maxHeight = constraints.maxHeight * 0.6;
     return Container(
-      constraints: const BoxConstraints(maxHeight: 160),
+      constraints: BoxConstraints(maxHeight: maxHeight),
       child: AudioPreviewWidget(audioUrl: audioUrl),
     );
   }
 
   // Konten untuk file
-  Widget _buildFileContent(String fileUrl) {
+  Widget _buildFileContent(String fileUrl, BoxConstraints constraints) {
+    final maxHeight = constraints.maxHeight * 0.6;
     return Container(
-      constraints: const BoxConstraints(
+      constraints: BoxConstraints(
         minHeight: 200,
-        maxHeight: 280,
+        maxHeight: maxHeight,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),

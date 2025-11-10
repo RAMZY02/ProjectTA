@@ -559,7 +559,7 @@ class _InsertUjianAdminScreenState extends State<InsertUjianAdminScreen> {
                             selesai: _selectedSelesaiTime!,
                             deskripsi: _deskripsiController.text,
                             kode: randomCode,
-                            id_guru: authState.id,
+                            id_guru: _selectedGuruId ?? 0,
                           ));
                         }
                       } else {
@@ -577,7 +577,7 @@ class _InsertUjianAdminScreenState extends State<InsertUjianAdminScreen> {
                             mulai: _selectedMulaiTime!,
                             selesai: _selectedSelesaiTime!,
                             deskripsi: _deskripsiController.text,
-                            id_guru: authState.id,
+                            id_guru: _selectedGuruId ?? 0,
                           ));
                         }
                       }
