@@ -34,9 +34,8 @@ class HasilUjianScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
     if(authState is Authenticated){
-      final pesan =  'Berikut adalah nilai ananda $pilihanGandaScore pada ${ujian.tipe_ujian} mata pelajaran ${ujian.mapel}';
+      final pesan =  'Berikut adalah nilai ananda ${authState.username} ${pilihanGandaScore.toInt()} pada ${ujian.tipe_ujian} mata pelajaran ${ujian.mapel}';
       context.read<WaBloc>().add(SendMessage(pesan: pesan, tujuan: authState.nomor_ortu, token: authState.token));
-      context.read<HistoryUjianBloc>().add(UpdateHistoryUjian(token: authState.token, userId: authState.id, ujianId: ujian.id, kehadiran: 'true', selesai: 'true', nilai: pilihanGandaScore.toInt(), diperiksa: 'true'));
     }
     return Scaffold(
       appBar: AppBar(

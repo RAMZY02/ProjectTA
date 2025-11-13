@@ -221,6 +221,9 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
     if (_examTimer.isActive) _examTimer.cancel();
 
     if(widget.ujian.tipe_soal == 'Pilihan Ganda'){
+      if(authState is Authenticated){
+        context.read<HistoryUjianBloc>().add(UpdateHistoryUjian(token: authState.token, userId: authState.id, ujianId: widget.ujian.id, kehadiran: 'true', selesai: 'true', nilai: pilihanGandaScore.toInt(), diperiksa: 'true'));
+      }
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
@@ -236,6 +239,9 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
       );
     }
     else{
+      if(authState is Authenticated){
+        context.read<HistoryUjianBloc>().add(UpdateHistoryUjian(token: authState.token, userId: authState.id, ujianId: widget.ujian.id, kehadiran: 'true', selesai: 'true', nilai: 0, diperiksa: 'false'));
+      }
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => const HasilUjianDiperiksaScreen(),
