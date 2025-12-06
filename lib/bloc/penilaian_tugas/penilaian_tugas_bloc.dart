@@ -8,8 +8,8 @@ import 'penilaian_tugas_state.dart';
 class PenilaianTugasBloc extends Bloc<PenilaianTugasEvent, PenilaianTugasState> {
 
   // final baseUrl = 'http://localhost:3000';
-  // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
-  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
+  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   PenilaianTugasBloc() : super(PenilaianTugasInitial()) {
     on<FetchAllPenilaianTugas>(_onFetchAllPenilaianTugas);

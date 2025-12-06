@@ -8,8 +8,8 @@ import 'tugas_state.dart';
 class TugasBloc extends Bloc<TugasEvent, TugasState> {
 
   // final baseUrl = 'http://localhost:3000';
-  // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
-  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
+  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   TugasBloc() : super(TugasInitial()) {
     on<TugasInit>(_onInit);

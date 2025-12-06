@@ -10,8 +10,8 @@ import 'nilai_akhir_siswa_state.dart';
 class NilaiAkhirSiswaBloc extends Bloc<NilaiAkhirSiswaEvent, NilaiAkhirSiswaState> {
 
   // final baseUrl = 'http://localhost:3000';
-  // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
-  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
+  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   NilaiAkhirSiswaBloc() : super(NilaiAkhirSiswaInitial()) {
     on<InitNilaiAkhirSiswa>(_onInit);

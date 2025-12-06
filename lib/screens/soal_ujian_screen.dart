@@ -258,9 +258,7 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
       builder: (context, state) {
 
         if(authState is Authenticated && state is SoalUjianInitial){
-          Future.microtask((){
-            context.read<SoalUjianBloc>().add(FetchSoalUjian3(token: authState.token, ujianId: widget.ujian.id, userId: authState.id));
-          });
+          context.read<SoalUjianBloc>().add(FetchSoalUjian3(token: authState.token, ujianId: widget.ujian.id, userId: authState.id));
         }
 
         if (state is SoalUjianLoading) {

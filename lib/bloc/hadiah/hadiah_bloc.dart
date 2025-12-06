@@ -8,8 +8,8 @@ import 'dart:convert';
 class HadiahBloc extends Bloc<HadiahEvent, HadiahState>{
 
   // final baseUrl = 'http://localhost:3000';
-  // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
-  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
+  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   HadiahBloc() : super(HadiahInitial()) {
     on<Inits>(_onInit);
