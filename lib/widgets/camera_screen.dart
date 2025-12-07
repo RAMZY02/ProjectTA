@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mime/mime.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_state.dart';
@@ -33,6 +34,7 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
   bool _isUploading = false;
   XFile? _capturedImage;
   String? _capturedImageUrl;
+  int _currentCameraIndex = 0;
 
   @override
   void initState() {
@@ -45,12 +47,7 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
     try {
       _cameras = await availableCameras();
       if (_cameras!.isNotEmpty) {
-        _controller = CameraController(
-          _cameras![0],
-          ResolutionPreset.medium, // Turunkan resolusi untuk performa web
-        );
-        await _controller!.initialize();
-        setState(() => _isLoading = false);
+        await _initializeCamera(0);
       } else {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -61,6 +58,51 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal menginisialisasi kamera: $e')),
+      );
+    }
+  }
+
+  Future<void> _initializeCamera(int cameraIndex) async {
+    if (_controller != null) {
+      await _controller!.dispose();
+    }
+
+    _controller = CameraController(
+      _cameras![cameraIndex],
+      ResolutionPreset.medium,
+    );
+
+    try {
+      await _controller!.initialize();
+      setState(() {
+        _isLoading = false;
+        _currentCameraIndex = cameraIndex;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menginisialisasi kamera: $e')),
+      );
+    }
+  }
+
+  Future<void> _rotateCamera() async {
+    if (_isCapturing || !_controller!.value.isInitialized || _cameras!.length <= 1) {
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Hitung indeks kamera berikutnya
+      int nextCameraIndex = (_currentCameraIndex + 1) % _cameras!.length;
+
+      // Inisialisasi kamera baru
+      await _initializeCamera(nextCameraIndex);
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengganti kamera: $e')),
       );
     }
   }
@@ -99,7 +141,6 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
 
   void _retakePicture() {
     setState(() {
-      _initCamera();
       _capturedImage = null;
       _capturedImageUrl = null;
     });
@@ -117,9 +158,10 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
     }
 
     // Handle mobile upload
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
     final imageFile = File(_capturedImage!.path);
     final contentType = lookupMimeType(_capturedImage!.path) ?? 'image/jpeg';
-    final fileName = 'Jawaban/user-${authState.id}-ujian-${widget.soal.idUjian}-soal-${widget.soal.id}${extension(imageFile.path)}';
+    final fileName = 'Jawaban/user-${authState.id}-ujian-${widget.soal.idUjian}-soal-${widget.soal.id}-$timestamp${extension(imageFile.path)}';
 
     context.read<CloudflareBloc>().add(
       UploadFile(
@@ -149,8 +191,9 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
       if (_capturedImage == null) return;
 
       // Convert XFile to bytes untuk web
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
       final bytes = await _capturedImage!.readAsBytes();
-      final fileName = 'Jawaban/user-${authState.id}-ujian-${widget.soal.idUjian}-soal-${widget.soal.id}.jpg';
+      final fileName = 'Jawaban/user-${authState.id}-ujian-${widget.soal.idUjian}-soal-${widget.soal.id}-$timestamp.jpg';
       final contentType = 'image/jpeg';
 
       context.read<CloudflareBloc>().add(
@@ -200,8 +243,8 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
           ? Image.network(
         _capturedImageUrl!,
         fit: BoxFit.cover,
-        width: screenWidth < 600 ? double.infinity : 600,
-        height: double.infinity,
+        width: screenWidth < 600 ? screenWidth - 32 : 600,
+        height: screenWidth < 600 ? (screenWidth * 16) / 10 : (600 * 16) / 10,
         errorBuilder: (context, error, stackTrace) {
           return Center(
             child: Column(
@@ -227,8 +270,8 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
       return Image.file(
         File(_capturedImage!.path),
         fit: BoxFit.cover,
-        width: screenWidth < 600 ? double.infinity : 600,
-        height: double.infinity,
+        width: screenWidth < 600 ? screenWidth - 32 : 600,
+        height: screenWidth < 600 ? (screenWidth * 16) / 10 : (600 * 16) / 10,
         errorBuilder: (context, error, stackTrace) {
           return Center(
             child: Column(
@@ -242,6 +285,30 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
           );
         },
       );
+    }
+  }
+
+  Widget _getCameraIcon() {
+    if (_cameras == null || _cameras!.isEmpty) {
+      return Icon(Icons.camera_alt);
+    }
+
+    if (_cameras!.length == 1) {
+      return Icon(Icons.camera_alt);
+    }
+
+    // Tentukan ikon berdasarkan jenis kamera
+    final cameraLensDirection = _cameras![_currentCameraIndex].lensDirection;
+
+    switch (cameraLensDirection) {
+      case CameraLensDirection.front:
+        return Icon(Icons.camera_front);
+      case CameraLensDirection.back:
+        return Icon(Icons.camera_rear);
+      case CameraLensDirection.external:
+        return Icon(Icons.videocam);
+      default:
+        return Icon(Icons.camera_alt);
     }
   }
 
@@ -289,19 +356,19 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
       body: Column(
         children: [
           LayoutBuilder(
-            builder: (context, constraints){
-              final screenWidth = constraints.maxWidth;
+              builder: (context, constraints){
+                final screenWidth = constraints.maxWidth;
 
-              if(_capturedImage != null){
-                return _buildCapturedImage(screenWidth);
+                if(_capturedImage != null){
+                  return _buildCapturedImage(screenWidth);
+                }
+                else if(_controller != null && _controller!.value.isInitialized){
+                  return CameraPreview(_controller!);
+                }
+                else{
+                  return Center(child: CircularProgressIndicator());
+                }
               }
-              else if(_controller != null && _controller!.value.isInitialized){
-                return CameraPreview(_controller!);
-              }
-              else{
-                return Center(child: CircularProgressIndicator());
-              }
-            }
           ),
           Padding(
             padding: const EdgeInsets.all(20.0),
@@ -315,7 +382,7 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
                     child: Icon(Icons.arrow_back),
                   ),
                 SizedBox(width: 20),
-                if (_capturedImage == null)
+                if (_capturedImage == null)...[
                   FloatingActionButton(
                     onPressed: _takePicture,
                     heroTag: 'capture',
@@ -323,6 +390,14 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
                         ? CircularProgressIndicator(color: Colors.white)
                         : Icon(Icons.camera_alt),
                   ),
+                  if (_cameras!.length > 1) SizedBox(width: 20),
+                  if (_cameras!.length > 1)
+                    FloatingActionButton(
+                      onPressed: _rotateCamera,
+                      heroTag: 'rotate',
+                      child: _getCameraIcon(),
+                    ),
+                ]
               ],
             ),
           ),

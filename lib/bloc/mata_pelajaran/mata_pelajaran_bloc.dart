@@ -7,9 +7,9 @@ import 'mata_pelajaran_state.dart';
 
 class MataPelajaranBloc extends Bloc<MataPelajaranEvent, MataPelajaranState> {
 
-  // final String baseUrl = 'http://localhost:3000/api/mata-pelajaran';
+  final String baseUrl = 'http://localhost:3000/api/mata-pelajaran';
   // final String baseUrl = 'https://flounder-moved-rooster.ngrok-free.app/api/mata-pelajaran';
-  final baseUrl = 'https://backend.srv1071909.hstgr.cloud/api/mata-pelajaran';
+  // final baseUrl = 'https://backend.srv1071909.hstgr.cloud/api/mata-pelajaran';
 
   MataPelajaranBloc() : super(MataPelajaranInitial()) {
     on<InitialMataPelajaran>(_onInitialMataPelajaran);

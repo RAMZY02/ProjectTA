@@ -1,6 +1,9 @@
+import 'package:project_ta/models/user_model.dart';
+
 class TugasModel {
   final int id;
   final int idUser;
+  final int idMapel;
   final int idTahunPelajaran;
   final String nama;
   final String deskripsi;
@@ -12,10 +15,12 @@ class TugasModel {
   final DateTime deadline;
   final DateTime timestamp;
   bool mengumpulkan;
+  final UserModel? user;
 
   TugasModel({
     required this.id,
     required this.idUser,
+    required this.idMapel,
     required this.idTahunPelajaran,
     required this.nama,
     required this.deskripsi,
@@ -27,12 +32,14 @@ class TugasModel {
     required this.deadline,
     required this.timestamp,
     this.mengumpulkan = false,
+    this.user,
   });
 
   factory TugasModel.fromJson(Map<String, dynamic> json) {
     return TugasModel(
       id: json['id'],
       idUser: json['id_user'],
+      idMapel: json['id_mapel'],
       idTahunPelajaran: json['id_tahun_pelajaran'],
       nama: json['nama'],
       deskripsi: json['deskripsi'],
@@ -43,7 +50,8 @@ class TugasModel {
       linkFile: json['link_file'],
       deadline: DateTime.parse(json['deadline']),
       timestamp: DateTime.parse(json['timestamp']),
-      mengumpulkan: json['mengumpulkan'] ?? false
+      mengumpulkan: json['mengumpulkan'] ?? false,
+      user: json['user'] != null ? UserModel.fromJson(json['user']) : null,
     );
   }
 

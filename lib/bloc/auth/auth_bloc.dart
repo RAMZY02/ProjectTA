@@ -6,9 +6,9 @@ import 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
-  // final baseUrl = 'http://localhost:3000';
+  final baseUrl = 'http://localhost:3000';
   // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
-  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
+  // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   AuthBloc() : super(AuthInitial()) {
     on<LoginEvent>(_handleLogin);

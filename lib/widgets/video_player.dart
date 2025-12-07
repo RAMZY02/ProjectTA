@@ -18,7 +18,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
 
-  double _aspectRatio = 16 / 9; // Nilai default sebelum video diinisialisasi
+  double _aspectRatio = 16 / 10; // Nilai default sebelum video diinisialisasi
 
   @override
   void initState() {
@@ -157,7 +157,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                       Align(
                         alignment: Alignment.bottomCenter,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          padding: const EdgeInsets.symmetric(horizontal: 1.8),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [

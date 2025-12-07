@@ -25,11 +25,13 @@ import '../bloc/users/users_state.dart';
 
 class InsertTugasAdminScreen extends StatefulWidget {
   final TugasModel? tugasData;
+  final UserModel? guruData;
   final bool isEdit;
 
   const InsertTugasAdminScreen({
     super.key,
     this.tugasData,
+    this.guruData,
     this.isEdit = false,
   });
 
@@ -73,7 +75,7 @@ class _InsertTugasAdminScreenState extends State<InsertTugasAdminScreen> {
   // Variables for selection
   DateTime? _selectedDeadline;
   int? _selectedTahunPelajaranId;
-  int? _selectedGuruId; // ID guru yang dipilih
+  UserModel? _selectedGuru;
 
   @override
   void initState() {
@@ -109,7 +111,7 @@ class _InsertTugasAdminScreenState extends State<InsertTugasAdminScreen> {
     if (widget.isEdit) {
       _selectedDeadline = widget.tugasData!.deadline;
       _selectedTahunPelajaranId = widget.tugasData?.idTahunPelajaran;
-      _selectedGuruId = widget.tugasData?.idUser; // Set guru dari data existing untuk edit
+      _selectedGuru = widget.guruData ?? null; // Set guru dari data existing untuk edit
     }
 
     // Fetch tahun pelajaran dan data guru
@@ -632,31 +634,31 @@ class _InsertTugasAdminScreenState extends State<InsertTugasAdminScreen> {
 
   // Widget untuk dropdown guru
   Widget _buildGuruDropdown(List<UserModel> guruList) {
-    return DropdownButtonFormField<int>(
-      value: _selectedGuruId,
+    return DropdownButtonFormField<UserModel>(
+      value: _selectedGuru,
       decoration: const InputDecoration(
         labelText: 'Pilih Guru',
         border: OutlineInputBorder(),
         hintText: 'Pilih guru yang bertanggung jawab',
       ),
       items: [
-        const DropdownMenuItem<int>(
+        const DropdownMenuItem<UserModel>(
           value: null,
           child: Text('Pilih Guru'),
         ),
         ...guruList.map((guru) {
-          return DropdownMenuItem<int>(
-            value: guru.id,
+          return DropdownMenuItem<UserModel>(
+            value: guru,
             child: Text('${guru.nama} (${guru.email})'),
           );
         }),
       ],
       onChanged: (value) {
         setState(() {
-          _selectedGuruId = value;
+          _selectedGuru = value;
           if (value != null) {
             final selectedGuru = guruList.firstWhere(
-                  (guru) => guru.id == value,
+                  (guru) => guru.id == value.id,
               orElse: () => guruList.first,
             );
           }
@@ -735,9 +737,11 @@ class _InsertTugasAdminScreenState extends State<InsertTugasAdminScreen> {
                         if (usersState is UsersLoading) {
                           return const CircularProgressIndicator();
                         } else if (usersState is UsersLoaded) {
-                          final guruList = usersState.users
-                              .where((user) => user.role == 'guru')
-                              .toList();
+                          final guruList = usersState.users.where((user) => user.role == 'guru').toList();
+
+                          if(_selectedGuru != null){
+                            _selectedGuru = usersState.users.firstWhere((test) => test.id == _selectedGuru!.id);
+                          }
 
                           if (guruList.isEmpty) {
                             return Container(
@@ -986,7 +990,7 @@ class _InsertTugasAdminScreenState extends State<InsertTugasAdminScreen> {
                             return;
                           }
 
-                          if (_selectedGuruId == null) {
+                          if (_selectedGuru == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Harap pilih guru terlebih dahulu')),
                             );
@@ -998,7 +1002,8 @@ class _InsertTugasAdminScreenState extends State<InsertTugasAdminScreen> {
                               // Create new tugas dengan id guru yang dipilih
                               context.read<TugasBloc>().add(CreateTugas(
                                 token: authState.token,
-                                idUser: _selectedGuruId!, // Gunakan ID guru yang dipilih
+                                idUser: _selectedGuru!.id, // Gunakan ID guru yang dipilih
+                                idMapel: _selectedGuru!.id_mapel,
                                 nama: _namaController.text,
                                 deskripsi: _deskripsiController.text,
                                 kelas: _kelasController.text,

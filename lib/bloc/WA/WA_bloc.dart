@@ -9,9 +9,9 @@ import '../../models/WA_model.dart';
 
 class WaBloc extends Bloc<WaEvent, WaState> {
 
-  // final baseUrl = 'http://localhost:3000';
+  final baseUrl = 'http://localhost:3000';
   // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
-  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
+  // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   WaBloc() : super(WaInitial()) {
     on<InitWa>(_onInit);

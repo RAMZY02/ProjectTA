@@ -2,27 +2,27 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:project_ta/bloc/mata_pelajaran/mata_pelajaran_bloc.dart';
-import 'package:project_ta/bloc/mata_pelajaran/mata_pelajaran_event.dart';
-import 'package:project_ta/bloc/mata_pelajaran/mata_pelajaran_state.dart';
-import '../bloc/auth/auth_bloc.dart';
-import '../bloc/auth/auth_state.dart';
-import 'insert_mata_pelajaran_screen.dart';
+import 'package:project_ta/bloc/auth/auth_bloc.dart';
+import 'package:project_ta/bloc/auth/auth_state.dart';
+import 'package:project_ta/bloc/tahun_pelajaran/tahun_pelajaran_bloc.dart';
+import 'package:project_ta/bloc/tahun_pelajaran/tahun_pelajaran_event.dart';
+import 'package:project_ta/bloc/tahun_pelajaran/tahun_pelajaran_state.dart';
+import 'insert_tahun_pelajaran_screen.dart';
 
-class MasterMataPelajaranScreen extends StatefulWidget {
-  const MasterMataPelajaranScreen({super.key});
+class MasterTahunPelajaranScreen extends StatefulWidget {
+  const MasterTahunPelajaranScreen({super.key});
 
   @override
-  State<MasterMataPelajaranScreen> createState() => _MasterMataPelajaranScreenState();
+  State<MasterTahunPelajaranScreen> createState() => _MasterTahunPelajaranScreenState();
 }
 
-class _MasterMataPelajaranScreenState extends State<MasterMataPelajaranScreen> {
+class _MasterTahunPelajaranScreenState extends State<MasterTahunPelajaranScreen> {
   // Tambahkan controller untuk search
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  // Tambahkan variabel untuk filter status
-  String _selectedStatus = 'Semua';
+  // Tambahkan variabel untuk filter semester
+  String _selectedSemester = 'Semua';
 
   @override
   void initState() {
@@ -40,63 +40,28 @@ class _MasterMataPelajaranScreenState extends State<MasterMataPelajaranScreen> {
     super.dispose();
   }
 
-  // Fungsi untuk filter mata pelajaran berdasarkan query dan status
-  List<dynamic> _filterMataPelajaran(List<dynamic> mataPelajaranList, String query, String status) {
-    List<dynamic> filtered = mataPelajaranList;
-
-    // Filter berdasarkan status
-    if (status != 'Semua') {
-      filtered = filtered.where((mapel) => mapel.keyStatus == status).toList();
-    }
+  // Fungsi untuk filter tahun pelajaran berdasarkan query dan semester
+  List<dynamic> _filterTahunPelajaran(List<dynamic> tahunPelajaranList, String query) {
+    List<dynamic> filtered = tahunPelajaranList;
 
     // Filter berdasarkan query pencarian
     if (query.isNotEmpty) {
-      filtered = filtered.where((mapel) {
-        return mapel.mapel.toLowerCase().contains(query) ||
-            mapel.id.toString().contains(query);
+      filtered = filtered.where((tahunPelajaran) {
+        return tahunPelajaran.tahun.toLowerCase().contains(query) ||
+            tahunPelajaran.semester.toLowerCase().contains(query) ||
+            tahunPelajaran.id.toString().contains(query);
       }).toList();
     }
 
     return filtered;
   }
 
-  // Fungsi untuk mendapatkan daftar status unik
-  List<String> _getStatusList(List<dynamic> mataPelajaranList) {
-    Set<String> statusSet = {'Semua'};
-    for (var mapel in mataPelajaranList) {
-      statusSet.add(mapel.keyStatus);
-    }
-    return statusSet.toList();
-  }
-
-  String _getStatusText(String keyStatus) {
-    switch (keyStatus) {
-      case 'active':
-        return 'Aktif';
-      case 'inactive':
-        return 'Nonaktif';
-      default:
-        return keyStatus;
-    }
-  }
-
-  Color _getStatusColor(String keyStatus) {
-    switch (keyStatus) {
-      case 'active':
-        return Colors.green;
-      case 'inactive':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  void _deleteMataPelajaran(int id, AuthState state) {
+  void _deleteTahunPelajaran(int id, AuthState state) {
     if(state is Authenticated){
-      context.read<MataPelajaranBloc>().add(DeleteMataPelajaran(token: state.token, id: id));
+      context.read<TahunPelajaranBloc>().add(DeleteTahunPelajaran(token: state.token, id: id));
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Mata pelajaran berhasil dihapus')),
+      const SnackBar(content: Text('Tahun pelajaran berhasil dihapus')),
     );
   }
 
@@ -129,7 +94,7 @@ class _MasterMataPelajaranScreenState extends State<MasterMataPelajaranScreen> {
                           child: TextField(
                             controller: _searchController,
                             decoration: const InputDecoration(
-                              hintText: 'Cari mata pelajaran berdasarkan nama...',
+                              hintText: 'Cari tahun pelajaran berdasarkan nama tahun, semester...',
                               border: InputBorder.none,
                               hintStyle: TextStyle(color: Colors.grey),
                             ),
@@ -151,12 +116,12 @@ class _MasterMataPelajaranScreenState extends State<MasterMataPelajaranScreen> {
                 // Add Button
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add),
-                  label: const Text('Tambah Mata Pelajaran'),
+                  label: const Text('Tambah Tahun'),
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const InsertMataPelajaranScreen(),
+                        builder: (context) => const InsertTahunPelajaranScreen(),
                       ),
                     );
                   },
@@ -168,32 +133,31 @@ class _MasterMataPelajaranScreenState extends State<MasterMataPelajaranScreen> {
 
             // DataTable
             Expanded(
-              child: BlocBuilder<MataPelajaranBloc, MataPelajaranState>(
-                builder: (context, mataPelajaranState) {
+              child: BlocBuilder<TahunPelajaranBloc, TahunPelajaranState>(
+                builder: (context, tahunPelajaranState) {
                   if (authState is! Authenticated) {
                     return const Center(child: Text("Silakan login terlebih dahulu"));
                   }
-                  if (mataPelajaranState is MataPelajaranInitial) {
-                    context.read<MataPelajaranBloc>().add(FetchAllMataPelajaran(token: authState.token));
+                  if (tahunPelajaranState is TahunPelajaranInitial) {
+                    context.read<TahunPelajaranBloc>().add(FetchAllTahunPelajaran(token: authState.token));
                   }
-                  if (mataPelajaranState is MataPelajaranLoaded) {
-                    // Filter mata pelajaran berdasarkan search query dan status
-                    final filteredMataPelajaran = _filterMataPelajaran(
-                        mataPelajaranState.mataPelajaranList,
+                  if (tahunPelajaranState is TahunPelajaranLoaded) {
+                    // Filter tahun pelajaran berdasarkan search query dan semester
+                    final filteredTahunPelajaran = _filterTahunPelajaran(
+                        tahunPelajaranState.tahunPelajaranList,
                         _searchQuery,
-                        _selectedStatus
                     );
 
-                    if (filteredMataPelajaran.isEmpty) {
+                    if (filteredTahunPelajaran.isEmpty) {
                       return Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.subject, size: 64, color: Colors.grey),
+                          const Icon(Icons.school, size: 64, color: Colors.grey),
                           const SizedBox(height: 16),
                           Text(
-                            _searchQuery.isEmpty && _selectedStatus == 'Semua'
-                                ? "Belum ada data mata pelajaran tersedia"
-                                : "Tidak ditemukan mata pelajaran dengan filter yang dipilih",
+                            _searchQuery.isEmpty && _selectedSemester == 'Semua'
+                                ? "Belum ada data tahun pelajaran tersedia"
+                                : "Tidak ditemukan tahun pelajaran dengan filter yang dipilih",
                             style: const TextStyle(fontSize: 16, color: Colors.grey),
                             textAlign: TextAlign.center,
                           ),
@@ -203,28 +167,28 @@ class _MasterMataPelajaranScreenState extends State<MasterMataPelajaranScreen> {
 
                     // Tampilkan info filter
                     Widget filterInfo = Container();
-                    if (_searchQuery.isNotEmpty || _selectedStatus != 'Semua') {
+                    if (_searchQuery.isNotEmpty || _selectedSemester != 'Semua') {
                       filterInfo = Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Menampilkan ${filteredMataPelajaran.length} dari ${mataPelajaranState.mataPelajaranList.length} mata pelajaran',
+                              'Menampilkan ${filteredTahunPelajaran.length} dari ${tahunPelajaranState.tahunPelajaranList.length} tahun pelajaran',
                               style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 12,
                                 fontStyle: FontStyle.italic,
                               ),
                             ),
-                            if (_searchQuery.isNotEmpty || _selectedStatus != 'Semua')
+                            if (_searchQuery.isNotEmpty || _selectedSemester != 'Semua')
                               TextButton.icon(
                                 icon: const Icon(Icons.clear_all, size: 16),
                                 label: const Text('Reset Filter'),
                                 onPressed: () {
                                   setState(() {
                                     _searchController.clear();
-                                    _selectedStatus = 'Semua';
+                                    _selectedSemester = 'Semua';
                                   });
                                 },
                                 style: TextButton.styleFrom(
@@ -255,8 +219,8 @@ class _MasterMataPelajaranScreenState extends State<MasterMataPelajaranScreen> {
                                   columnSpacing: 20,
                                   columns: const [
                                     DataColumn(label: Text('ID')),
-                                    DataColumn(label: Text('Mata Pelajaran')),
-                                    DataColumn(label: Text('Status')),
+                                    DataColumn(label: Text('Tahun Pelajaran')),
+                                    DataColumn(label: Text('Semester')),
                                     DataColumn(
                                       label: SizedBox(
                                         width: 100,
@@ -266,34 +230,37 @@ class _MasterMataPelajaranScreenState extends State<MasterMataPelajaranScreen> {
                                       ),
                                     ),
                                   ],
-                                  rows: filteredMataPelajaran.map((mataPelajaran) {
+                                  rows: filteredTahunPelajaran.map((tahunPelajaran) {
                                     return DataRow(
                                       cells: [
                                         DataCell(
-                                          Text(
-                                            mataPelajaran.id.toString(),
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          ConstrainedBox(
-                                            constraints: const BoxConstraints(maxWidth: 200),
+                                          Center(
                                             child: Text(
-                                              mataPelajaran.mapel,
-                                              overflow: TextOverflow.ellipsis,
+                                              tahunPelajaran.id.toString(),
                                               style: const TextStyle(
-                                                fontWeight: FontWeight.w500,
+                                                fontSize: 12,
+                                                color: Colors.grey,
                                               ),
                                             ),
                                           ),
                                         ),
                                         DataCell(
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.calendar_today,
+                                                  size: 14, color: Colors.grey),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                tahunPelajaran.tahun,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        DataCell(
                                           Center(
                                             child: Text(
-                                              _getStatusText(mataPelajaran.keyStatus),
+                                              tahunPelajaran.semester,
                                               style: const TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.black,
@@ -311,8 +278,8 @@ class _MasterMataPelajaranScreenState extends State<MasterMataPelajaranScreen> {
                                                   Navigator.push(
                                                     context,
                                                     MaterialPageRoute(
-                                                      builder: (context) => InsertMataPelajaranScreen(
-                                                        mataPelajaranData: mataPelajaran,
+                                                      builder: (context) => InsertTahunPelajaranScreen(
+                                                        tahunPelajaranData: tahunPelajaran,
                                                       ),
                                                     ),
                                                   );
@@ -321,7 +288,7 @@ class _MasterMataPelajaranScreenState extends State<MasterMataPelajaranScreen> {
                                               IconButton(
                                                 icon: const Icon(Icons.delete,
                                                     color: Colors.red, size: 20),
-                                                onPressed: () => _deleteMataPelajaran(mataPelajaran.id, authState),
+                                                onPressed: () => _deleteTahunPelajaran(tahunPelajaran.id, authState),
                                               ),
                                             ],
                                           ),
@@ -336,7 +303,7 @@ class _MasterMataPelajaranScreenState extends State<MasterMataPelajaranScreen> {
                         ),
                       ],
                     );
-                  } else if (mataPelajaranState is MataPelajaranError) {
+                  } else if (tahunPelajaranState is TahunPelajaranError) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -344,7 +311,7 @@ class _MasterMataPelajaranScreenState extends State<MasterMataPelajaranScreen> {
                           const Icon(Icons.error, size: 64, color: Colors.red),
                           const SizedBox(height: 16),
                           Text(
-                            mataPelajaranState.message,
+                            tahunPelajaranState.message,
                             style: const TextStyle(
                               fontSize: 16,
                               color: Colors.red,
@@ -356,10 +323,12 @@ class _MasterMataPelajaranScreenState extends State<MasterMataPelajaranScreen> {
                             icon: const Icon(Icons.refresh),
                             label: const Text('Coba Lagi'),
                             onPressed: () {
-                              context.read<MataPelajaranBloc>().add(
-                                  FetchAllMataPelajaran(token: authState.token)
-                              );
-                                                        },
+                              if (authState is Authenticated) {
+                                context.read<TahunPelajaranBloc>().add(
+                                    FetchAllTahunPelajaran(token: authState.token)
+                                );
+                              }
+                            },
                           ),
                         ],
                       ),

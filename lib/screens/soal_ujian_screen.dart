@@ -191,10 +191,6 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
     final authState = context.read<AuthBloc>().state;
     if (state is! SoalUjianLoaded) return;
 
-    if(authState is Authenticated){
-      context.read<HistoryUjianBloc>().add(UpdateHistoryUjian(token: authState.token, userId: authState.id, ujianId: widget.ujian.id, kehadiran: 'true', selesai: 'true', nilai: 0, diperiksa: 'false'));
-    }
-
     int pilihanGandaCorrect = 0;
     int pilihanGandaWrong = 0;
     int pilihanGandaTotal = 0;
@@ -258,9 +254,7 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
       builder: (context, state) {
 
         if(authState is Authenticated && state is SoalUjianInitial){
-          Future.microtask((){
-            context.read<SoalUjianBloc>().add(FetchSoalUjian3(token: authState.token, ujianId: widget.ujian.id, userId: authState.id));
-          });
+          context.read<SoalUjianBloc>().add(FetchSoalUjian3(token: authState.token, ujianId: widget.ujian.id, userId: authState.id));
         }
 
         if (state is SoalUjianLoading) {

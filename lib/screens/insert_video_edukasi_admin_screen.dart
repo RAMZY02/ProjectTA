@@ -137,7 +137,7 @@ class _InsertVideoEdukasiAdminScreenState extends State<InsertVideoEdukasiAdminS
               folder,
               contentType,
               authState,
-              videoState,
+              videoState.IdVideo,
             );
           } else {
             // Handle untuk platform mobile
@@ -147,11 +147,30 @@ class _InsertVideoEdukasiAdminScreenState extends State<InsertVideoEdukasiAdminS
               folder,
               contentType,
               authState,
-              videoState,
+              videoState.IdVideo,
             );
           }
         } else {
-          _setUploadErrorState(fileType, 'Tidak dapat mendapatkan ID video');
+          if (kIsWeb) {
+            await _handleWebFileUpload(
+              result.files.single,
+              fileType,
+              folder,
+              contentType,
+              authState,
+              0,
+            );
+          } else {
+            // Handle untuk platform mobile
+            await _handleMobileFileUpload(
+              result.files.single,
+              fileType,
+              folder,
+              contentType,
+              authState,
+              0,
+            );
+          }
         }
       }
     } catch (e) {
@@ -166,7 +185,7 @@ class _InsertVideoEdukasiAdminScreenState extends State<InsertVideoEdukasiAdminS
       String folder,
       String contentType,
       Authenticated authState,
-      VideoId videoState,
+      int idVideo,
       ) async {
     try {
       // Validasi file untuk web
@@ -180,7 +199,7 @@ class _InsertVideoEdukasiAdminScreenState extends State<InsertVideoEdukasiAdminS
 
       // Generate filename untuk web
       final fileExtension = _getFileExtensionForWeb(platformFile.name, fileType);
-      final fileName = '$folder${_selectedMapelName ?? "MataPelajaran"}-${_judulController.text}-Kelas $_selectedKelas-${videoState.IdVideo + 1}$fileExtension';
+      final fileName = '$folder${_selectedMapelName ?? "MataPelajaran"}-${_judulController.text}-Kelas $_selectedKelas-${idVideo + 1}$fileExtension';
 
       // Upload file menggunakan CloudflareBloc untuk web
       context.read<CloudflareBloc>().add(
@@ -209,7 +228,7 @@ class _InsertVideoEdukasiAdminScreenState extends State<InsertVideoEdukasiAdminS
       String folder,
       String contentType,
       Authenticated authState,
-      VideoId videoState,
+      int idVideo,
       ) async {
     try {
       // Validasi path file untuk mobile
@@ -224,7 +243,7 @@ class _InsertVideoEdukasiAdminScreenState extends State<InsertVideoEdukasiAdminS
       final actualContentType = _getContentTypeForMobile(file.path, fileType, contentType);
 
       // Generate filename untuk mobile
-      final fileName = '$folder${_selectedMapelName ?? "MataPelajaran"}-${_judulController.text}-Kelas $_selectedKelas-${videoState.IdVideo + 1}${_extension(file.path)}';
+      final fileName = '$folder${_selectedMapelName ?? "MataPelajaran"}-${_judulController.text}-Kelas $_selectedKelas-${idVideo + 1}${_extension(file.path)}';
 
       // Upload file menggunakan CloudflareBloc untuk mobile
       context.read<CloudflareBloc>().add(

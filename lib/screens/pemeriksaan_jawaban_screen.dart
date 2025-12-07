@@ -16,6 +16,9 @@ import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_state.dart';
 import '../bloc/jawaban_siswa/jawaban_siswa_bloc.dart';
 import '../bloc/jawaban_siswa/jawaban_siswa_event.dart';
+import '../models/soal_model.dart';
+import '../widgets/audio_player.dart';
+import '../widgets/video_player.dart';
 
 class PemeriksaanJawabanScreen extends StatefulWidget {
   final UjianModel examData;
@@ -174,6 +177,8 @@ class _PemeriksaanJawabanScreenState extends State<PemeriksaanJawabanScreen> {
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
+                _buildMediaGrid(soal),
+                const SizedBox(height: 8),
                 Text(soal.soal),
                 const SizedBox(height: 8),
                 if (soal.tipe == 'Pilihan Ganda')
@@ -261,6 +266,171 @@ class _PemeriksaanJawabanScreenState extends State<PemeriksaanJawabanScreen> {
           ),
         );
       },
+    );
+  }
+
+  //preview disini
+  Widget _buildMediaGrid(SoalModel question) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Tentukan jumlah kolom berdasarkan lebar layar
+        int crossAxisCount;
+        if (constraints.maxWidth > 1200) {
+          crossAxisCount = 3; // Layar besar (desktop)
+        } else if (constraints.maxWidth > 600) {
+          crossAxisCount = 2; // Layar sedang (tablet)
+        } else {
+          crossAxisCount = 1; // Layar kecil (mobile)
+        }
+
+        // Kumpulkan semua media yang ada
+        List<Widget> mediaWidgets = [];
+
+        if (question.linkGambar != '-') {
+          mediaWidgets.add(_buildQuestionImagePreview(question.linkGambar));
+        }
+
+        if (question.linkVideo != '-') {
+          mediaWidgets.add(_buildVideoPreview(question.linkVideo));
+        }
+
+        if (question.linkAudio != '-') {
+          mediaWidgets.add(_buildAudioPreview(question.linkAudio));
+        }
+
+
+        // Tampilkan dalam grid
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: _getAspectRatio(crossAxisCount),
+          ),
+          itemCount: mediaWidgets.length,
+          itemBuilder: (context, index) {
+            return mediaWidgets[index];
+          },
+        );
+      },
+    );
+  }
+
+// Fungsi untuk menentukan aspect ratio berdasarkan jumlah kolom
+  double _getAspectRatio(int crossAxisCount) {
+    switch (crossAxisCount) {
+      case 1:
+        return 16 / 9; // Lebar landscape untuk 1 kolom
+      case 2:
+        return 16 / 9;  // Sedikit lebih persegi untuk 2 kolom
+      case 3:
+        return 16 / 9;      // Persegi untuk 3 kolom
+      default:
+        return 16 / 9;
+    }
+  }
+
+  // Modifikasi widget preview agar lebih responsive
+  Widget _buildQuestionImagePreview(String imageUrl) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.contain,
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            if (wasSynchronouslyLoaded) return child;
+            return AnimatedOpacity(
+              opacity: frame == null ? 0 : 1,
+              duration: const Duration(seconds: 1),
+              curve: Curves.easeOut,
+              child: child,
+            );
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              color: Colors.grey[200],
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: Colors.grey[200],
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                    SizedBox(height: 8),
+                    Text(
+                      'Gagal memuat gambar',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVideoPreview(String videoUrl) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: VideoPlayerWidget(videoUrl: videoUrl),
+      ),
+    );
+  }
+
+  Widget _buildAudioPreview(String audioUrl) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: AudioPreviewWidget(audioUrl: audioUrl),
     );
   }
 

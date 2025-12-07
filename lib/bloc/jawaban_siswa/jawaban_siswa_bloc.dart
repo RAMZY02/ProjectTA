@@ -9,9 +9,9 @@ import '../../models/jawaban_siswa_model.dart';
 
 class JawabanSiswaBloc extends Bloc<JawabanSiswaEvent, JawabanSiswaState> {
 
-  // final baseUrl = 'http://localhost:3000';
+  final baseUrl = 'http://localhost:3000';
   // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
-  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
+  // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   JawabanSiswaBloc() : super(JawabanSiswaInitial()) {
     on<Initial>(onInitial);

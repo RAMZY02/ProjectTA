@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_ta/bloc/comments/comments_bloc.dart';
 import 'package:project_ta/bloc/hadiah/hadiah_bloc.dart';
+import 'package:project_ta/bloc/kelas_mengajar/kelas_mengajar_bloc.dart';
+import 'package:project_ta/bloc/kelas_mengajar/kelas_mengajar_event.dart';
+import 'package:project_ta/bloc/mata_pelajaran/mata_pelajaran_bloc.dart';
+import 'package:project_ta/bloc/mata_pelajaran/mata_pelajaran_event.dart';
+import 'package:project_ta/bloc/tahun_pelajaran/tahun_pelajaran_bloc.dart';
+import 'package:project_ta/bloc/tahun_pelajaran/tahun_pelajaran_event.dart';
+import 'package:project_ta/bloc/tugas/tugas_bloc.dart';
+import 'package:project_ta/bloc/tugas/tugas_event.dart';
 import 'package:project_ta/bloc/ujian/ujian_event.dart';
 import 'package:project_ta/bloc/users/users_bloc.dart';
 import 'package:project_ta/bloc/video_edukasi/video_edukasi_bloc.dart';
@@ -9,6 +17,7 @@ import 'package:project_ta/screens/master_comments_screen.dart';
 import 'package:project_ta/screens/master_hadiah_screen.dart';
 import 'package:project_ta/screens/master_kelas_mengajar.dart';
 import 'package:project_ta/screens/master_mata_pelajaran_screen.dart';
+import 'package:project_ta/screens/master_tahun_pelajaran_screen.dart';
 import 'package:project_ta/screens/master_tugas_screen.dart';
 import 'package:project_ta/screens/master_ujian_screen.dart';
 import 'package:project_ta/screens/master_video_edukasi_screen.dart';
@@ -40,6 +49,7 @@ class _MasterScreenState extends State<MasterScreen> {
     MasterMenuItem(title: 'Mata Pelajaran', screen: const MasterMataPelajaranScreen()),
     MasterMenuItem(title: 'Kelas Mengajar', screen: const MasterKelasMengajarScreen()),
     MasterMenuItem(title: 'Tugas', screen: const MasterTugasScreen()),
+    MasterMenuItem(title: 'Tahun Pelajaran', screen: const MasterTahunPelajaranScreen()),
   ];
 
   @override
@@ -96,6 +106,18 @@ class _MasterScreenState extends State<MasterScreen> {
         break;
       case 4:
         context.read<CommentsBloc>().add(InitComment());
+        break;
+      case 5:
+        context.read<MataPelajaranBloc>().add(InitialMataPelajaran());
+        break;
+      case 6:
+        context.read<KelasMengajarBloc>().add(InitialKelasMengajar());
+        break;
+      case 7:
+        context.read<TugasBloc>().add(TugasInit());
+        break;
+      case 8:
+        context.read<TahunPelajaranBloc>().add(InitTahunPelajaran());
         break;
     }
     setState(() {

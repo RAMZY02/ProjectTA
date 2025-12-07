@@ -18,9 +18,14 @@ class DaftarSiswaKelasScreen extends StatefulWidget {
 }
 
 class _DaftarSiswaKelasScreenState extends State<DaftarSiswaKelasScreen> {
+  TextEditingController searchController = TextEditingController();
+  List<dynamic> filteredStudents = [];
+  List<dynamic> allStudents = [];
+
   @override
   void initState() {
     super.initState();
+    searchController.addListener(_filterStudents);
     final authState = context.read<AuthBloc>().state;
     if (authState is Authenticated) {
       context.read<UsersBloc>().add(
@@ -30,6 +35,32 @@ class _DaftarSiswaKelasScreenState extends State<DaftarSiswaKelasScreen> {
         ),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterStudents() {
+    final searchTerm = searchController.text.toLowerCase();
+    setState(() {
+      if (searchTerm.isEmpty) {
+        filteredStudents = List.from(allStudents);
+      } else {
+        filteredStudents = allStudents.where((student) {
+          final studentName = student.nama.toLowerCase();
+          final studentNis = student.nis?.toLowerCase() ?? '';
+          return studentName.contains(searchTerm) || studentNis.contains(searchTerm);
+        }).toList();
+      }
+    });
+  }
+
+  void _initializeStudents(List<dynamic> students) {
+    allStudents = students;
+    filteredStudents = List.from(allStudents);
   }
 
   @override
@@ -65,10 +96,14 @@ class _DaftarSiswaKelasScreenState extends State<DaftarSiswaKelasScreen> {
           }
 
           if (usersState is UsersLoaded) {
+            if (allStudents.isEmpty) {
+              _initializeStudents(usersState.users);
+            }
+
             if (usersState.users.isEmpty) {
               return _buildEmptyState();
             }
-            return _buildStudentList(usersState.users);
+            return _buildContent(usersState.users);
           }
 
           return _buildEmptyState();
@@ -196,15 +231,13 @@ class _DaftarSiswaKelasScreenState extends State<DaftarSiswaKelasScreen> {
     );
   }
 
-  Widget _buildStudentList(List<dynamic> students) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  Widget _buildContent(List<dynamic> students) {
+    return Column(
+      children: [
+        // Search Bar
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -216,40 +249,180 @@ class _DaftarSiswaKelasScreenState extends State<DaftarSiswaKelasScreen> {
                 ),
               ],
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.group,
+            child: TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: 'Cari siswa berdasarkan nama atau NIS...',
+                prefixIcon: Icon(
+                  Icons.search,
                   color: Colors.blue[700],
-                  size: 20,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '${students.length} Siswa',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
-                    fontSize: 14,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 16,
+                ),
+                suffixIcon: searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: Icon(
+                    Icons.clear,
+                    color: Colors.grey[600],
+                  ),
+                  onPressed: () {
+                    searchController.clear();
+                    _filterStudents();
+                  },
+                )
+                    : null,
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Colors.blue[700]!,
+                    width: 2,
                   ),
                 ),
-              ],
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Colors.grey[300]!,
+                    width: 1,
+                  ),
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+        ),
 
-          // List Siswa
-          Expanded(
-            child: ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              itemCount: students.length,
-              itemBuilder: (context, index) {
-                final student = students[index];
-                return _buildStudentCard(student, index);
-              },
-            ),
+        // Student Count Info
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.group,
+                    color: Colors.blue[700],
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${filteredStudents.length} Siswa',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              if (searchController.text.isNotEmpty)
+                TextButton(
+                  onPressed: () {
+                    searchController.clear();
+                    _filterStudents();
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.clear_all,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Clear',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
-        ],
+        ),
+
+        const SizedBox(height: 8),
+
+        // Student List or No Results
+        Expanded(
+          child: filteredStudents.isEmpty
+              ? _buildNoResultsState()
+              : _buildStudentList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNoResultsState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 80,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Tidak Ditemukan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tidak ada siswa yang cocok dengan pencarian "${searchController.text}"',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                searchController.clear();
+                _filterStudents();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue[700],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: const Text(
+                'Tampilkan Semua',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildStudentList() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      physics: const BouncingScrollPhysics(),
+      itemCount: filteredStudents.length,
+      itemBuilder: (context, index) {
+        final student = filteredStudents[index];
+        return _buildStudentCard(student, index);
+      },
     );
   }
 
