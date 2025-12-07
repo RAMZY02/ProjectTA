@@ -7,9 +7,9 @@ import 'package:project_ta/models/history_tugas_model.dart';
 
 class HistoryTugasBloc extends Bloc<HistoryTugasEvent, HistoryTugasState> {
 
-  final baseUrl = 'http://localhost:3000';
+  // final baseUrl = 'http://localhost:3000';
   // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
-  // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
+  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   HistoryTugasBloc() : super(HistoryTugasInitial()) {
     on<InitialHistoryTugas>(onInitial);

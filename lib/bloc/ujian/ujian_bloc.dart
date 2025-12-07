@@ -8,9 +8,9 @@ import 'package:project_ta/models/ujian_model.dart';
 
 class UjianBloc extends Bloc<UjianEvent, UjianState> {
 
-  final baseUrl = 'http://localhost:3000';
+  // final baseUrl = 'http://localhost:3000';
   // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
-  // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
+  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   UjianBloc() : super(UjianInitial()) {
     on<InitUjian>(_onInitUjian);

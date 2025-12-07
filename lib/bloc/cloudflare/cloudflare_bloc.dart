@@ -7,9 +7,9 @@ import 'package:project_ta/bloc/cloudflare/cloudflare_state.dart';
 
 class CloudflareBloc extends Bloc<CloudflareEvent, CloudflareState> {
 
-  final baseUrl = 'http://localhost:3000';
+  // final baseUrl = 'http://localhost:3000';
   // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
-  // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
+  final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   CloudflareBloc() : super(CloudFlareInitial()) {
     on<UploadFile>(_onUploadFile);
