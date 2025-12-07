@@ -7,8 +7,8 @@ import 'package:project_ta/models/video_edukasi_model.dart';
 
 class VideoEdukasiBloc extends Bloc<VideoEdukasiEvent, VideoEdukasiState> {
 
-  // final baseUrl = 'http://localhost:3000';
-  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  final baseUrl = 'http://localhost:3000';
+  // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
   // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   VideoEdukasiBloc() : super(VideoInitial()) {

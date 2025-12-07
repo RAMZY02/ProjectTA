@@ -9,8 +9,8 @@ import 'package:http/http.dart' as http;
 
 class KuponBloc extends Bloc<KuponEvent, KuponState> {
 
-  // final baseUrl = 'http://localhost:3000';
-  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  final baseUrl = 'http://localhost:3000';
+  // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
   // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   KuponBloc() : super(KuponInitial()) {

@@ -11,8 +11,8 @@ import '../../services/openai_service.dart';
 class SoalUjianBloc extends Bloc<SoalUjianEvent, SoalUjianState> {
 
   final OpenAIService openAIService; // Tambahkan OpenAIService
-  // final baseUrl = 'http://localhost:3000';
-  final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
+  final baseUrl = 'http://localhost:3000';
+  // final baseUrl = 'https://flounder-moved-rooster.ngrok-free.app';
   // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   SoalUjianBloc({required this.openAIService}) : super(SoalUjianInitial()) {
