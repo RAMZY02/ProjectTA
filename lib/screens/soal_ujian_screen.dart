@@ -191,10 +191,6 @@ class _SoalUjianScreenState extends State<SoalUjianScreen> with WidgetsBindingOb
     final authState = context.read<AuthBloc>().state;
     if (state is! SoalUjianLoaded) return;
 
-    if(authState is Authenticated){
-      context.read<HistoryUjianBloc>().add(UpdateHistoryUjian(token: authState.token, userId: authState.id, ujianId: widget.ujian.id, kehadiran: 'true', selesai: 'true', nilai: 0, diperiksa: 'false'));
-    }
-
     int pilihanGandaCorrect = 0;
     int pilihanGandaWrong = 0;
     int pilihanGandaTotal = 0;

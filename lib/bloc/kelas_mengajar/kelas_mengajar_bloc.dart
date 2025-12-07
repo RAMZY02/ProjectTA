@@ -12,12 +12,17 @@ class KelasMengajarBloc extends Bloc<KelasMengajarEvent, KelasMengajarState> {
   // final baseUrl = 'https://backend.srv1071909.hstgr.cloud';
 
   KelasMengajarBloc() : super(KelasMengajarInitial()) {
+    on<InitialKelasMengajar>(_onInitialKelasMengajar);
     on<FetchAllKelasMengajar>(_onFetchAllKelasMengajar);
     on<FetchKelasMengajarById>(_onFetchKelasMengajarById);
     on<FetchKelasMengajarByUserId>(_onFetchKelasMengajarByUserId);
     on<CreateKelasMengajar>(_onCreateKelasMengajar);
     on<UpdateKelasMengajar>(_onUpdateKelasMengajar);
     on<DeleteKelasMengajar>(_onDeleteKelasMengajar);
+  }
+
+  Future<void> _onInitialKelasMengajar(InitialKelasMengajar event, Emitter<KelasMengajarState> emit) async {
+    emit(KelasMengajarInitial());
   }
 
   Future<void> _onFetchAllKelasMengajar(

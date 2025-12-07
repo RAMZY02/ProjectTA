@@ -14,54 +14,267 @@ import '../bloc/history_ujian/history_ujian_bloc.dart';
 import '../bloc/history_ujian/history_ujian_event.dart';
 import 'detail_riwayat_ujian_screen.dart';
 
-class RiwayatUjianScreen extends StatelessWidget {
+class RiwayatUjianScreen extends StatefulWidget {
   const RiwayatUjianScreen({super.key});
+
+  @override
+  State<RiwayatUjianScreen> createState() => _RiwayatUjianScreenState();
+}
+
+class _RiwayatUjianScreenState extends State<RiwayatUjianScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  List<HistoryUjianModel> _filteredHistories = [];
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text.toLowerCase();
+    });
+  }
+
+  void _filterHistories(List<HistoryUjianModel> histories) {
+    if (_searchQuery.isEmpty) {
+      _filteredHistories = List.from(histories);
+    } else {
+      _filteredHistories = histories.where((history) {
+        final mapel = history.ujian.mapel.toLowerCase();
+        final tipeUjian = history.ujian.tipe_ujian.toLowerCase();
+        final tipeSoal = history.ujian.tipe_soal.toLowerCase();
+        final tanggal = DateFormat('dd MMMM yyyy').format(history.ujian.tanggal).toLowerCase();
+        final nilai = history.nilai.toString();
+
+        return mapel.contains(_searchQuery) ||
+            tipeUjian.contains(_searchQuery) ||
+            tipeSoal.contains(_searchQuery) ||
+            tanggal.contains(_searchQuery) ||
+            nilai.contains(_searchQuery);
+      }).toList();
+    }
+  }
+
+  void _clearSearch() {
+    setState(() {
+      _searchController.clear();
+      _searchQuery = '';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Riwayat Ujian',
-          style: TextStyle(
-            fontSize: 18,
-            color: Colors.white,
-            fontWeight: FontWeight.bold
-          )
+        appBar: AppBar(
+          title: const Text(
+              'Riwayat Ujian',
+              style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold
+              )
+          ),
+          centerTitle: true,
+          backgroundColor: kPrimaryColor,
+          iconTheme: const IconThemeData(color: Colors.white),
+          systemOverlayStyle: const SystemUiOverlayStyle(
+            statusBarColor: Colors.grey,
+            statusBarIconBrightness: Brightness.light,
+          ),
         ),
-        centerTitle: true,
-        backgroundColor: kPrimaryColor,
-        iconTheme: IconThemeData(color: Colors.white),
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Colors.grey,
-          statusBarIconBrightness: Brightness.light,
-        ),
-      ),
-      body: BlocBuilder<HistoryUjianBloc, HistoryUjianState>(
-          builder: (context, historyUjianState){
-            if(authState is Authenticated && historyUjianState is HistoryUjianInitial){
-              context.read<HistoryUjianBloc>().add(FetchHistoryUjian(token: authState.token, userId: authState.id));
-            }
-            if(historyUjianState is HistoryUjianLoaded){
-              return ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: historyUjianState.histories.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final exam = historyUjianState.histories[index];
-                  return _buildExamCard(context, exam);
-                },
-              );
-            }
-            else if(historyUjianState is HistoryUjianError){
-              return Center(child: Text(historyUjianState.message));
-            }
-            else{
-              return Center(child: CircularProgressIndicator());
-            }
-          }
-      )
+        body: Column(
+          children: [
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Cari riwayat ujian...',
+                    hintStyle: TextStyle(color: Colors.grey.shade500),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: kPrimaryColor,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                      icon: Icon(
+                        Icons.clear,
+                        color: Colors.grey.shade500,
+                      ),
+                      onPressed: _clearSearch,
+                    )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 20,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+
+            // List Riwayat Ujian
+            Expanded(
+              child: BlocBuilder<HistoryUjianBloc, HistoryUjianState>(
+                  builder: (context, historyUjianState) {
+                    if (authState is Authenticated && historyUjianState is HistoryUjianInitial) {
+                      context.read<HistoryUjianBloc>().add(FetchHistoryUjian(token: authState.token, userId: authState.id));
+                    }
+
+                    if (historyUjianState is HistoryUjianLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (historyUjianState is HistoryUjianLoaded) {
+                      final histories = historyUjianState.histories;
+                      _filterHistories(histories);
+
+                      if (_filteredHistories.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _searchQuery.isEmpty
+                                    ? Icons.history
+                                    : Icons.search_off,
+                                size: 64,
+                                color: Colors.grey.shade400,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _searchQuery.isEmpty
+                                    ? "Belum ada riwayat ujian"
+                                    : "Riwayat tidak ditemukan",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _searchQuery.isEmpty
+                                    ? "Riwayat ujian akan muncul di sini"
+                                    : "Coba kata kunci lain",
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return RefreshIndicator(
+                        onRefresh: () async {
+                          if (authState is Authenticated) {
+                            context.read<HistoryUjianBloc>().add(FetchHistoryUjian(token: authState.token, userId: authState.id));
+                          }
+                        },
+                        child: ListView.separated(
+                          padding: const EdgeInsets.only(
+                            left: 16,
+                            right: 16,
+                            bottom: 16,
+                          ),
+                          itemCount: _filteredHistories.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final exam = _filteredHistories[index];
+                            return _buildExamCard(context, exam);
+                          },
+                        ),
+                      );
+                    }
+
+                    if (historyUjianState is HistoryUjianError) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Colors.red.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              "Terjadi Kesalahan",
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey.shade800,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 32),
+                              child: Text(
+                                historyUjianState.message,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () {
+                                if (authState is Authenticated) {
+                                  context.read<HistoryUjianBloc>().add(FetchHistoryUjian(token: authState.token, userId: authState.id));
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kPrimaryColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                "Coba Lagi",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return const Center(child: CircularProgressIndicator());
+                  }
+              ),
+            ),
+          ],
+        )
     );
   }
 
@@ -74,7 +287,7 @@ class RiwayatUjianScreen extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          if(exam.diperiksa == 'true'){
+          if (exam.diperiksa == 'true') {
             context.read<SoalUjianBloc>().add(InitSoalUjian());
             Navigator.push(
               context,
@@ -82,10 +295,9 @@ class RiwayatUjianScreen extends StatelessWidget {
                 builder: (context) => DetailRiwayatUjianScreen(exam: exam),
               ),
             );
-          }
-          else{
+          } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Ujian Belum Diperiksa')),
+              const SnackBar(content: Text('Ujian Belum Diperiksa')),
             );
           }
         },

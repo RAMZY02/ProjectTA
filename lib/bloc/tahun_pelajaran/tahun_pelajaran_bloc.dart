@@ -12,11 +12,16 @@ class TahunPelajaranBloc extends Bloc<TahunPelajaranEvent, TahunPelajaranState> 
   // final baseUrl = 'https://backend.srv1071909.hstgr.cloud/api/tahun-pelajaran';
 
   TahunPelajaranBloc() : super(TahunPelajaranInitial()) {
+    on<InitTahunPelajaran>(_onInitTahunPelajaran);
     on<FetchAllTahunPelajaran>(_onFetchAllTahunPelajaran);
     on<FetchTahunPelajaranById>(_onFetchTahunPelajaranById);
     on<CreateTahunPelajaran>(_onCreateTahunPelajaran);
     on<UpdateTahunPelajaran>(_onUpdateTahunPelajaran);
     on<DeleteTahunPelajaran>(_onDeleteTahunPelajaran);
+  }
+
+  Future<void> _onInitTahunPelajaran(InitTahunPelajaran event, Emitter<TahunPelajaranState> emit) async {
+    emit(TahunPelajaranInitial());
   }
 
   Future<void> _onFetchAllTahunPelajaran(

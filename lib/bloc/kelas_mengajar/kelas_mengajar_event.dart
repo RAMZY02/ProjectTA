@@ -7,6 +7,13 @@ abstract class KelasMengajarEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class InitialKelasMengajar extends KelasMengajarEvent{
+  const InitialKelasMengajar();
+
+  @override
+  List<Object> get props => [];
+}
+
 // Event untuk mengambil semua kelas mengajar
 class FetchAllKelasMengajar extends KelasMengajarEvent {
   final String token;

@@ -11,68 +11,281 @@ import 'package:project_ta/bloc/kupon/kupon_state.dart';
 import 'package:project_ta/constants/color.dart';
 import 'package:project_ta/models/kupon_model.dart';
 
-class SiswaKuponScreen extends StatelessWidget {
+class SiswaKuponScreen extends StatefulWidget {
   const SiswaKuponScreen({super.key});
+
+  @override
+  State<SiswaKuponScreen> createState() => _SiswaKuponScreenState();
+}
+
+class _SiswaKuponScreenState extends State<SiswaKuponScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  List<KuponModel> _filteredKupons = [];
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text.toLowerCase();
+    });
+  }
+
+  void _filterKupons(List<KuponModel> kupons) {
+    if (_searchQuery.isEmpty) {
+      _filteredKupons = List.from(kupons);
+    } else {
+      _filteredKupons = kupons.where((kupon) {
+        final namaHadiah = kupon.hadiah.nama.toLowerCase();
+        final kategori = kupon.hadiah.kategori.toLowerCase();
+        return namaHadiah.contains(_searchQuery) ||
+            kategori.contains(_searchQuery);
+      }).toList();
+    }
+  }
+
+  void _clearSearch() {
+    setState(() {
+      _searchController.clear();
+      _searchQuery = '';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
+        appBar: AppBar(
+          title: const Text(
             'Kupon',
-          style: TextStyle(
-            fontSize: 18,
-            color: Colors.white,
-            fontWeight: FontWeight.bold
+            style: TextStyle(
+                fontSize: 18,
+                color: Colors.white,
+                fontWeight: FontWeight.bold
+            ),
+          ),
+          centerTitle: true,
+          backgroundColor: kPrimaryColor,
+          iconTheme: const IconThemeData(color: Colors.white),
+          systemOverlayStyle: const SystemUiOverlayStyle(
+            statusBarColor: Colors.grey,
+            statusBarIconBrightness: Brightness.light,
           ),
         ),
-        centerTitle: true,
-        backgroundColor: kPrimaryColor,
-        iconTheme: IconThemeData(color: Colors.white),
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Colors.grey,
-          statusBarIconBrightness: Brightness.light,
-        ),
-      ),
-      body: SafeArea(
-        child: BlocBuilder<KuponBloc, KuponState>(
-            builder: (context, kuponState){
-              if(authState is Authenticated && kuponState is KuponInitial){
-                context.read<KuponBloc>().add(FetchKupon(token: authState.token, userId: authState.id));
-              }
-              if(kuponState is KuponLoaded){
-                if(kuponState.kupons.isEmpty){
-                  return Center(child:Text("Belum Memiliki Kupon"));
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: kuponState.kupons.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final coupon = kuponState.kupons[index];
-                    return _buildCouponCard(context, coupon);
-                  },
-                );
-              }
-              else{
-                return Center(child: CircularProgressIndicator());
-              }
-            }
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Cari kupon...',
+                      hintStyle: TextStyle(color: Colors.grey.shade500),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: kPrimaryColor,
+                      ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          color: Colors.grey.shade500,
+                        ),
+                        onPressed: _clearSearch,
+                      )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 20,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+
+              // List Kupon
+              Expanded(
+                child: BlocBuilder<KuponBloc, KuponState>(
+                    builder: (context, kuponState) {
+                      if (authState is Authenticated && kuponState is KuponInitial) {
+                        context.read<KuponBloc>().add(FetchKupon(token: authState.token, userId: authState.id));
+                      }
+
+                      if (kuponState is KuponLoading) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+
+                      if (kuponState is KuponLoaded) {
+                        final kupons = kuponState.kupons;
+                        _filterKupons(kupons);
+
+                        if (_filteredKupons.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  _searchQuery.isEmpty
+                                      ? Icons.card_giftcard
+                                      : Icons.search_off,
+                                  size: 64,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _searchQuery.isEmpty
+                                      ? "Belum Memiliki Kupon"
+                                      : "Kupon tidak ditemukan",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _searchQuery.isEmpty
+                                      ? "Kupon yang Anda dapatkan akan muncul di sini"
+                                      : "Coba kata kunci lain",
+                                  style: TextStyle(
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return RefreshIndicator(
+                          onRefresh: () async {
+                            if (authState is Authenticated) {
+                              context.read<KuponBloc>().add(FetchKupon(token: authState.token, userId: authState.id));
+                            }
+                          },
+                          child: ListView.separated(
+                            padding: const EdgeInsets.only(
+                              left: 16,
+                              right: 16,
+                              bottom: 16,
+                            ),
+                            itemCount: _filteredKupons.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final coupon = _filteredKupons[index];
+                              return _buildCouponCard(context, coupon);
+                            },
+                          ),
+                        );
+                      }
+
+                      if (kuponState is KuponError) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: Colors.red.shade400,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                "Terjadi Kesalahan",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey.shade800,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 32),
+                                child: Text(
+                                  kuponState.message,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  if (authState is Authenticated) {
+                                    context.read<KuponBloc>().add(FetchKupon(token: authState.token, userId: authState.id));
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: kPrimaryColor,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Coba Lagi",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                ),
+              ),
+            ],
+          ),
         )
-      )
     );
   }
 
   Widget _buildCouponCard(BuildContext context, KuponModel coupon) {
+    final isExpired = coupon.kadaluarsa.isBefore(DateTime.now());
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
+      color: isExpired ? Colors.grey.shade200 : null,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
+        onTap: isExpired ? null : () {
           _showCouponBarcode(context, coupon);
         },
         child: Padding(
@@ -82,12 +295,14 @@ class SiswaKuponScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: isExpired
+                      ? Colors.grey.withOpacity(0.3)
+                      : Colors.blue.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  Icons.edit,
-                  color: Colors.blue,
+                  Icons.card_giftcard,
+                  color: isExpired ? Colors.grey : Colors.blue,
                   size: 30,
                 ),
               ),
@@ -98,37 +313,60 @@ class SiswaKuponScreen extends StatelessWidget {
                   children: [
                     Text(
                       coupon.hadiah.nama,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
+                        color: isExpired ? Colors.grey : null,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Jenis: ${coupon.hadiah.kategori}',
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: isExpired ? Colors.grey : Colors.grey[600],
                         fontSize: 12,
                       ),
                     ),
                     Text(
                       'Didapatkan: ${_formatDate(coupon.waktu)}',
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: isExpired ? Colors.grey : Colors.grey[600],
                         fontSize: 12,
                       ),
                     ),
                     Text(
                       'Kadaluarsa: ${_formatDate(coupon.kadaluarsa)}',
                       style: TextStyle(
-                        color: Colors.red[600],
+                        color: isExpired ? Colors.grey : Colors.red[600],
                         fontSize: 12,
                       ),
                     ),
+                    if (isExpired) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'KADALUARSA',
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, size: 24),
+              Icon(
+                Icons.chevron_right,
+                size: 24,
+                color: isExpired ? Colors.grey : null,
+              ),
             ],
           ),
         ),
@@ -147,10 +385,10 @@ class SiswaKuponScreen extends StatelessWidget {
             Text('Jenis: ${coupon.hadiah.kategori}'),
             const SizedBox(height: 16),
             BarcodeWidget(
-              barcode: Barcode.qrCode(), // Menggunakan QR code instead of code128
-              data: coupon.kode, // Data unik untuk QR code
+              barcode: Barcode.qrCode(),
+              data: coupon.kode,
               width: 200,
-              height: 200, // QR code biasanya berbentuk persegi
+              height: 200,
             ),
             const SizedBox(height: 16),
             Text(
@@ -174,14 +412,13 @@ class SiswaKuponScreen extends StatelessWidget {
       final formatter = DateFormat('d MMMM yyyy', 'id_ID');
       return formatter.format(date);
     } catch (e) {
-      return DateFormat('d MMMM yyyy').format(date); // Fallback format
+      return DateFormat('d MMMM yyyy').format(date);
     }
   }
 
   String formatTimeOfDay(TimeOfDay time) {
-    // Format jam dan menit dengan leading zero
     final hour = time.hour.toString().padLeft(2, '0');
     final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour.$minute'; // Format 10.00
+    return '$hour.$minute';
   }
 }

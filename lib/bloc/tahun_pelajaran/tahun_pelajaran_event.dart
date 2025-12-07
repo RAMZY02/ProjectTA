@@ -7,6 +7,13 @@ abstract class TahunPelajaranEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class InitTahunPelajaran extends TahunPelajaranEvent{
+  InitTahunPelajaran();
+
+  @override
+  List<Object> get props => [];
+}
+
 class FetchAllTahunPelajaran extends TahunPelajaranEvent {
   final String token;
 

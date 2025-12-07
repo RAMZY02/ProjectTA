@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Border;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:project_ta/bloc/auth/auth_state.dart';
@@ -17,6 +17,7 @@ import '../bloc/mata_pelajaran/mata_pelajaran_event.dart';
 import '../bloc/mata_pelajaran/mata_pelajaran_state.dart';
 import '../bloc/users/users_state.dart';
 import '../models/mata_pelajaran_model.dart';
+import '../models/user_model.dart';
 import '../services/notification_service.dart';
 import 'insert_user_screen.dart';
 
@@ -32,11 +33,41 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
   final ScrollController _horizontalController = ScrollController();
   final ScrollController _verticalController = ScrollController();
 
+  // Tambahkan controller untuk search
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
   @override
   void dispose() {
     _horizontalController.dispose();
     _verticalController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  // Fungsi untuk filter users berdasarkan query
+  List<UserModel> _filterUsers(List<UserModel> users, String query) {
+    if (query.isEmpty) return users;
+
+    return users.where((user) {
+      return user.nama.toLowerCase().contains(query) ||
+          user.nis.toLowerCase().contains(query) ||
+          user.nisn.toLowerCase().contains(query) ||
+          user.email.toLowerCase().contains(query) ||
+          user.role.toLowerCase().contains(query) ||
+          user.kelas.toLowerCase().contains(query) ||
+          user.mapel.toLowerCase().contains(query);
+    }).toList();
   }
 
   @override
@@ -56,10 +87,67 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Download Template Button
+            // Row untuk Search dan Add Button
+            Row(
+              children: [
+                // Search Bar
+                Expanded(
+                  child: Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 16),
+                        const Icon(Icons.search, color: Colors.grey),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: const InputDecoration(
+                              hintText: 'Cari user berdasarkan nama, NIS, email, kelas...',
+                              border: InputBorder.none,
+                              hintStyle: TextStyle(color: Colors.grey),
+                            ),
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                        if (_searchQuery.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(Icons.clear, size: 20),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Add Button
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: const Text('User'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const InsertUserScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Row untuk Template Button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // Download Template Button
                 Align(
                   alignment: Alignment.centerLeft,
                   child: ElevatedButton.icon(
@@ -68,26 +156,11 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                     onPressed: _downloadExcelTemplate,
                   ),
                 ),
-                // Add Button
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.add),
-                    label: const Text('User'),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const InsertUserScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 16),
-            // DataTable - HAPUS Expanded yang berlebihan
+
+            // DataTable
             BlocConsumer<UsersBloc, UsersState>(
               listener: (context, usersState){
                 if(usersState is UsersError){
@@ -111,143 +184,182 @@ class _MasterUserScreenState extends State<MasterUserScreen> {
                       .add(FetchUsers(token: authState.token));
                 }
                 if (usersState is UsersLoaded) {
-                  if (usersState.users.isEmpty) {
-                    return Expanded(child: Center(child: Text("Belum ada data tersedia")));
+                  // Filter users berdasarkan search query
+                  final filteredUsers = _filterUsers(usersState.users, _searchQuery);
+
+                  if (filteredUsers.isEmpty) {
+                    return Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.search_off, size: 64, color: Colors.grey),
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchQuery.isEmpty
+                                ? "Belum ada data tersedia"
+                                : "Tidak ditemukan user dengan kata kunci '$_searchQuery'",
+                            style: const TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    );
                   }
 
-                  // GUNAKAN HANYA SATU Expanded di sini
-                  return Expanded(
-                    child: ScrollConfiguration(
-                      behavior: ScrollConfiguration.of(context).copyWith(
-                        dragDevices: {
-                          PointerDeviceKind.touch,
-                          PointerDeviceKind.mouse,
-                        },
+                  // Tampilkan jumlah hasil pencarian
+                  Widget searchInfo = Container();
+                  if (_searchQuery.isNotEmpty) {
+                    searchInfo = Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Text(
+                        'Menampilkan ${filteredUsers.length} dari ${usersState.users.length} user',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
-                      child: Scrollbar(
-                        controller: _verticalController, // Tambahkan controller
-                        thumbVisibility: true,
-                        child: Scrollbar(
-                          controller: _horizontalController, // Tambahkan controller
-                          thumbVisibility: true,
-                          notificationPredicate: (notif) => notif.depth == 1,
-                          child: SingleChildScrollView(
-                            controller: _verticalController,
-                            scrollDirection: Axis.vertical,
-                            child: SingleChildScrollView(
-                              controller: _horizontalController,
-                              scrollDirection: Axis.horizontal,
-                              child: DataTable(
-                                columnSpacing: 20,
-                                horizontalMargin: 12,
-                                columns: const [
-                                  DataColumn(label: Text('ID')),
-                                  DataColumn(label: Text('Nama')),
-                                  DataColumn(label: Text('NIS')),
-                                  DataColumn(label: Text('NISN')),
-                                  DataColumn(label: Text('Email')),
-                                  DataColumn(label: Text('Role')),
-                                  DataColumn(label: Text('Nomor Ortu')),
-                                  DataColumn(label: Text('Kelas')),
-                                  DataColumn(label: Text('Agama')),
-                                  DataColumn(label: Text('Mata Pelajaran')),
-                                  DataColumn(label: Text('Wali Kelas')),
-                                  DataColumn(label: Text('Poin')),
-                                  DataColumn(label: Text('Profil Picture')),
-                                  DataColumn(
-                                    label: SizedBox(
-                                      width: 100,
-                                      child: Center(
-                                        child: Text('Actions'),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                                rows: usersState.users.map((user) {
-                                  return DataRow(
-                                    cells: [
-                                      DataCell(Text(user.id.toString())),
-                                      DataCell(
-                                        ConstrainedBox(
-                                          constraints: const BoxConstraints(maxWidth: 120),
-                                          child: Text(
-                                            user.nama,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ),
-                                      DataCell(Text(user.nis)),
-                                      DataCell(Text(user.nisn)),
-                                      DataCell(
-                                        ConstrainedBox(
-                                          constraints: const BoxConstraints(maxWidth: 150),
-                                          child: Text(
-                                            user.email,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ),
-                                      DataCell(Text(user.role)),
-                                      DataCell(Text(user.nomor_ortu)),
-                                      DataCell(Center(child: Text(user.kelas))),
-                                      DataCell(Text(user.agama)),
-                                      DataCell(
-                                        ConstrainedBox(
-                                          constraints: const BoxConstraints(maxWidth: 120),
-                                          child: Text(
-                                            user.mapel,
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 2,
-                                          ),
-                                        ),
-                                      ),
-                                      DataCell(Center(child: Text(user.wali_kelas))),
-                                      DataCell(Text(user.poin.toString())),
-                                      DataCell(
-                                          Center(
-                                            child: user.profpic != '-' ?
-                                            Image.network(
-                                              user.profpic,
-                                              width: 40,
-                                              height: 40,
-                                              errorBuilder: (context, error, stackTrace) {
-                                                return const Icon(Icons.error);
-                                              },
-                                            )
-                                                : const Icon(Icons.person, size: 40),
-                                          )
-                                      ),
-                                      DataCell(
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.edit, color: Colors.blue),
-                                              onPressed: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) => InsertUserScreen(isEdit: true, userData: user),
-                                                  ),
-                                                );
-                                              },
+                    );
+                  }
+
+                  return Expanded(
+                    child: Column(
+                      children: [
+                        searchInfo,
+                        Expanded(
+                          child: ScrollConfiguration(
+                            behavior: ScrollConfiguration.of(context).copyWith(
+                              dragDevices: {
+                                PointerDeviceKind.touch,
+                                PointerDeviceKind.mouse,
+                              },
+                            ),
+                            child: Scrollbar(
+                              controller: _verticalController,
+                              thumbVisibility: true,
+                              child: Scrollbar(
+                                controller: _horizontalController,
+                                thumbVisibility: true,
+                                notificationPredicate: (notif) => notif.depth == 1,
+                                child: SingleChildScrollView(
+                                  controller: _verticalController,
+                                  scrollDirection: Axis.vertical,
+                                  child: SingleChildScrollView(
+                                    controller: _horizontalController,
+                                    scrollDirection: Axis.horizontal,
+                                    child: DataTable(
+                                      columnSpacing: 20,
+                                      horizontalMargin: 12,
+                                      columns: const [
+                                        DataColumn(label: Text('ID')),
+                                        DataColumn(label: Text('Nama')),
+                                        DataColumn(label: Text('NIS')),
+                                        DataColumn(label: Text('NISN')),
+                                        DataColumn(label: Text('Email')),
+                                        DataColumn(label: Text('Role')),
+                                        DataColumn(label: Text('Nomor Ortu')),
+                                        DataColumn(label: Text('Kelas')),
+                                        DataColumn(label: Text('Agama')),
+                                        DataColumn(label: Text('Mata Pelajaran')),
+                                        DataColumn(label: Text('Wali Kelas')),
+                                        DataColumn(label: Text('Poin')),
+                                        DataColumn(label: Text('Profil Picture')),
+                                        DataColumn(
+                                          label: SizedBox(
+                                            width: 100,
+                                            child: Center(
+                                              child: Text('Actions'),
                                             ),
-                                            IconButton(
-                                              icon: const Icon(Icons.delete, color: Colors.red),
-                                              onPressed: () {
-                                                _deleteUser(authState.token, user.id);
-                                              },
+                                          ),
+                                        ),
+                                      ],
+                                      rows: filteredUsers.map((user) {
+                                        return DataRow(
+                                          cells: [
+                                            DataCell(Text(user.id.toString())),
+                                            DataCell(
+                                              ConstrainedBox(
+                                                constraints: const BoxConstraints(maxWidth: 120),
+                                                child: Text(
+                                                  user.nama,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell(Text(user.nis)),
+                                            DataCell(Text(user.nisn)),
+                                            DataCell(
+                                              ConstrainedBox(
+                                                constraints: const BoxConstraints(maxWidth: 150),
+                                                child: Text(
+                                                  user.email,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell(Text(user.role)),
+                                            DataCell(Text(user.nomor_ortu)),
+                                            DataCell(Center(child: Text(user.kelas))),
+                                            DataCell(Text(user.agama)),
+                                            DataCell(
+                                              ConstrainedBox(
+                                                constraints: const BoxConstraints(maxWidth: 120),
+                                                child: Text(
+                                                  user.mapel,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  maxLines: 2,
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell(Center(child: Text(user.wali_kelas))),
+                                            DataCell(Text(user.poin.toString())),
+                                            DataCell(
+                                                Center(
+                                                  child: user.profpic != '-' ?
+                                                  Image.network(
+                                                    user.profpic,
+                                                    width: 40,
+                                                    height: 40,
+                                                    errorBuilder: (context, error, stackTrace) {
+                                                      return const Icon(Icons.error);
+                                                    },
+                                                  )
+                                                      : const Icon(Icons.person, size: 40),
+                                                )
+                                            ),
+                                            DataCell(
+                                              Row(
+                                                children: [
+                                                  IconButton(
+                                                    icon: const Icon(Icons.edit, color: Colors.blue),
+                                                    onPressed: () {
+                                                      Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) => InsertUserScreen(isEdit: true, userData: user),
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                                    onPressed: () {
+                                                      _deleteUser(authState.token, user.id);
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ],
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                }).toList(),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   );
                 }
