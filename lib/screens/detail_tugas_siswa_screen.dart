@@ -41,6 +41,7 @@ class DetailTugasSiswaScreen extends StatefulWidget {
 class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
   final TextEditingController _deskripsiController = TextEditingController();
 
+  final _formKey = GlobalKey<FormState>();
   String? _gambarPath;
   String? _videoPath;
   String? _audioPath;
@@ -487,7 +488,7 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
   // Fungsi untuk menentukan aspect ratio berdasarkan jumlah kolom
   double _getAspectRatio(int crossAxisCount) {
     switch (crossAxisCount) {
-      case 1: return 12 / 9;  // Lebar landscape untuk 1 kolom
+      case 1: return 12 / 20;  // Lebar landscape untuk 1 kolom
       case 2: return 12 / 9; // Sedikit lebih persegi untuk 2 kolom
       case 3: return 12 / 9; // Persegi untuk 3 kolom
       default: return 12 / 9;
@@ -814,10 +815,7 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: VideoPlayerWidget(videoUrl: videoUrl),
-      ),
+      child: VideoPlayerWidget(videoUrl: videoUrl),
     );
   }
 
@@ -832,7 +830,7 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
 
   // Konten untuk file
   Widget _buildFileContent(String fileUrl, BoxConstraints constraints) {
-    final maxHeight = constraints.maxHeight * 0.6;
+    final maxHeight = constraints.maxHeight * 0.8;
     return Container(
       constraints: BoxConstraints(
         minHeight: 200,
@@ -1169,6 +1167,7 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
 
                           // Button history tugas
                           if(isTerkumpul)...[
+                            SizedBox(height: 16),
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
@@ -1331,18 +1330,27 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
                                       ),
                                     ),
                                     SizedBox(height: 12),
-                                    TextField(
-                                      controller: _deskripsiController,
-                                      decoration: InputDecoration(
-                                        hintText: "Tambahkan deskripsi untuk tugas Anda...",
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                    Form(
+                                      key: _formKey,
+                                      child: TextFormField(
+                                        controller: _deskripsiController,
+                                        decoration: InputDecoration(
+                                          hintText: "Tambahkan deskripsi untuk tugas Anda...",
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          filled: true,
+                                          fillColor: Colors.grey.shade50,
                                         ),
-                                        filled: true,
-                                        fillColor: Colors.grey.shade50,
+                                        maxLines: 4,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Harap masukkan deskripsi';
+                                          }
+                                          return null;
+                                        },
                                       ),
-                                      maxLines: 4,
-                                    ),
+                                    )
                                   ],
                                 ),
                               ),
@@ -1356,7 +1364,7 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
                               onPressed: () {
                                 final authState = context.read<AuthBloc>().state;
                                 context.read<TugasBloc>().add(TugasInit());
-                                if (authState is Authenticated) {
+                                if (_formKey.currentState!.validate() && authState is Authenticated) {
                                   context.read<PengumpulanTugasBloc>().add(
                                     SubmitPengumpulanTugas(
                                       idUser: authState.id,

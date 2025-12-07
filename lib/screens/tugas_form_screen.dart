@@ -402,12 +402,14 @@ class _TugasFormScreenState extends State<TugasFormScreen> {
   }
 
   void _submitForm() {
-    if (_formKey.currentState!.validate()) {
+    final authState = context.read<AuthBloc>().state;
+    if (_formKey.currentState!.validate() && authState is Authenticated) {
       if (widget.tugas == null) {
         // Create new tugas
         context.read<TugasBloc>().add(CreateTugas(
           token: widget.token,
           idUser: widget.userId,
+          idMapel: authState.id_mapel,
           nama: _namaController.text,
           deskripsi: _deskripsiController.text,
           kelas: _kelasController.text,

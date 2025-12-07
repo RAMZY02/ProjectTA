@@ -134,6 +134,7 @@ class TugasBloc extends Bloc<TugasEvent, TugasState> {
         },
         body: jsonEncode({
           'id_user': event.idUser,
+          'id_mapel': event.idMapel,
           'nama': event.nama,
           'deskripsi': event.deskripsi,
           'kelas': event.kelas,

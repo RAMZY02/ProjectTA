@@ -40,6 +40,7 @@ class FetchTugasByIdUser extends TugasEvent {
 class CreateTugas extends TugasEvent {
   final String token;
   final int idUser;
+  final int idMapel;
   final String nama;
   final String deskripsi;
   final String kelas;
@@ -53,6 +54,7 @@ class CreateTugas extends TugasEvent {
   CreateTugas({
     required this.token,
     required this.idUser,
+    required this.idMapel,
     required this.nama,
     required this.deskripsi,
     required this.kelas,

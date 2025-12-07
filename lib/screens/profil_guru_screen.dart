@@ -245,12 +245,21 @@ class _ProfileMenu extends StatelessWidget {
                   ),
                 );
               } else if (menu['route'] == '/rapot-wali-kelas') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const RapotWaliKelasScreen(),
-                  ),
-                );
+                if(state is Authenticated){
+                  if(state.wali_kelas != '-'){
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RapotWaliKelasScreen(),
+                      ),
+                    );
+                  }
+                  else{
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Hanya Wali Kelas yang dapat mengakses fitur ini')),
+                    );
+                  }
+                }
               } else {
                 logout(context);
                 context.read<AuthBloc>().add(LogoutEvent());

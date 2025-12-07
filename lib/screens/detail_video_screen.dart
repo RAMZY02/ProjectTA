@@ -86,6 +86,16 @@ class _DetailVideoScreenState extends State<DetailVideoScreen>{
 
     context.read<VideoEdukasiBloc>().add(InitVideoEdukasi());
     context.read<CommentsBloc>().add(InitComment());
+
+    final historyVideoState = context.read<HistoryVideoBloc>().state;
+    final authState = context.read<AuthBloc>().state;
+    if(authState is Authenticated && historyVideoState is HistoryVideoInitial) {
+      context.read<HistoryVideoBloc>().add(CreateHistoryVideo(
+          token: authState.token,
+          userId: authState.id,
+          videoId: widget.video.id
+      ));
+    }
   }
 
   void _setupScrollListener() {
@@ -556,15 +566,6 @@ class _DetailVideoScreenState extends State<DetailVideoScreen>{
   Widget _buildScrollableContent() {
     return BlocBuilder<AuthBloc, AuthState>(
         builder: (context, authState) {
-          final historyVideoState = context.read<HistoryVideoBloc>().state;
-          if(authState is Authenticated && historyVideoState is HistoryVideoInitial) {
-            context.read<HistoryVideoBloc>().add(CreateHistoryVideo(
-                token: authState.token,
-                userId: authState.id,
-                videoId: widget.video.id
-            ));
-          }
-
           return BlocBuilder<CommentsBloc, CommentsState>(
               builder: (context, commentState) {
                 if(authState is Authenticated && commentState is CommentsInitial){

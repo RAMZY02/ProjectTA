@@ -59,11 +59,7 @@ class _MasterTugasScreenState extends State<MasterTugasScreen> {
                   return const Text("Login Dulu min");
                 }
                 if (tugasState is TugasInitial) {
-                  Future.microtask(() {
-                    context
-                        .read<TugasBloc>()
-                        .add(FetchTugas(token: authState.token));
-                  });
+                    context.read<TugasBloc>().add(FetchTugas(token: authState.token));
                 }
                 if (tugasState is TugasLoaded) {
                   if (tugasState.tugas.isEmpty) {
@@ -150,6 +146,7 @@ class _MasterTugasScreenState extends State<MasterTugasScreen> {
                                               builder: (context) =>
                                                   InsertTugasAdminScreen(
                                                     tugasData: tugas,
+                                                    guruData: tugas.user,
                                                     isEdit: true,
                                                   ),
                                             ),
