@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:project_ta/bloc/history_tugas/history_tugas_bloc.dart';
 import 'package:project_ta/bloc/history_tugas/history_tugas_event.dart';
@@ -220,7 +221,6 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
 
   // Fungsi untuk download file
   Future<void> _downloadFile(String url, String fileName, BuildContext context) async {
-    // Generate unique notification ID untuk setiap download
     final int notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
 
     try {
@@ -231,7 +231,6 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
         _currentDownloadUrl = url;
       });
 
-      // Tampilkan notifikasi progress awal
       await NotificationService.showDownloadNotification(
         title: 'Memulai Download',
         body: 'Mempersiapkan $fileName...',
@@ -240,95 +239,115 @@ class _DetailTugasSiswaScreenState extends State<DetailTugasSiswaScreen> {
         notificationId: notificationId,
       );
 
-      print("Downloading from: $url");
-
       if (kIsWeb) {
         await _downloadFileForWebWithProgress(url, fileName, context);
         return;
       }
 
-      // Untuk platform mobile
-      String extension = getFileExtensionFromUrl(url);
+      // **PERBAIKAN 1: Dapatkan direktori yang benar**
+      final Directory directory = Directory('/storage/emulated/0/Download');
+      final String downloadsPath = directory.path;
 
-      // Request permission untuk mobile
-      if (await Permission.manageExternalStorage.request().isGranted ||
-          await Permission.storage.request().isGranted) {
+      // **PERBAIKAN 2: Buat nama file yang valid**
+      String cleanFileName = fileName.replaceAll(RegExp(r'[^\w\s.-]'), '_');
 
-        final String savePath = '/storage/emulated/0/Download/$fileName$extension';
-        final Dio dio = Dio();
+      // Tambahkan ekstensi jika belum ada
+      if (!cleanFileName.contains('.')) {
+        String extension = getFileExtensionFromUrl(url);
+        cleanFileName = '$cleanFileName$extension';
+      }
 
-        setState(() {
-          _downloadStatus = 'Sedang mengunduh...';
-        });
+      final String savePath = '$downloadsPath/$cleanFileName';
 
-        // Update notifikasi progress
-        await NotificationService.showDownloadNotification(
-          title: 'Mengunduh $fileName',
-          body: '0% - Memulai download...',
-          progress: 0,
-          isProgress: true,
-          notificationId: notificationId,
-        );
+      print("Will save to: $savePath");
 
-        await dio.download(
-          url,
-          savePath,
-          onReceiveProgress: (received, total) {
-            if (total != -1) {
-              final progress = (received / total * 100).toInt();
-              final receivedMB = (received / 1024 / 1024).toStringAsFixed(1);
-              final totalMB = (total / 1024 / 1024).toStringAsFixed(1);
+      final Dio dio = Dio();
 
-              setState(() {
-                _downloadProgress = progress.toDouble();
-                _downloadStatus = '$receivedMB MB / $totalMB MB';
-              });
+      setState(() {
+        _downloadStatus = 'Sedang mengunduh...';
+      });
 
-              // Update notifikasi progress
-              NotificationService.showDownloadNotification(
-                title: 'Mengunduh $fileName',
-                body: '$progress% - $receivedMB MB / $totalMB MB',
-                progress: progress,
-                isProgress: true,
-                notificationId: notificationId,
-              );
-            }
-          },
-        );
+      await NotificationService.showDownloadNotification(
+        title: 'Mengunduh $cleanFileName',
+        body: '0% - Memulai download...',
+        progress: 0,
+        isProgress: true,
+        notificationId: notificationId,
+      );
 
-        // Hapus notifikasi progress dan tampilkan notifikasi sukses
+      // **PERBAIKAN 3: Gunakan request permission yang tepat**
+      bool hasPermission = false;
+
+      if (Platform.isAndroid) {
+        // Untuk Android 13+
+        if (await Permission.manageExternalStorage.isGranted ||
+            await Permission.storage.isGranted ||
+            await Permission.notification.isGranted) {
+          hasPermission = true;
+        } else {
+          var status = await Permission.storage.request();
+          hasPermission = status.isGranted;
+        }
+      } else {
+        hasPermission = true;
+      }
+
+      if (!hasPermission) {
+        throw Exception('Izin penyimpanan tidak diberikan');
+      }
+
+      // **PERBAIKAN 4: Gunakan File untuk memastikan path valid**
+      final File file = File(savePath);
+
+      // Pastikan direktori ada
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      }
+
+      await dio.download(
+        url,
+        savePath,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            final progress = (received / total * 100).toInt();
+            final receivedMB = (received / 1024 / 1024).toStringAsFixed(1);
+            final totalMB = (total / 1024 / 1024).toStringAsFixed(1);
+
+            setState(() {
+              _downloadProgress = progress.toDouble();
+              _downloadStatus = '$receivedMB MB / $totalMB MB';
+            });
+
+            NotificationService.showDownloadNotification(
+              title: 'Mengunduh $cleanFileName',
+              body: '$progress% - $receivedMB MB / $totalMB MB',
+              progress: progress,
+              isProgress: true,
+              notificationId: notificationId,
+            );
+          }
+        },
+      );
+
+      // **PERBAIKAN 5: Verifikasi file berhasil disimpan**
+      if (await file.exists()) {
         await NotificationService.cancelProgressNotification(notificationId);
         await NotificationService.showDownloadNotification(
           title: 'Download Berhasil ✅',
-          body: '$fileName$extension berhasil disimpan di Folder Download',
+          body: '$cleanFileName berhasil disimpan',
         );
 
-        _showDownloadSuccess(context, 'File berhasil didownload ke Folder Download');
+        _showDownloadSuccess(context, 'File berhasil disimpan di: $downloadsPath');
         print("File downloaded successfully to: $savePath");
-
       } else {
-        setState(() {
-          _isDownloading = false;
-          _downloadStatus = 'Izin ditolak';
-          _currentDownloadUrl = null;
-        });
-
-        // Notifikasi error permission
-        await NotificationService.cancelProgressNotification(notificationId);
-        await NotificationService.showDownloadNotification(
-          title: 'Download Gagal ❌',
-          body: 'Izin penyimpanan ditolak untuk $fileName',
-        );
-
-        _showDownloadError(context, 'Izin penyimpanan ditolak');
-        print("Storage permission denied");
+        throw Exception('File gagal disimpan');
       }
+
     } catch (e) {
-      // Handle error dengan notifikasi
       await NotificationService.cancelProgressNotification(notificationId);
       await NotificationService.showDownloadNotification(
         title: 'Download Gagal ❌',
-        body: 'Gagal mendownload $fileName: ${e.toString()}',
+        body: 'Gagal mendownload: ${e.toString()}',
       );
 
       _handleDownloadError(context, e);

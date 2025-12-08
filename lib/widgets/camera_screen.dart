@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -20,13 +22,15 @@ class CameraScreen extends StatefulWidget {
   final SoalModel soal;
   final int questionIndex;
 
-  const CameraScreen({super.key, required this.soal, required this.questionIndex});
+  const CameraScreen(
+      {super.key, required this.soal, required this.questionIndex});
 
   @override
   _CameraScreenState createState() => _CameraScreenState();
 }
 
-class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver {
+class _CameraScreenState extends State<CameraScreen>
+    with WidgetsBindingObserver {
   CameraController? _controller;
   List<CameraDescription>? _cameras;
   bool _isLoading = true;
@@ -35,12 +39,52 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
   XFile? _capturedImage;
   String? _capturedImageUrl;
   int _currentCameraIndex = 0;
+  Size _targetSize = Size.zero;
+  double _aspectRatio = 16 / 10; // Aspek rasio yang diinginkan
+  bool _isPortrait = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initCamera();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateTargetSize();
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    _updateTargetSize();
+  }
+
+  void _updateTargetSize() {
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final screenHeight = mediaQuery.size.height;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _isPortrait = screenHeight > screenWidth;
+
+          // Hitung ukuran target berdasarkan aspek rasio
+          if (screenWidth < 600) {
+            final targetWidth = screenWidth - 32.0; // Konversi ke double
+            final targetHeight = targetWidth * _aspectRatio;
+            _targetSize = Size(targetWidth, targetHeight);
+          } else {
+            final targetWidth = 600.0;
+            final targetHeight = targetWidth * _aspectRatio;
+            _targetSize = Size(targetWidth, targetHeight);
+          }
+        });
+      }
+    });
   }
 
   Future<void> _initCamera() async {
@@ -67,19 +111,42 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
       await _controller!.dispose();
     }
 
+    // Pilih resolusi preset yang sesuai
+    ResolutionPreset selectedPreset = ResolutionPreset.medium;
+
+    // Coba set preset berdasarkan kebutuhan
+    if (_targetSize.width > 0 && _targetSize.height > 0) {
+      final targetPixels = _targetSize.width * _targetSize.height;
+
+      if (targetPixels >= 1920 * 1080) {
+        selectedPreset = ResolutionPreset.high;
+      } else if (targetPixels >= 1280 * 720) {
+        selectedPreset = ResolutionPreset.medium;
+      } else if (targetPixels >= 640 * 480) {
+        selectedPreset = ResolutionPreset.medium;
+      } else {
+        selectedPreset = ResolutionPreset.medium;
+      }
+    }
+
     _controller = CameraController(
       _cameras![cameraIndex],
-      ResolutionPreset.medium,
+      selectedPreset,
+      imageFormatGroup: ImageFormatGroup.jpeg,
     );
 
     try {
       await _controller!.initialize();
-      setState(() {
-        _isLoading = false;
-        _currentCameraIndex = cameraIndex;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _currentCameraIndex = cameraIndex;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal menginisialisasi kamera: $e')),
       );
@@ -237,55 +304,93 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
   Widget _buildCapturedImage(double screenWidth) {
     if (_capturedImage == null) return Container();
 
+    final targetWidth = screenWidth < 600 ? screenWidth - 32.0 : 600.0;
+    final targetHeight = targetWidth * _aspectRatio;
+
     if (kIsWeb) {
       // Untuk web, gunakan Image.network dengan base64 URL
       return _capturedImageUrl != null
-          ? Image.network(
-        _capturedImageUrl!,
-        fit: BoxFit.cover,
-        width: screenWidth < 600 ? screenWidth - 32 : 600,
-        height: screenWidth < 600 ? (screenWidth * 16) / 10 : (600 * 16) / 10,
-        errorBuilder: (context, error, stackTrace) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error, size: 64, color: Colors.red),
-                SizedBox(height: 16),
-                Text('Gagal menampilkan gambar'),
-                SizedBox(height: 8),
-                Text(
-                  error.toString(),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-          );
-        },
+          ? Container(
+        width: targetWidth,
+        height: targetHeight,
+        child: Image.network(
+          _capturedImageUrl!,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error, size: 64, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text('Gagal menampilkan gambar'),
+                  SizedBox(height: 8),
+                  Text(
+                    error.toString(),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       )
           : Center(child: CircularProgressIndicator());
     } else {
       // Untuk mobile, gunakan Image.file
-      return Image.file(
-        File(_capturedImage!.path),
-        fit: BoxFit.cover,
-        width: screenWidth < 600 ? screenWidth - 32 : 600,
-        height: screenWidth < 600 ? (screenWidth * 16) / 10 : (600 * 16) / 10,
-        errorBuilder: (context, error, stackTrace) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error, size: 64, color: Colors.red),
-                SizedBox(height: 16),
-                Text('Gagal menampilkan gambar'),
-              ],
-            ),
-          );
-        },
+      return Container(
+        width: targetWidth,
+        height: targetHeight,
+        child: Image.file(
+          File(_capturedImage!.path),
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error, size: 64, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text('Gagal menampilkan gambar'),
+                ],
+              ),
+            );
+          },
+        ),
       );
     }
+  }
+
+  Widget _buildCameraPreview(double screenWidth) {
+    if (_controller == null || !_controller!.value.isInitialized) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    final targetWidth = screenWidth < 600 ? screenWidth - 32.0 : 600.0;
+    final targetHeight = targetWidth * _aspectRatio;
+
+    return Container(
+      width: targetWidth,
+      height: targetHeight,
+      child: ClipRect(
+        child: OverflowBox(
+          alignment: Alignment.center,
+          child: FittedBox(
+            fit: BoxFit.fitWidth,
+            child: SizedBox(
+              width: _isPortrait
+                  ? _controller!.value.previewSize!.height.toDouble()
+                  : _controller!.value.previewSize!.width.toDouble(),
+              height: _isPortrait
+                  ? _controller!.value.previewSize!.width.toDouble()
+                  : _controller!.value.previewSize!.height.toDouble(),
+              child: CameraPreview(_controller!),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _getCameraIcon() {
@@ -305,10 +410,8 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
         return Icon(Icons.camera_front);
       case CameraLensDirection.back:
         return Icon(Icons.camera_rear);
-      case CameraLensDirection.external:
-        return Icon(Icons.videocam);
       default:
-        return Icon(Icons.camera_alt);
+        return Icon(Icons.camera_rear);
     }
   }
 
@@ -353,55 +456,61 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
             ),
         ],
       ),
-      body: Column(
-        children: [
-          LayoutBuilder(
-              builder: (context, constraints){
-                final screenWidth = constraints.maxWidth;
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            LayoutBuilder(
+                builder: (context, constraints){
+                  final screenWidth = constraints.maxWidth;
 
-                if(_capturedImage != null){
-                  return _buildCapturedImage(screenWidth);
+                  if(_capturedImage != null){
+                    return Center(
+                      child: _buildCapturedImage(screenWidth.toDouble()), // Konversi ke double
+                    );
+                  }
+                  else if(_controller != null && _controller!.value.isInitialized){
+                    return Center(
+                      child: _buildCameraPreview(screenWidth.toDouble()), // Konversi ke double
+                    );
+                  }
+                  else{
+                    return Center(child: CircularProgressIndicator());
+                  }
                 }
-                else if(_controller != null && _controller!.value.isInitialized){
-                  return CameraPreview(_controller!);
-                }
-                else{
-                  return Center(child: CircularProgressIndicator());
-                }
-              }
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_capturedImage != null)
-                  FloatingActionButton(
-                    onPressed: _isUploading ? null : _retakePicture,
-                    heroTag: 'retake',
-                    child: Icon(Icons.arrow_back),
-                  ),
-                SizedBox(width: 20),
-                if (_capturedImage == null)...[
-                  FloatingActionButton(
-                    onPressed: _takePicture,
-                    heroTag: 'capture',
-                    child: _isCapturing
-                        ? CircularProgressIndicator(color: Colors.white)
-                        : Icon(Icons.camera_alt),
-                  ),
-                  if (_cameras!.length > 1) SizedBox(width: 20),
-                  if (_cameras!.length > 1)
-                    FloatingActionButton(
-                      onPressed: _rotateCamera,
-                      heroTag: 'rotate',
-                      child: _getCameraIcon(),
-                    ),
-                ]
-              ],
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_capturedImage != null)
+                    FloatingActionButton(
+                      onPressed: _isUploading ? null : _retakePicture,
+                      heroTag: 'retake',
+                      child: Icon(Icons.arrow_back),
+                    ),
+                  SizedBox(width: 20),
+                  if (_capturedImage == null)...[
+                    FloatingActionButton(
+                      onPressed: _takePicture,
+                      heroTag: 'capture',
+                      child: _isCapturing
+                          ? CircularProgressIndicator(color: Colors.white)
+                          : Icon(Icons.camera_alt),
+                    ),
+                    if (_cameras!.length > 1) SizedBox(width: 20),
+                    if (_cameras!.length > 1)
+                      FloatingActionButton(
+                        onPressed: _rotateCamera,
+                        heroTag: 'rotate',
+                        child: _getCameraIcon(),
+                      ),
+                  ]
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
