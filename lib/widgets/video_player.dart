@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
@@ -17,8 +19,9 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   bool _showControls = true;
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
+  Timer? _controlsTimer;
 
-  double _aspectRatio = 16 / 10; // Nilai default sebelum video diinisialisasi
+  double _aspectRatio = 16 / 10;
 
   @override
   void initState() {
@@ -32,6 +35,9 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       });
     });
     _controller.addListener(_updateState);
+
+    // Set timer untuk hide controls setelah beberapa detik
+    _startControlsTimer();
   }
 
   void _updateState() {
@@ -50,18 +56,34 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         _controller.pause();
       } else {
         _controller.play();
-        // Hide controls after 3 seconds of playback
-        Future.delayed(const Duration(seconds: 3), () {
-          if (_controller.value.isPlaying) {
-            setState(() => _showControls = false);
-          }
-        });
+        // Restart timer ketika mulai play
+        _restartControlsTimer();
       }
     });
   }
 
   void _seekToPosition(Duration position) {
     _controller.seekTo(position);
+  }
+
+  void _startControlsTimer() {
+    _controlsTimer?.cancel();
+    _controlsTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && _isPlaying) {
+        setState(() => _showControls = false);
+      }
+    });
+  }
+
+  void _restartControlsTimer() {
+    if (_isPlaying) {
+      _startControlsTimer();
+    }
+  }
+
+  void _showControlsTemporarily() {
+    setState(() => _showControls = true);
+    _restartControlsTimer();
   }
 
   String _formatDuration(Duration duration) {
@@ -79,6 +101,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   @override
   void dispose() {
+    _controlsTimer?.cancel();
     _controller.removeListener(_updateState);
     _controller.dispose();
     super.dispose();
@@ -90,14 +113,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     final calculatedHeight = screenWidth / _aspectRatio;
 
     return GestureDetector(
-      onTap: () {
-        setState(() => _showControls = !_showControls);
-        if (_showControls && _isPlaying) {
-          Future.delayed(const Duration(seconds: 5), () {
-            if (_isPlaying) setState(() => _showControls = false);
-          });
-        }
-      },
+      onTap: _showControlsTemporarily, // Ubah ini
       child: SizedBox(
         height: calculatedHeight,
         child: Stack(
@@ -114,7 +130,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                 } else {
                   return Center(
                     child: AspectRatio(
-                      aspectRatio: 16/9, // Default selama loading
+                      aspectRatio: 16/9,
                       child: Container(
                         color: Colors.black,
                         child: const Center(child: CircularProgressIndicator()),
@@ -125,113 +141,118 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
               },
             ),
 
-            // Custom controls overlay
-            if (_showControls)
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.7),
-                      ],
+            // Custom controls overlay - selalu ada di stack, tapi opacity berubah
+            Positioned.fill(
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity: _showControls ? 1.0 : 0.0,
+                child: MouseRegion(
+                  onEnter: (_) => _showControlsTemporarily(),
+                  child: GestureDetector(
+                    onTap: () {}, // Kosongkan agar tidak bertabrakan dengan GestureDetector utama
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.7),
+                          ],
+                        ),
+                      ),
+                      child: Stack(
+                        children: [
+                          // Play/Pause button di tengah
+                          if (!_isPlaying || _showControls) // Tampilkan jika tidak playing atau controls visible
+                            Center(
+                              child: IconButton(
+                                icon: Icon(
+                                  _isPlaying ? Icons.pause : Icons.play_arrow,
+                                  size: 50,
+                                  color: Colors.white,
+                                ),
+                                onPressed: _togglePlayPause,
+                              ),
+                            ),
+
+                          // Progress bar di bawah
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 1.8),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Custom progress bar
+                                  SliderTheme(
+                                    data: SliderTheme.of(context).copyWith(
+                                      activeTrackColor: Colors.red,
+                                      inactiveTrackColor: Colors.grey[300],
+                                      trackHeight: 4.0,
+                                      thumbColor: Colors.red,
+                                      thumbShape: const RoundSliderThumbShape(
+                                        enabledThumbRadius: 8.0,
+                                      ),
+                                      overlayColor: Colors.red.withAlpha(32),
+                                      overlayShape: const RoundSliderOverlayShape(
+                                        overlayRadius: 14.0,
+                                      ),
+                                    ),
+                                    child: Slider(
+                                      min: 0,
+                                      max: _totalDuration.inSeconds.toDouble(),
+                                      value: _currentPosition.inSeconds.toDouble(),
+                                      onChanged: (value) {
+                                        _seekToPosition(Duration(seconds: value.toInt()));
+                                        _restartControlsTimer(); // Restart timer saat seek
+                                      },
+                                      onChangeEnd: (value) {
+                                        if (_isPlaying) {
+                                          _restartControlsTimer();
+                                        }
+                                      },
+                                    ),
+                                  ),
+
+                                  // Time indicators
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          _formatDuration(_currentPosition),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        Text(
+                                          _formatDuration(_totalDuration - _currentPosition),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  child: Stack(  // Ganti Column dengan Stack
-                    children: [
-                      // Play/Pause button - sekarang di tengah layar
-                      Center(
-                        child: IconButton(
-                          icon: Icon(
-                            _isPlaying ? Icons.pause : Icons.play_arrow,
-                            size: 50,
-                            color: Colors.white,
-                          ),
-                          onPressed: _togglePlayPause,
-                        ),
-                      ),
-
-                      // Progress bar dan kontrol lainnya di bagian bawah
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 1.8),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Custom progress bar
-                              SliderTheme(
-                                data: SliderTheme.of(context).copyWith(
-                                  activeTrackColor: Colors.red,
-                                  inactiveTrackColor: Colors.grey[300],
-                                  trackHeight: 4.0,
-                                  thumbColor: Colors.red,
-                                  thumbShape: const RoundSliderThumbShape(
-                                    enabledThumbRadius: 8.0,
-                                  ),
-                                  overlayColor: Colors.red.withAlpha(32),
-                                  overlayShape: const RoundSliderOverlayShape(
-                                    overlayRadius: 14.0,
-                                  ),
-                                ),
-                                child: Slider(
-                                  min: 0,
-                                  max: _totalDuration.inSeconds.toDouble(),
-                                  value: _currentPosition.inSeconds.toDouble(),
-                                  onChanged: (value) {
-                                    _seekToPosition(Duration(seconds: value.toInt()));
-                                  },
-                                ),
-                              ),
-
-                              // Time indicators
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      _formatDuration(_currentPosition),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    Text(
-                                      _formatDuration(_totalDuration - _currentPosition),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
-
-            // Play button center when not playing
-            if (!_isPlaying && !_showControls)
-              Positioned.fill( // Gunakan Positioned.fill agar button mengisi seluruh area video
-                child: Center( // Gunakan Center untuk memposisikan button di tengah
-                  child: IconButton(
-                    icon: const Icon(Icons.play_arrow, size: 50, color: Colors.white),
-                    onPressed: _togglePlayPause,
-                  ),
-                ),
-              ),
+            ),
           ],
         ),
-      )
+      ),
     );
   }
 }
