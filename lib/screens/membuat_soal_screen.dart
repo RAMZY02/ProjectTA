@@ -110,6 +110,10 @@ class _MembuatSoalScreenContentState extends State<_MembuatSoalScreenContent> {
 
     // Simbol lain
     '⋯', '…', '■'
+
+    // pangkat
+    '⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'
+    'ᵃ', 'ᵇ', 'ᶜ', 'ˣ', 'ʸ', 'ᶻ'
   ];
 
   @override

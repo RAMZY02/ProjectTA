@@ -234,7 +234,7 @@ class _DaftarVideoEdukasiScreenState extends State<DaftarVideoEdukasiScreen> {
                             ),
                             const SizedBox(height: 4),
                             SizedBox(
-                              width: 300, // Atur lebar sesuai kebutuhan
+                              width: 280, // Atur lebar sesuai kebutuhan
                               child: Text(
                                 widget.mapel,
                                 style: const TextStyle(

@@ -477,7 +477,6 @@ class _InsertUjianScreenState extends State<InsertUjianScreen> {
 
                       if (!widget.isEdit) {
                         if (authState is Authenticated) {
-                          print("masuk sini kah");
                           final randomCode = generateRandomAlphanumeric(6);
                           context.read<UjianBloc>().add(AddUjian(
                             token: authState.token,

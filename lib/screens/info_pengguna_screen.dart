@@ -104,7 +104,7 @@ class InfoPenggunaScreen extends StatelessWidget {
                               if(authState.mapel != '-')
                                 _buildInfoField('Mata Pelajaran', userState.mapel),
                               const Divider(height: 24),
-                              _buildInfoField('Bergabung Sejak', '${authState.timestamps.day} ${monthNames[authState.timestamps.month]} ${authState.timestamps.year}'),
+                              _buildInfoField('Bergabung Sejak', '${authState.timestamps.day} ${monthNames[authState.timestamps.month - 1]} ${authState.timestamps.year}'),
                             ],
                           ),
                         ),
